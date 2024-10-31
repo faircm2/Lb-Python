@@ -15,13 +15,13 @@ import numpy as np
 
 TOTAL_TIME = 0.01
 INIT_DENSITY = 1. #0.001
-VERBOSE = True
+VERBOSE = False
 
 #Cs=1/math.sqrt(3)
 Cs=math.sqrt(3)
 if(VERBOSE): print("Cs: {0}".format(Cs))
 
-D=10**(-3) #m
+D=10**(-3) 
 if(VERBOSE): print("D: {0}".format(D))
 D_nd=100
 if(VERBOSE): print("D_nd: {0}".format(D_nd))
@@ -38,7 +38,7 @@ if(VERBOSE): print("dx: {0}".format(dx))
 delta_t=1
 #relaxation time tau, should be > 0,5
 tau=0.6
-dP=10**(-2) #Pa
+dP=10**(-2) 
 rho_0=10**3
 dRho=dP/Cs**2
 
@@ -55,7 +55,7 @@ if(VERBOSE):
     print("roh_in: {0}".format(roh_in))
     print("roh_out: {0}".format(roh_out))
 
-nu=3*10**(-6) #m2/s
+nu=3*10**(-6) 
 dt=Cs**2*(tau-1./2)*(dx**2/nu)
 if(VERBOSE): print("dt: {0}".format(dt))
 
@@ -184,14 +184,14 @@ def feq_i(i, rho, u_avg):
 
 #collision equilibrium distribution function feq(0-8) for each lattice slice at inlet/outlet
 def f_eq_slc(j, roh_nd, u_avg):
-    _slice = np.stack([feq_i(i, roh_nd, u_avg) for i in range(0, 9)], axis=0) #-1
+    _slice = np.stack([feq_i(i, roh_nd, u_avg) for i in range(0, 9)], axis=0) 
     return _slice
 
 
 #roll the lattice based on the discrete velocities
 def streamLtc(_ltc):
     tmpLtc = [np.roll(np.roll(_ltc[direction, :, :], shift=dy, axis=0), shift=dx, axis=1) for direction, (dx, dy) in enumerate(discrete_velocities)]
-    shifted_lattice = np.stack(tmpLtc, axis=0) #2
+    shifted_lattice = np.stack(tmpLtc, axis=0) 
     
     return shifted_lattice
 
@@ -351,7 +351,7 @@ speed_values = [pair[1] for pair in outlet_midstream_avg_v]
 
 plt.plot(time_values, speed_values)
 plt.xlabel('Time (t)')
-plt.ylabel('Speed (s)')
-plt.title('Speed vs. Time')
+plt.ylabel('Avg speed')
+plt.title('Avg speed vs. Time')
 plt.grid(True)
 plt.show(block=True)
