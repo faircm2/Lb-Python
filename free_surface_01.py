@@ -25,7 +25,7 @@ L=1 #m
 
 D_nd=50 #100
 
-Yn=D_nd #+1
+Yn=int(D_nd) #+1
 Xn=200 #int(Yn*L/D)
 
 if(VERBOSE1): print("Ny: {0}".format(Yn))
@@ -236,32 +236,38 @@ def c_second_derivative(lamda, dx=1.0, dy=1.0):
 
 #Inamuro eq(9): Gab - shear terms
 def Gab(func):
-    phi_x, phi_y = c_first_derivative(_phi)
-    grad_func = phi_x**2 + phi_y**2
+    dphi_x, dphi_y = c_first_derivative(_phi)
 
     G = np.zeros((Xn+2, Yn+2, 2, 2))
-    G[:,:,0,0] = (9/2) * phi_x * phi_x - (3/2) * grad_func
-    G[:,:,0,1] = (3/2) * phi_x * phi_y
-    G[:,:,1,0] = (3/2) * phi_x * phi_y
-    G[:,:,1,1] = (9/2) * phi_y * phi_y - (3/2) * grad_func
+    G[:,:,0,0] = (3) * dphi_x**2 - (3/2) * dphi_y**2
+    G[:,:,0,1] = (9/2) * dphi_x * dphi_y
+    G[:,:,1,0] = (9/2) * dphi_y * dphi_x
+    G[:,:,1,1] = (3) * dphi_y**2 - (3/2) * dphi_x**2
 
     return G
 
 #Inamuro eq(14 & 15): density rho and viscosity mu
-def density_and_viscosity(rho_G, rho_L, _phi, phi_cutoff_G, phi_cutoff_L, mu_L, mu_G):
-    _rho = 0.0
-    delta_rho = rho_L - rho_G
-    delta_phi_cutoff = phi_cutoff_L - phi_cutoff_G
-    dash_phi_cutoff = (phi_cutoff_L + phi_cutoff_G) / 2
-    rho_center = (delta_rho/2) * (np.sin(((_phi - dash_phi_cutoff)/delta_phi_cutoff) * np.pi) + 1) + rho_G
+def density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L):
+    _rho = np.zeros_like(_phi)
+    mu = np.zeros_like(_phi)
 
-    #if _phi < phi_cutoff_G:
+    delta_rho = rho_L - rho_G
+    phi_dash_star = (phi_star_L + phi_star_G) / 2
+    phi_delta_star = phi_star_L - phi_star_G    
+
+    #if _phi < phi_star_G:
     #    _rho = rho_G
-    #elif _phi >= phi_cutoff_G and _phi <= phi_cutoff_L:
+    mask1 = _phi < phi_star_G
+    _rho[mask1] = rho_G
+    #elif _phi >= phi_star_G and _phi <= phi_star_L:
     #    _rho = rho_center
-    #elif _phi > phi_cutoff_L:
+    mask2 = (_phi >= phi_star_G) & (_phi <= phi_star_L)
+    rho_center = (delta_rho/2) * (np.sin(np.pi * ((_phi[mask2] - phi_dash_star)/phi_delta_star)) + 1) + rho_G    
+    _rho[mask2] = rho_center
+    #elif _phi > phi_star_L:
     #    _rho = rho_L
-    _rho = np.where(_phi < phi_cutoff_G, rho_G, np.where(_phi <= phi_cutoff_L, rho_center, rho_L))
+    mask3 = _phi > phi_star_L
+    _rho[mask3] = rho_L
 
     mu = ((_rho - rho_G) / (rho_L - rho_G)) * (mu_L - mu_G) + mu_G
 
@@ -281,14 +287,11 @@ def ph(hn, _rho, u_ckl, dx=1.0, dy=1.0):
     E_exp = np.expand_dims(E, axis=(1,2)) #(9,1,1)
     p_exp = np.expand_dims(_p, axis=0) #(1,Xn,Yn)
     E_p = E_exp * p_exp
-    #term1 = hn      
 
     tau = 1/_rho + 1/2 #(Xn,Yn)
-    tau_exp = np.expand_dims(1/tau, axis=0)
-    #term2 = tau_exp * (hn - E_p)    
+    tau_exp = np.expand_dims(1./tau, axis=0) #(1,Xn,Yn)
 
     du_dx, du_dy = c_first_derivative(u_ckl[0])
-    #term3 = (1/3) * E_exp * der_u_exp
 
     #full evolution equation
     collision = hn - tau_exp * (hn - E_p) - (1/3) * E_exp * du_dx
@@ -299,57 +302,105 @@ def ph(hn, _rho, u_ckl, dx=1.0, dy=1.0):
 
     return _p, hn_plus1
 
+#Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
+def gi(_gi, _gi_c, u_ckl, rho, mu):
+    E_exp = np.expand_dims(E, axis=(1,2)) #(9,1,1)
+    u_dx, u_dy = c_first_derivative(u_ckl)[0] 
+    v_dx, v_dy = c_first_derivative(u_ckl)[1] 
+    div_u = u_dx + v_dy
+    mu_div_u = mu * div_u
+    d_dx, d_dy = c_first_derivative(mu)
+    discrete_velocities_exp = discrete_velocities[:,:,None,None]
+    derivatives = np.stack([d_dx, d_dy], axis=0)
+    deriv_term = np.sum(discrete_velocities_exp*derivatives[None,:,:,:], axis=1)
+    deriv_term = 3 * E_exp * deriv_term / rho[None,:,:] * dx
+    force_term = force(rho, g_x, g_y, Cs)
+
+    _gi = _gi - (1/tau_g) * (_gi - _gi_c) + deriv_term + force_term
+
+    return _gi
+
 #Inamuro eq(7): calculation of predicted velocity of the two phase fluid - collision term
 def gi_c(u, rho, tau_g, Kg, F):
-    grad_u = np.stack([c_first_derivative(u[:,:,0]), c_first_derivative(u[:,:,1])], axis=0)
-    grad_rho = c_first_derivative(rho)
-    _gi_c = np.zeros(9, Xn+2, Yn+2)
+    grad_rho_x,grad_rho_y = c_first_derivative(rho)
+    _gi_c = np.zeros((9, Xn+2, Yn+2))
+    ones = np.ones((Xn+2, Yn+2))
+
+    #ua*ua
+    u_dot_u = np.sum(u**2, axis=0)    
 
     #_gi_c
     for i in range(9):
         #cia*ua
-        c_dot_u = np.tensordot(discrete_velocities[i], u, axes=(0,0))
-
-        #ua*ua
-        u_dot_u = np.sum(u*u, axis=0)
+        c_dot_u = np.einsum('i,ikl->kl', discrete_velocities[i], u)
 
         #cia*cib*ua*ub
-        c_dot_u_tensor = c_dot_u ** 2 #(ci.u)^2, shape(Xn, Yn)
+        #(ci.u)^2, shape(Xn, Yn)
+        discrete_velocities_exp = discrete_velocities[:,:,None,None]
+        c_dot_u_tensor = c_dot_u**2
+        #c_dot_u_tensor = np.tensordot(discrete_velocities[i,0], u[0], axes=(0,0)) * np.tensordot(discrete_velocities[i], u[0], axes=(0,0))
 
         #(dub/dxa + dua/dxb)
-        grad_sym = grad_u + np.transpose(grad_u, (1,0,2,3)) #symmetric gradient
-        grad_term = np.einsum('ijab,ab->ij', grad_sym, c_tensor[i])
+        dua_dx,dua_dy = c_first_derivative(u[0,:,:])  
+        dub_dx,dub_dy = c_first_derivative(u[1,:,:])  
+        term_xx = (dua_dx) * discrete_velocities[i,0] * discrete_velocities[i,0]
+        term_xy = (dua_dy) * discrete_velocities[i,0] * discrete_velocities[i,1] 
+        term_yx = (dub_dx) * discrete_velocities[i,1] * discrete_velocities[i,0] 
+        term_yy = (dub_dy) * discrete_velocities[i,1] * discrete_velocities[i,1]
+        velocity_gradient_term = term_xx + term_xy + term_yx + term_yy
 
         #Gab(rho)*cia*cib
         Gab_rho = Gab(rho)
-        _Gab = np.einsum('ijab,ab->ij', Gab_rho, c_tensor[i])
+        c_i_tensor = np.outer(discrete_velocities[i], discrete_velocities[i])
+        _Gab = np.einsum('klab,ab->kl', Gab_rho, c_i_tensor)
 
         #(drho/dxa)^2
-        drho_dxa = np.sum(grad_rho**2, axis=0) #shape(Xn, Yn)
+        drho_dxa = np.sum(grad_rho_x**2, axis=0) #shape(Xn, Yn)
 
-        _gi_c[i] = E[i] * (1 + 3*c_dot_u - 1.5*u_dot_u + 4.5*c_dot_u_tensor + 1.5*(tau_g - 0.5)*dx*grad_term) \
-            + E[i]*Kg/rho*_Gab - (2/3)*F[i]*Kg/rho*drho_dxa
+        term1 = E[i]*ones
+        term2 = E[i]*3*c_dot_u
+        term3 = E[i]*(3/2)*u_dot_u
+        term4 = E[i]*(9/2)*c_dot_u_tensor
+        term5 = E[i]*(3/2)*(tau_g - 1/2)*dx*velocity_gradient_term
+        term6 = E[i]*(Kg/rho)*_Gab
+        term7 = (2/3)*F[i]*(Kg/rho)*drho_dxa
+
+        _gi_c[i] = term1 + term2 - term3 + term4 + term5 + term6 - term7
+        print(_gi_c[i])
         
     return _gi_c
+
+def fi(_fi, _fi_c, tau_f):
+    #Inamuro eq(2): calculation of the order parameter which distiguishes the two phases
+    _fi = _fi - (1/tau_f) * (_fi - _fi_c)    
+
+    return _fi
 
 #Inamuro eq(6): calculation of the order parameter which distiguishes the two phases - collision term
 def fi_c(u, Kf, F, _phi):
     _fi_c = np.zeros((9, Xn+2, Yn+2))
-    d1phi_dxa = c_first_derivative(_phi, 0)
+    d1phi_dxa,d1phi_dya = c_first_derivative(_phi)
     d2phi_dxa = c_second_derivative(_phi)
+    Gab_phi = Gab(_phi)   
 
     #gi
     for i in range(9):
         #cia*ua
-        c_dot_u = np.tensordot(discrete_velocities[i], u, axes=(0,0))
+        c_dot_u = np.tensordot(discrete_velocities[i,:], u, axes=([0],[0]))
 
         #Gab(rho)*cia*cib
-        Gab_phi = Gab(_phi)
-        _Gab = np.einsum('ijab,ab->ij', Gab_phi, c_tensor[i])
-
-        _fi_c[i] = H[i]*_phi + F[i]*(p0(_phi) - Kf*_phi*d2phi_dxa - Kf/6*(d1phi_dxa)**2) \
-            + 3*E[i]*_phi*c_dot_u \
-            + E[i]*Kf*_Gab
+        #_Gab = np.einsum('ijab,ab->ij', Gab_phi, c_tensor[i])
+        td1 = np.tensordot(Gab_phi, discrete_velocities[i,:], axes=([2],[0]))
+        _Gab = np.tensordot(td1, discrete_velocities[i,:], axes=([2],[0]))
+       
+        #einstein summen-konvention
+        term1 = H[i]*_phi
+        term2 = F[i]*p0(_phi)
+        term3 = F[i]*Kf*_phi*d2phi_dxa
+        term4 = F[i]*Kf/6*(d1phi_dxa**2+d1phi_dxa**2)
+        term5 = 3*E[i]*_phi*c_dot_u
+        term6 = E[i]*Kf*_Gab
+        _fi_c[i] = term1 + term2 - term3 - term4 + term5 + term6
         
     return _fi_c
 
@@ -572,17 +623,17 @@ Sh = U/Cs
 rho_G = 1
 rho_L = 50
 _phi = np.ones((Xn+2, Yn+2))
-phi_cutoff_G = 1.5e-2
-phi_cutoff_L = 9.2e-2
+phi_star_G = 1.5e-2
+phi_star_L = 9.2e-2
 mu_G = 1.6e-4*dx
 mu_L = 8e-3*dx
-h0 = np.ones((9,Xn+2, Yn+2))
-p0 = np.zeros((9,Xn+2, Yn+2))
+h0 = np.zeros((9,Xn+2, Yn+2))
+_p0 = np.zeros((9,Xn+2, Yn+2))
 #_h = np.zeros((9,Xn,Yn))
 _fi_c = np.zeros((9,Xn+2, Yn+2))
-fi = np.zeros((9,Xn+2, Yn+2))
+_fi = np.zeros((9,Xn+2, Yn+2))
 _gi_c = np.zeros((9, Xn+2, Yn+2))
-gi = np.zeros((9, Xn+2, Yn+2))
+_gi = np.zeros((9, Xn+2, Yn+2))
 h = np.zeros((9,Xn+2, Yn+2))
 alpha = 20
 g = 9.81
@@ -593,8 +644,8 @@ g_y = -g * np.cos(np.radians(alpha))
 y0 = (Yn-1)/2
 xi = 0.75
 x,y = np.meshgrid(np.arange(Xn+2),np.arange(Yn+2),indexing='ij')
-_phi = (phi_cutoff_L + phi_cutoff_G)/2 - (phi_cutoff_L - phi_cutoff_G)/2 * np.tanh((y-y0)/xi)
-rho = rho_G + (_phi - phi_cutoff_G) / (phi_cutoff_L - phi_cutoff_G) * (rho_L - rho_G)
+_phi = (phi_star_L + phi_star_G)/2 - (phi_star_L - phi_star_G)/2 * np.tanh((y-y0)/xi)
+rho = rho_G + (_phi - phi_star_G) / (phi_star_L - phi_star_G) * (rho_L - rho_G)
 
 
 while iteration < TOTAL_ITERATION:
@@ -605,54 +656,44 @@ while iteration < TOTAL_ITERATION:
         _fi_c = fi_c(u_ckl, Kf, F, _phi)
     
     #Inamuro eq(2): calculation of the order parameter which distiguishes the two phases
-    #calculate f(i)
-    fi = fi - (1/tau_f) * (fi - _fi_c)
+    _fi = fi(_fi, _fi_c, tau_f)
     #Calculation of order parameter to distiguish the 2 phases
-    _phi = phi(fi)
-    #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
+    _phi = phi(_fi)
+    #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid        
     if iteration > 0:
         _gi_c = gi_c(u_ckl, rho, tau_g, Kg, F)
-    rho, mu = density_and_viscosity(rho_G, rho_L, _phi, phi_cutoff_G, phi_cutoff_L, mu_L, mu_G)
+    rho, mu = density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L)
+    _gi = gi(_gi, _gi_c, u_ckl, rho, mu)    
 
-    #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
-    E_exp = np.expand_dims(E, axis=(1,2)) #(9,1,1)
-    u_dx, u_dy = c_first_derivative(u_ckl)[0] 
-    v_dx, v_dy = c_first_derivative(u_ckl)[1] 
-    div_u = u_dx + v_dy
-    mu_div_u = mu * div_u
-    d_dx, d_dy = c_first_derivative(mu)
-    discrete_velocities_exp = discrete_velocities[:,:,None,None]
-    derivatives = np.stack([d_dx, d_dy], axis=0)
-    deriv_term = np.sum(discrete_velocities_exp*derivatives[None,:,:,:], axis=1)
-    deriv_term = 3 * E_exp * deriv_term / rho[None,:,:] * dx
-    force_term = force(rho, g_x, g_y, Cs)
-    gi = gi - (1/tau_g) * (gi - _gi_c) + deriv_term + force_term
-    
+    #=> here the boundary conditions
+    #Bounce-Back Top and Bottom
+    _gi = bounceBackTopBottom2(_gi, Xn, Yn)     
+
+    #4.1b. assign inlet boundary values -> B)
+    _gi[:, 0, :] = _gi[:,Xn,:]
+    _gi[:, Xn+1, :] = _gi[:,1,:]      
+
+
+    #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
     #Inamuro eq(5): Compute u(x,t+dt)
-    u_ckl = np.einsum('ia,ijk->ajk', discrete_velocities, gi)    
+    u_ckl = np.einsum('ia,ijk->ajk', discrete_velocities, _gi)    
 
     #Step2a. calculate h, p
     epsilon0 = epsilon_cutoff * 10.0
     epsilon = np.full_like(h, epsilon0, dtype=np.float32)
     while np.all(epsilon > epsilon_cutoff):
         p, h = ph(h, rho, u_ckl)
-        epsilon = np.abs(p-p0)/rho
+        epsilon = np.abs(p-_p0)/rho
         
-    #Inamuro eq(22 & 24): assign resultant p to p0 for next iteration
-    p0 = p
+    #Inamuro eq(22 & 24): assign resultant p to _p0 for next iteration
+    _p0 = p
 
     #Step 3: Compute u(x,t+dt) using eq. (20)
     #Inamuro eq(20): corrected current velocity u which satisfies the continuity equation div.u=0
     u_ckl = (-gradient_p(p)/rho * dt + u_ckl)/Sh
 
 
-    #stream lattice 
-    #store pre-stream boundary top and bottom values
-    fi = streamLattice0(fi)
-
-
-    #Bounce-Back Top and Bottom
-    fi = bounceBackTopBottom2(fi, Xn, Yn)     
+    #streaming has commenced
 
 
     # Get the maximum density and its location
@@ -662,11 +703,6 @@ while iteration < TOTAL_ITERATION:
         if np.any(rho > 1):
             print(f"Instability detected at iteration {iteration + 1}")
         print(f"Maximum density: {max_density} at location {max_location}")
-
-
-    #4.1b. assign inlet boundary values -> B)
-    fi[:, 0, :] = fi[:,Xn,:]
-    fi[:, Xn+1, :] = fi[:,1,:]  
 
 
     # Update plots and parameters
