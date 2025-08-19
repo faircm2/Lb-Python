@@ -138,15 +138,7 @@ discrete_velocities = np.array([[0, 0],     # i=0
                       [1, -1]])             # i=8
 
 #Inamuro eq(8): constant E
-E = np.array([0,    # i=0
-            2/9,    # i=1
-            1/9,    # i=2
-            1/9,    # i=3
-            1/9,    # i=4
-            1/9,    # i=5
-            1/9,    # i=6
-            1/9,    # i=7
-            1/72])  # i=8
+E = np.array([4/9,1/9,1/9,1/9,1/9,1/36,1/36,1/36,1/36])
 #Inamuro eq(8): constant H
 H = np.array([1,    # i=0
             0,      # i=1
@@ -168,8 +160,8 @@ for i in range(9):
 if(VERBOSE1): print("Discrete velocities: {0}".format(discrete_velocities))
 
 #Krüger: force weights
-weights = np.array([4/9,1/9,1/9,1/9,1/9,1/36,1/36,1/36,1/36])
-if(VERBOSE1): print("Weights: {0}".format(weights))
+#weights = np.array([4/9,1/9,1/9,1/9,1/9,1/36,1/36,1/36,1/36])
+if(VERBOSE1): print("Weights: {0}".format(E))
 
 #Inamuro eq(4): particle velocity distribution
 def phi(_f):
@@ -263,6 +255,7 @@ def density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L
     #    _rho = rho_center
     mask2 = (_phi >= phi_star_G) & (_phi <= phi_star_L)
     rho_center = (delta_rho/2) * (np.sin(np.pi * ((_phi[mask2] - phi_dash_star)/phi_delta_star)) + 1) + rho_G    
+    #rho_center = (delta_rho/2) * (np.sin(np.pi * ((_phi - phi_dash_star)/phi_delta_star)) + 1) + rho_G    
     _rho[mask2] = rho_center
     #elif _phi > phi_star_L:
     #    _rho = rho_L
@@ -307,16 +300,14 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
     E_exp = np.expand_dims(E, axis=(1,2)) #(9,1,1)
     u_dx, u_dy = c_first_derivative(u_ckl)[0] 
     v_dx, v_dy = c_first_derivative(u_ckl)[1] 
-    div_u = u_dx + v_dy
+    div_u = v_dx + u_dy
     mu_div_u = mu * div_u
-    d_dx, d_dy = c_first_derivative(mu)
+    d_dx, d_dy = c_first_derivative(mu_div_u)
     discrete_velocities_exp = discrete_velocities[:,:,None,None]
-    derivatives = np.stack([d_dx, d_dy], axis=0)
-    deriv_term = np.sum(discrete_velocities_exp*derivatives[None,:,:,:], axis=1)
-    deriv_term = 3 * E_exp * deriv_term / rho[None,:,:] * dx
+    deriv_term = 3*np.sum(E_exp * discrete_velocities[:,0])/rho * d_dy
     force_term = force(rho, g_x, g_y, Cs)
-
     _gi = _gi - (1/tau_g) * (_gi - _gi_c) + deriv_term + force_term
+    #_gi = _gi - (1/tau_g) * (_gi - _gi_c) + deriv_term
 
     return _gi
 
@@ -400,13 +391,14 @@ def fi_c(u, Kf, F, _phi):
         term4 = F[i]*Kf/6*(d1phi_dxa**2+d1phi_dxa**2)
         term5 = 3*E[i]*_phi*c_dot_u
         term6 = E[i]*Kf*_Gab
-        _fi_c[i] = term1 + term2 - term3 - term4 + term5 + term6
+        _fi_c[i] = term1 + term2 - term3 - term4 + term5 + term6 
         
     return _fi_c
 
 
 def force(rho, g_x, g_y, cs):
-    _force = 3 * E[:,None,None] * rho[None,:,:] * (discrete_velocities[:,0]*g_x + discrete_velocities[:,1]*g_y)[:,None,None] / cs**2
+    #_force = 3 * E[:,None,None] * rho[None,:,:] * (discrete_velocities[:,0]*g_x + discrete_velocities[:,1]*g_y)[:,None,None] / cs**2
+    _force = E[:,None,None] * (discrete_velocities[:,0]*g_x + discrete_velocities[:,1]*g_y)[:,None,None] / cs**2
     return _force
 
 
@@ -529,7 +521,6 @@ def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, titl
     ax1.set_xlabel(xlabel)
     ax1.set_ylabel(ylabel)
     ax1.set_title(title)
-    
     ax1.set_xlim(-1, 51)
     ax1.set_xticks(np.arange(0, 51, 10))
     
@@ -635,7 +626,7 @@ _fi = np.zeros((9,Xn+2, Yn+2))
 _gi_c = np.zeros((9, Xn+2, Yn+2))
 _gi = np.zeros((9, Xn+2, Yn+2))
 h = np.zeros((9,Xn+2, Yn+2))
-alpha = 20
+alpha = 0
 g = 9.81
 g_x = g * np.sin(np.radians(alpha))
 g_y = -g * np.cos(np.radians(alpha))
@@ -676,13 +667,17 @@ while iteration < TOTAL_ITERATION:
 
     #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
     #Inamuro eq(5): Compute u(x,t+dt)
-    u_ckl = np.einsum('ia,ijk->ajk', discrete_velocities, _gi)    
+    u_ckl_star = np.einsum('ia,ijk->ajk', discrete_velocities, _gi)    
 
     #Step2a. calculate h, p
     epsilon0 = epsilon_cutoff * 10.0
     epsilon = np.full_like(h, epsilon0, dtype=np.float32)
     while np.all(epsilon > epsilon_cutoff):
         p, h = ph(h, rho, u_ckl)
+        print(p)
+        print("-----------------------------------------------")
+        print(h)
+        print("===============================================")
         epsilon = np.abs(p-_p0)/rho
         
     #Inamuro eq(22 & 24): assign resultant p to _p0 for next iteration
@@ -690,8 +685,8 @@ while iteration < TOTAL_ITERATION:
 
     #Step 3: Compute u(x,t+dt) using eq. (20)
     #Inamuro eq(20): corrected current velocity u which satisfies the continuity equation div.u=0
-    u_ckl = (-gradient_p(p)/rho * dt + u_ckl)/Sh
-
+    #u_ckl = (-gradient_p(p)/rho * dt + u_ckl)/Sh
+    u_ckl = -gradient_p(p)*dt/(rho*Sh) + u_ckl_star
 
     #streaming has commenced
 
