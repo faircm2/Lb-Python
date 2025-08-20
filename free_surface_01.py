@@ -8,11 +8,13 @@ plt.rc('font', family='serif')
 import time
 import numpy as np
 import math
+import os
+import matplotlib.pyplot as plt
 
 
 TOTAL_ITERATION = 10000
 VERBOSE1=True
-VERBOSE2=False
+VERBOSE2=True
 VERBOSE_MAX_RHO=False
 
 GC_COLLECT = True
@@ -127,7 +129,7 @@ if(VERBOSE1): print("omega_nd: {0}".format(omega_nd))
 
 
 #discrete velocity channels for D2Q9
-discrete_velocities = np.array([[0, 0],     # i=0
+c = np.array([[0, 0],     # i=0
                       [1, 0],               # i=1
                       [0, 1],               # i=2
                       [-1, 0],              # i=3
@@ -154,10 +156,10 @@ F = 3*E
 F[0] = -7/3
 c_tensor = np.zeros((9, 2, 2))
 for i in range(9):
-    c_tensor = np.outer(discrete_velocities[i], discrete_velocities[i])
+    c_tensor = np.outer(c[i], c[i])
 
 
-if(VERBOSE1): print("Discrete velocities: {0}".format(discrete_velocities))
+if(VERBOSE1): print("Discrete velocities: {0}".format(c))
 
 #Krüger: force weights
 #weights = np.array([4/9,1/9,1/9,1/9,1/9,1/36,1/36,1/36,1/36])
@@ -201,10 +203,10 @@ def c_first_derivative(lamda, dx=1.0, dy=1.0):
     roll_axes = (1,2) if is_3d else (0,1)
 
     for k in range(1,9):
-        shift_x, shift_y = -discrete_velocities[k,0], -discrete_velocities[k,1]
+        shift_x, shift_y = -c[k,0], -c[k,1]
         lamda_shift = np.roll(lamda, shift=(shift_x, shift_y), axis=roll_axes)
-        dlamda_dx += discrete_velocities[k,0] * lamda_shift
-        dlamda_dy += discrete_velocities[k,1] * lamda_shift
+        dlamda_dx += c[k,0] * lamda_shift
+        dlamda_dy += c[k,1] * lamda_shift
 
     dlamda_dx /= (10 * dx)
     dlamda_dy /= (10 * dy)
@@ -217,10 +219,10 @@ def c_second_derivative(lamda, dx=1.0, dy=1.0):
     sum_yy = np.zeros((Xn+2, Yn+2))
 
     for k in range(1,9):
-        shift_x, shift_y = -discrete_velocities[k,0], -discrete_velocities[k,1]        
+        shift_x, shift_y = -c[k,0], -c[k,1]        
         lamda_shift = np.roll(lamda, shift=(shift_x, shift_y), axis=(0,1))
-        sum_xx = discrete_velocities[k, 0] * lamda_shift
-        sum_yy = discrete_velocities[k, 0] * lamda_shift
+        sum_xx = c[k, 0] * lamda_shift
+        sum_yy = c[k, 0] * lamda_shift
 
     laplacian = (sum_xx + sum_yy - 14 * lamda)/(5*dx)
 
@@ -274,7 +276,7 @@ def tau_h(_rho):
 #Inamuro eq(22,24): evolution equation of the velocity distribution function h(i) and pressure
 def ph(hn, _rho, u_ckl, dx=1.0, dy=1.0):
     _p = np.zeros(hn.shape[1:])
-    shift_x = discrete_velocities * dx
+    shift_x = c * dx
     x_shifts = shift_x[:,0]
     y_shifts = shift_x[:,1]
     E_exp = np.expand_dims(E, axis=(1,2)) #(9,1,1)
@@ -297,19 +299,28 @@ def ph(hn, _rho, u_ckl, dx=1.0, dy=1.0):
 
 #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
 def gi(_gi, _gi_c, u_ckl, rho, mu):
-    E_exp = np.expand_dims(E, axis=(1,2)) #(9,1,1)
     u_dx, u_dy = c_first_derivative(u_ckl)[0] 
     v_dx, v_dy = c_first_derivative(u_ckl)[1] 
     div_u = v_dx + u_dy
     mu_div_u = mu * div_u
     d_dx, d_dy = c_first_derivative(mu_div_u)
-    discrete_velocities_exp = discrete_velocities[:,:,None,None]
-    deriv_term = 3*np.sum(E_exp * discrete_velocities[:,0])/rho * d_dy
-    force_term = force(rho, g_x, g_y, Cs)
-    _gi = _gi - (1/tau_g) * (_gi - _gi_c) + deriv_term + force_term
+    _force = np.zeros((9))
+    _gi_old = np.copy(_gi)
+    for i in range(9):
+        deriv_term = 3 * E[i] * c[i,0]/rho * d_dy * dx
+        _force[i] = force(i, g_x, g_y)
+        _gi[i,:,:] = _gi_old[i,:,:] - (1/tau_g) * (_gi_old[i,:,:] - _gi_c[i,:,:]) + deriv_term + _force[i]
+        #print(_gi[i,:,:])
     #_gi = _gi - (1/tau_g) * (_gi - _gi_c) + deriv_term
 
+    #print(_gi)
     return _gi
+
+def force(i, g_x, g_y):
+    #_force = 3 * E[:,None,None] * rho[None,:,:] * (c[:,0]*g_x + c[:,1]*g_y)[:,None,None] / cs**2
+    dot_product = np.dot(c[i], F_lattice)
+    _force = E[i] * dot_product / Cs**2
+    return _force
 
 #Inamuro eq(7): calculation of predicted velocity of the two phase fluid - collision term
 def gi_c(u, rho, tau_g, Kg, F):
@@ -323,26 +334,25 @@ def gi_c(u, rho, tau_g, Kg, F):
     #_gi_c
     for i in range(9):
         #cia*ua
-        c_dot_u = np.einsum('i,ikl->kl', discrete_velocities[i], u)
+        c_dot_u = np.einsum('i,ikl->kl', c[i], u)
 
         #cia*cib*ua*ub
         #(ci.u)^2, shape(Xn, Yn)
-        discrete_velocities_exp = discrete_velocities[:,:,None,None]
         c_dot_u_tensor = c_dot_u**2
-        #c_dot_u_tensor = np.tensordot(discrete_velocities[i,0], u[0], axes=(0,0)) * np.tensordot(discrete_velocities[i], u[0], axes=(0,0))
+        #c_dot_u_tensor = np.tensordot(c[i,0], u[0], axes=(0,0)) * np.tensordot(c[i], u[0], axes=(0,0))
 
         #(dub/dxa + dua/dxb)
         dua_dx,dua_dy = c_first_derivative(u[0,:,:])  
         dub_dx,dub_dy = c_first_derivative(u[1,:,:])  
-        term_xx = (dua_dx) * discrete_velocities[i,0] * discrete_velocities[i,0]
-        term_xy = (dua_dy) * discrete_velocities[i,0] * discrete_velocities[i,1] 
-        term_yx = (dub_dx) * discrete_velocities[i,1] * discrete_velocities[i,0] 
-        term_yy = (dub_dy) * discrete_velocities[i,1] * discrete_velocities[i,1]
+        term_xx = (dua_dx) * c[i,0] * c[i,0]
+        term_xy = (dua_dy) * c[i,0] * c[i,1] 
+        term_yx = (dub_dx) * c[i,1] * c[i,0] 
+        term_yy = (dub_dy) * c[i,1] * c[i,1]
         velocity_gradient_term = term_xx + term_xy + term_yx + term_yy
 
         #Gab(rho)*cia*cib
         Gab_rho = Gab(rho)
-        c_i_tensor = np.outer(discrete_velocities[i], discrete_velocities[i])
+        c_i_tensor = np.outer(c[i], c[i])
         _Gab = np.einsum('klab,ab->kl', Gab_rho, c_i_tensor)
 
         #(drho/dxa)^2
@@ -357,13 +367,15 @@ def gi_c(u, rho, tau_g, Kg, F):
         term7 = (2/3)*F[i]*(Kg/rho)*drho_dxa
 
         _gi_c[i] = term1 + term2 - term3 + term4 + term5 + term6 - term7
-        print(_gi_c[i])
+        #print(_gi_c[i])
         
     return _gi_c
 
 def fi(_fi, _fi_c, tau_f):
     #Inamuro eq(2): calculation of the order parameter which distiguishes the two phases
-    _fi = _fi - (1/tau_f) * (_fi - _fi_c)    
+    _fi_old = np.copy(_fi)
+    for i in range(9):
+        _fi[i,:,:] = _fi_old[i,:,:] - (1/tau_f) * (_fi_old[i,:,:] - _fi_c[i,:,:])
 
     return _fi
 
@@ -377,12 +389,12 @@ def fi_c(u, Kf, F, _phi):
     #gi
     for i in range(9):
         #cia*ua
-        c_dot_u = np.tensordot(discrete_velocities[i,:], u, axes=([0],[0]))
+        c_dot_u = np.tensordot(c[i,:], u, axes=([0],[0]))
 
         #Gab(rho)*cia*cib
         #_Gab = np.einsum('ijab,ab->ij', Gab_phi, c_tensor[i])
-        td1 = np.tensordot(Gab_phi, discrete_velocities[i,:], axes=([2],[0]))
-        _Gab = np.tensordot(td1, discrete_velocities[i,:], axes=([2],[0]))
+        td1 = np.tensordot(Gab_phi, c[i,:], axes=([2],[0]))
+        _Gab = np.tensordot(td1, c[i,:], axes=([2],[0]))
        
         #einstein summen-konvention
         term1 = H[i]*_phi
@@ -394,13 +406,6 @@ def fi_c(u, Kf, F, _phi):
         _fi_c[i] = term1 + term2 - term3 - term4 + term5 + term6 
         
     return _fi_c
-
-
-def force(rho, g_x, g_y, cs):
-    #_force = 3 * E[:,None,None] * rho[None,:,:] * (discrete_velocities[:,0]*g_x + discrete_velocities[:,1]*g_y)[:,None,None] / cs**2
-    _force = E[:,None,None] * (discrete_velocities[:,0]*g_x + discrete_velocities[:,1]*g_y)[:,None,None] / cs**2
-    return _force
-
 
 #apply bounce-back conditions on upper and lower boundaries of pipe
 def bounceBackTopBottom1(f, nx, ny):
@@ -467,11 +472,11 @@ def get_velocity_y_values4Poiseuille2D(num_nodes1, D):
 
 #roll the lattice based on the discrete velocities
 def streamLattice0(_ltc):
-    global discrete_velocities, weights
+    global c, weights
     
     shifted_lattice = np.stack([
         np.roll(np.roll(_ltc[d, :, :], shift=dx, axis=0), shift=dy, axis=1)
-        for d, (dx, dy) in enumerate(discrete_velocities)
+        for d, (dx, dy) in enumerate(c)
     ], axis=0)
 
     return shifted_lattice
@@ -529,9 +534,8 @@ def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, titl
     y_max_new = y_max + 0.1 * (y_max - y_min)
     ax1.set_ylim(y_min, y_max_new)
 
-
 # Density profile
-def density_profile(ax1, den_eq, nx, ny):
+def density_profile(ax1, den_eq, nx, ny, iteration=0):
     ax1.plot(den_eq[1:nx, ny // 2])
     ax1.set_xlabel("x-axis")
     ax1.set_ylabel("Density [rho]")
@@ -543,6 +547,11 @@ def density_profile(ax1, den_eq, nx, ny):
     ax1.set_xticks(np.linspace(0, nx, 5))
     ax1.grid()
 
+    # Save in same directory as the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    save_path = os.path.join(script_dir, f"density_profile_{iteration}.png")
+    ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"Saved density profile: {save_path}")
 
 #2D Density map
 def density_map(ax, rho_full_range, rho_out, rho_in, title):
@@ -556,16 +565,23 @@ def density_map(ax, rho_full_range, rho_out, rho_in, title):
     cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_ticks([rho_out, (rho_out + rho_in) / 2, rho_in])
 
-
-#2D Velocity map
-def velocity_map(ax, u_magnitude, _iteration):
-    im = ax.imshow(u_magnitude.T, interpolation='nearest', origin='lower', cmap='plasma')  # Capture imshow return
+# 2D Velocity map
+def velocity_map(ax, u_magnitude, _iteration, name):
+    im = ax.imshow(u_magnitude.T, interpolation='nearest', origin='lower', cmap='plasma')  
     ax.set_xlabel("x-axis")
     ax.set_ylabel("y-axis")
     ax.set_title("Velocity [u$_x$] map")
     ax.margins(x=0, y=0)
     ax.set_aspect('auto')
-    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04) 
+    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    
+    # Get folder where the script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    save_path = os.path.join(script_dir, name + f"_velocity_map_{_iteration}.png")
+    
+    # Save image
+    ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"Saved velocity map: {save_path}")
 
 
 def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
@@ -573,6 +589,35 @@ def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
 
     return filtered_velocities   
 
+
+def plot_u_ckl_bounds(results, filename):
+    # Unpack results
+    iterations = [r[0] for r in results]
+    u_ckl_x_min_vals = [r[1] for r in results]
+    u_ckl_x_max_vals = [r[2] for r in results]
+
+    # Create figure
+    plt.figure(figsize=(8, 5))
+    plt.plot(iterations, u_ckl_x_min_vals, label="u_ckl_x_min")
+    plt.plot(iterations, u_ckl_x_max_vals, label="u_ckl_x_max")
+    plt.xlabel("Iteration")
+    plt.ylabel("u_ckl_x")
+    plt.title("u_ckl_x_min and u_ckl_x_max vs Iteration")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Ensure filename ends with .png
+    if not filename.lower().endswith(".png"):
+        filename = f"{filename}.png"
+
+    # Save in the same directory as the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    save_path = os.path.join(script_dir, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    print(f"Plot saved to {save_path}")
 
 
 #preliminary
@@ -595,7 +640,8 @@ R = D / 2  # Radius of the pipe
 iteration = 0
 iterations = []
 
-list_avg_velocities = {}
+list_avg_velocities_x = {}
+list_avg_velocities_y = {}
 
 TOTAL_ITERATION = 12001
 start = time.perf_counter()
@@ -628,8 +674,11 @@ _gi = np.zeros((9, Xn+2, Yn+2))
 h = np.zeros((9,Xn+2, Yn+2))
 alpha = 0
 g = 9.81
-g_x = g * np.sin(np.radians(alpha))
-g_y = -g * np.cos(np.radians(alpha))
+alpha_rad = np.radians(alpha)
+g_x = g * np.sin(alpha_rad)
+g_y = -g * np.cos(alpha_rad)
+F_body = np.array([g_x, g_y])
+F_lattice = F_body * (dt**2 / dx)
 
 #initial conditions
 y0 = (Yn-1)/2
@@ -637,6 +686,10 @@ xi = 0.75
 x,y = np.meshgrid(np.arange(Xn+2),np.arange(Yn+2),indexing='ij')
 _phi = (phi_star_L + phi_star_G)/2 - (phi_star_L - phi_star_G)/2 * np.tanh((y-y0)/xi)
 rho = rho_G + (_phi - phi_star_G) / (phi_star_L - phi_star_G) * (rho_L - rho_G)
+
+u_ckl_x_min = 0
+u_ckl_x_max = 0
+u_bounds = []
 
 
 while iteration < TOTAL_ITERATION:
@@ -667,17 +720,17 @@ while iteration < TOTAL_ITERATION:
 
     #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
     #Inamuro eq(5): Compute u(x,t+dt)
-    u_ckl_star = np.einsum('ia,ijk->ajk', discrete_velocities, _gi)    
+    u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi)    
 
     #Step2a. calculate h, p
     epsilon0 = epsilon_cutoff * 10.0
     epsilon = np.full_like(h, epsilon0, dtype=np.float32)
     while np.all(epsilon > epsilon_cutoff):
         p, h = ph(h, rho, u_ckl)
-        print(p)
-        print("-----------------------------------------------")
-        print(h)
-        print("===============================================")
+        #print(p)
+        #print("-----------------------------------------------")
+        #print(h)
+        #print("===============================================")
         epsilon = np.abs(p-_p0)/rho
         
     #Inamuro eq(22 & 24): assign resultant p to _p0 for next iteration
@@ -687,6 +740,13 @@ while iteration < TOTAL_ITERATION:
     #Inamuro eq(20): corrected current velocity u which satisfies the continuity equation div.u=0
     #u_ckl = (-gradient_p(p)/rho * dt + u_ckl)/Sh
     u_ckl = -gradient_p(p)*dt/(rho*Sh) + u_ckl_star
+    u_ckl_x_min = np.min(u_ckl)
+    u_ckl_x_max = np.max(u_ckl)
+    # store tuple
+    u_bounds.append((iteration, u_ckl_x_min, u_ckl_x_max))
+    #print("_fi: {0}".format(_fi))
+    #print("_gi: {0}".format(_gi))
+    #print("u_ckl: {0}".format(u_ckl))
 
     #streaming has commenced
 
@@ -702,7 +762,8 @@ while iteration < TOTAL_ITERATION:
 
     # Update plots and parameters
     _rho_full_range = rho
-    list_avg_velocities[iteration] = u_ckl[0, 1:-1, :]
+    list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :]
+    list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :]
 
     #Step 4: re-iterate
 
@@ -722,8 +783,12 @@ rho_max = np.max(_rho_full_range)
 print(f"Debug: _rho_full_range min = {rho_min:.6f}, max = {rho_max:.6f}")
 paneLabel = f"LB: 2D Poiseuille with pressure difference; Lattice [{Xn},{Yn}]; Single processor"
 
-filtered_u_ckl_dict = filter_u_ckl_fullrange(list_avg_velocities, iterationsOfInterest)
-filtered_u_ckl_list = list(filtered_u_ckl_dict.values())
+filtered_u_ckl_dict_x = filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
+filtered_u_ckl_list_x = list(filtered_u_ckl_dict_x.values())
+
+filtered_u_ckl_dict_y = filter_u_ckl_fullrange(list_avg_velocities_y, iterationsOfInterest)
+filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
+
 
 
 # height ratios based on lattice dimensions
@@ -748,12 +813,16 @@ fig, ax = plt.subplots(
 
 # Row 0, Col 0: Amplitude plot (now in narrower column, width 2)
 sectionPosition = Xn-1
-U_max = np.max(filtered_u_ckl_list[-1][sectionPosition, 1:Yn+1])
-amplitude_plot(ax[0, 0], filtered_u_ckl_dict, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn, None)
+U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
+amplitude_plot(ax[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn, None)
 
 # Row 0, Col 1: Velocity map (now in wider column, width 4)
 _iteration = -1
-velocity_map(ax[0, 1], filtered_u_ckl_list[-1][1:-1, 1:Yn+1], _iteration)
+velocity_map(ax[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "filtered_u_ckl_list_x_")
+velocity_map(ax[0, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "filtered_u_ckl_list_y_")
+
+
+plot_u_ckl_bounds(u_bounds, "u_ckl_bounds")
 
 
 # Row 1, Col 0: Density profile (now in narrower column, width 2)
