@@ -243,7 +243,7 @@ def Gab(func):
 #Inamuro eq(14 & 15): density rho and viscosity mu
 def density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L):
     _rho = np.zeros_like(_phi)
-    mu = np.zeros_like(_phi)
+    _mu = np.zeros_like(_phi)
 
     delta_rho = rho_L - rho_G
     phi_dash_star = (phi_star_L + phi_star_G) / 2
@@ -257,16 +257,16 @@ def density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L
     #    _rho = rho_center
     mask2 = (_phi >= phi_star_G) & (_phi <= phi_star_L)
     rho_center = (delta_rho/2) * (np.sin(np.pi * ((_phi[mask2] - phi_dash_star)/phi_delta_star)) + 1) + rho_G    
-    #rho_center = (delta_rho/2) * (np.sin(np.pi * ((_phi - phi_dash_star)/phi_delta_star)) + 1) + rho_G    
+    #rho_center = (delta_rho/2) * (np.sin(((_phi - phi_dash_star)/phi_delta_star)*np.pi) + 1) + rho_G    
     _rho[mask2] = rho_center
     #elif _phi > phi_star_L:
     #    _rho = rho_L
     mask3 = _phi > phi_star_L
     _rho[mask3] = rho_L
 
-    mu = ((_rho - rho_G) / (rho_L - rho_G)) * (mu_L - mu_G) + mu_G
+    _mu = ((_rho - rho_G) / (rho_L - rho_G)) * (mu_L - mu_G) + mu_G
 
-    return _rho, mu
+    return _rho, _mu
 
 #Inamuro eq(23): relaxation time tau_h
 def tau_h(_rho):
@@ -274,7 +274,7 @@ def tau_h(_rho):
     return _tau_h
 
 #Inamuro eq(22,24): evolution equation of the velocity distribution function h(i) and pressure
-def ph(hn, _rho, u_ckl, dx=1.0, dy=1.0):
+def ph(hn, _rho, u_ckl_star, dx=1.0, dy=1.0):
     _p = np.zeros(hn.shape[1:])
     shift_x = c * dx
     x_shifts = shift_x[:,0]
@@ -286,7 +286,7 @@ def ph(hn, _rho, u_ckl, dx=1.0, dy=1.0):
     tau = 1/_rho + 1/2 #(Xn,Yn)
     tau_exp = np.expand_dims(1./tau, axis=0) #(1,Xn,Yn)
 
-    du_dx, du_dy = c_first_derivative(u_ckl[0])
+    du_dx, du_dy = c_first_derivative(u_ckl_star[0])
 
     #full evolution equation
     collision = hn - tau_exp * (hn - E_p) - (1/3) * E_exp * du_dx
@@ -297,24 +297,55 @@ def ph(hn, _rho, u_ckl, dx=1.0, dy=1.0):
 
     return _p, hn_plus1
 
+def velocity_gradient(u_ckl, dx=1.0, dy=1.0):
+    """
+    Compute ∂u_beta/∂x_alpha for a 2D velocity field.
+    Returns array with shape (2, 2, nx, ny).
+    """
+    u_x, u_y = u_ckl  # unpack
+
+    # Compute derivatives (np.gradient returns [∂/∂x0, ∂/∂x1])
+    du_x_dx, du_x_dy = np.gradient(u_x, dx, dy, edge_order=2)
+    du_y_dx, du_y_dy = np.gradient(u_y, dx, dy, edge_order=2)
+
+    # Stack properly into 4D tensor (β, α, nx, ny)
+    du_b_dx_a = np.stack([
+        np.stack([du_x_dx, du_x_dy], axis=0),   # β = 0
+        np.stack([du_y_dx, du_y_dy], axis=0)    # β = 1
+    ], axis=0)
+
+    return du_b_dx_a
+
+
 #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
 def gi(_gi, _gi_c, u_ckl, rho, mu):
-    u_dx, u_dy = c_first_derivative(u_ckl)[0] 
-    v_dx, v_dy = c_first_derivative(u_ckl)[1] 
-    div_u = v_dx + u_dy
+    du_b_dx_a = velocity_gradient(u_ckl)          # (2,2,202,52)
+    du_a_dx_b = np.swapaxes(du_b_dx_a, 0, 1)      # (2,2,202,52)
+    div_u = du_b_dx_a + du_a_dx_b                 # symmetrized gradient
     mu_div_u = mu * div_u
-    d_dx, d_dy = c_first_derivative(mu_div_u)
-    _force = np.zeros((9))
-    _gi_old = np.copy(_gi)
-    for i in range(9):
-        deriv_term = 3 * E[i] * c[i,0]/rho * d_dy * dx
-        _force[i] = force(i, g_x, g_y)
-        _gi[i,:,:] = _gi_old[i,:,:] - (1/tau_g) * (_gi_old[i,:,:] - _gi_c[i,:,:]) + deriv_term + _force[i]
-        #print(_gi[i,:,:])
-    #_gi = _gi - (1/tau_g) * (_gi - _gi_c) + deriv_term
 
-    #print(_gi)
+    _force = np.zeros((9,))
+    _gi_old = np.copy(_gi)
+
+    for i in range(9):
+        # Take derivative along the lattice direction c[i]
+        # For D2Q9, you can select x or y component as needed
+        # Example for x-component derivative:
+        d_dx, d_dy = np.gradient(mu_div_u[0,0], dx, dy, edge_order=2)
+        # Then compute the term for this direction
+        deriv_term = 3 * E[i] * c[i,0] / rho * d_dy * dx
+
+        _force[i] = force(i, g_x, g_y)
+
+        _gi[i,:,:] = (
+            _gi_old[i,:,:]
+            - (1/tau_g) * (_gi_old[i,:,:] - _gi_c[i,:,:])
+            + deriv_term
+            + _force[i]
+        )
+
     return _gi
+
 
 def force(i, g_x, g_y):
     #_force = 3 * E[:,None,None] * rho[None,:,:] * (c[:,0]*g_x + c[:,1]*g_y)[:,None,None] / cs**2
@@ -337,9 +368,7 @@ def gi_c(u, rho, tau_g, Kg, F):
         c_dot_u = np.einsum('i,ikl->kl', c[i], u)
 
         #cia*cib*ua*ub
-        #(ci.u)^2, shape(Xn, Yn)
         c_dot_u_tensor = c_dot_u**2
-        #c_dot_u_tensor = np.tensordot(c[i,0], u[0], axes=(0,0)) * np.tensordot(c[i], u[0], axes=(0,0))
 
         #(dub/dxa + dua/dxb)
         dua_dx,dua_dy = c_first_derivative(u[0,:,:])  
@@ -352,8 +381,11 @@ def gi_c(u, rho, tau_g, Kg, F):
 
         #Gab(rho)*cia*cib
         Gab_rho = Gab(rho)
-        c_i_tensor = np.outer(c[i], c[i])
-        _Gab = np.einsum('klab,ab->kl', Gab_rho, c_i_tensor)
+        #c_i_tensor = np.outer(c[i], c[i])
+        #_Gab = np.einsum('klab,ab->kl', Gab_rho, c_i_tensor)
+
+        _Gab_ab = np.tensordot(Gab_rho, c[i,:], axes=([2],[0]))
+        _Gab = np.tensordot(_Gab_ab, c[i,:], axes=([2],[0]))
 
         #(drho/dxa)^2
         drho_dxa = np.sum(grad_rho_x**2, axis=0) #shape(Xn, Yn)
@@ -382,7 +414,7 @@ def fi(_fi, _fi_c, tau_f):
 #Inamuro eq(6): calculation of the order parameter which distiguishes the two phases - collision term
 def fi_c(u, Kf, F, _phi):
     _fi_c = np.zeros((9, Xn+2, Yn+2))
-    d1phi_dxa,d1phi_dya = c_first_derivative(_phi)
+    dphi_dxa,dphi_dya = c_first_derivative(_phi)
     d2phi_dxa = c_second_derivative(_phi)
     Gab_phi = Gab(_phi)   
 
@@ -393,14 +425,14 @@ def fi_c(u, Kf, F, _phi):
 
         #Gab(rho)*cia*cib
         #_Gab = np.einsum('ijab,ab->ij', Gab_phi, c_tensor[i])
-        td1 = np.tensordot(Gab_phi, c[i,:], axes=([2],[0]))
-        _Gab = np.tensordot(td1, c[i,:], axes=([2],[0]))
+        _Gab_ab = np.tensordot(Gab_phi, c[i,:], axes=([2],[0]))
+        _Gab = np.tensordot(_Gab_ab, c[i,:], axes=([2],[0]))
        
         #einstein summen-konvention
         term1 = H[i]*_phi
         term2 = F[i]*p0(_phi)
         term3 = F[i]*Kf*_phi*d2phi_dxa
-        term4 = F[i]*Kf/6*(d1phi_dxa**2+d1phi_dxa**2)
+        term4 = F[i]*Kf/6*(dphi_dxa**2+dphi_dya**2)
         term5 = 3*E[i]*_phi*c_dot_u
         term6 = E[i]*Kf*_Gab
         _fi_c[i] = term1 + term2 - term3 - term4 + term5 + term6 
@@ -685,7 +717,8 @@ y0 = (Yn-1)/2
 xi = 0.75
 x,y = np.meshgrid(np.arange(Xn+2),np.arange(Yn+2),indexing='ij')
 _phi = (phi_star_L + phi_star_G)/2 - (phi_star_L - phi_star_G)/2 * np.tanh((y-y0)/xi)
-rho = rho_G + (_phi - phi_star_G) / (phi_star_L - phi_star_G) * (rho_L - rho_G)
+#rho = rho_G + (_phi - phi_star_G) / (phi_star_L - phi_star_G) * (rho_L - rho_G)
+rho, mu = density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L)
 
 u_ckl_x_min = 0
 u_ckl_x_max = 0
