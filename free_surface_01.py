@@ -109,7 +109,7 @@ if(VERBOSE1):
     print("U_nd: {0}".format(U_nd))
 
 #5. Conversion factor CF for Force
-CF=Crho*Cl**4*Ct**(-2)
+CF=Crho*Cl/(Ct**2)
 if(VERBOSE1): print("CF: {0}".format(CF))
 
 #6. Conversion factor Cf for frequency
@@ -335,23 +335,30 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
         # Then compute the term for this direction
         deriv_term = 3 * E[i] * c[i,0] / rho * d_dy * dx
 
-        _force[i] = force(i, g_x, g_y)
+        #_force[i] = force(i, F_lattice)
 
         _gi[i,:,:] = (
             _gi_old[i,:,:]
             - (1/tau_g) * (_gi_old[i,:,:] - _gi_c[i,:,:])
             + deriv_term
-            + _force[i]
+            #+ (1-dt/(2*tau))*_force[i]
         )
 
     return _gi
 
 
-def force(i, g_x, g_y):
-    #_force = 3 * E[:,None,None] * rho[None,:,:] * (c[:,0]*g_x + c[:,1]*g_y)[:,None,None] / cs**2
+def force_(F_lattice, rho):
+    _force = F_lattice[:, None, None]* rho  # shape (2,202,52)
+    #_force = (E[:, None, None] * dot_) / Cs**2  # (9,Xn,Yn)
+
+    return _force
+
+
+def force(i, F_lattice):
     dot_product = np.dot(c[i], F_lattice)
     _force = E[i] * dot_product / Cs**2
     return _force
+
 
 #Inamuro eq(7): calculation of predicted velocity of the two phase fluid - collision term
 def gi_c(u, rho, tau_g, Kg, F):
@@ -452,7 +459,7 @@ def bounceBackTopBottom1(f, nx, ny):
     ny: int
         number of grid points in y direction
     
-    Returns
+    Returnsforcing_term
     ---------
     f: np.array (nx, ny, 9)
         probability density function after the bounce back step
@@ -475,7 +482,7 @@ def bounceBackTopBottom1(f, nx, ny):
 def calcPeriodicBC00(pdf, _rho_N, _u_cNl, _rho_in, _rho_1, _u_c1l, _rho_out, rho, u_ckl, iteration): 
     
    # Reshape inputs for f_eq_3D compatibility
-    _rho_in_2d = _rho_in[None, :]  # (ny,) -> (1, ny)
+    _rho_in_2d = _rhtau*dto_in[None, :]  # (ny,) -> (1, ny)
     _u_cNl_2d = _u_cNl[:, None, :]  # (2, ny) -> (2, 1, ny)
     f_eq_in = f_eq_3D(_rho_in_2d, _u_cNl_2d)[:, 0, :]  # (9, 1, ny) -> (9, ny)
     fi_xN_prestream = pdf[:,Xn,:]
@@ -710,7 +717,10 @@ alpha_rad = np.radians(alpha)
 g_x = g * np.sin(alpha_rad)
 g_y = -g * np.cos(alpha_rad)
 F_body = np.array([g_x, g_y])
-F_lattice = F_body * (dt**2 / dx)
+#F_lattice = F_body * (dt**2 / dx)
+F_lattice1 = F_body * (dt**2 / dx)
+F_lattice = F_body / CF
+
 
 #initial conditions
 y0 = (Yn-1)/2
@@ -753,7 +763,16 @@ while iteration < TOTAL_ITERATION:
 
     #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
     #Inamuro eq(5): Compute u(x,t+dt)
-    u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi)    
+    #Kürger et al, p. 241 eq. (6.29) & Table 6.1
+    #1. Shan-Chen - A=tau*dt
+    A = tau*dt
+    #2. Kürger et al. eq(6.28)
+    A = 1/2
+
+    forcing_term = A*force_(F_lattice, rho)*dt
+    u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) + forcing_term
+    #old version
+    #u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi)
 
     #Step2a. calculate h, p
     epsilon0 = epsilon_cutoff * 10.0
@@ -771,7 +790,6 @@ while iteration < TOTAL_ITERATION:
 
     #Step 3: Compute u(x,t+dt) using eq. (20)
     #Inamuro eq(20): corrected current velocity u which satisfies the continuity equation div.u=0
-    #u_ckl = (-gradient_p(p)/rho * dt + u_ckl)/Sh
     u_ckl = -gradient_p(p)*dt/(rho*Sh) + u_ckl_star
     u_ckl_x_min = np.min(u_ckl)
     u_ckl_x_max = np.max(u_ckl)
@@ -779,7 +797,7 @@ while iteration < TOTAL_ITERATION:
     u_bounds.append((iteration, u_ckl_x_min, u_ckl_x_max))
     #print("_fi: {0}".format(_fi))
     #print("_gi: {0}".format(_gi))
-    #print("u_ckl: {0}".format(u_ckl))
+    print("u_ckl: {0}".format(u_ckl))
 
     #streaming has commenced
 
