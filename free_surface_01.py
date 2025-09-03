@@ -765,7 +765,7 @@ while iteration < TOTAL_ITERATION:
     #Inamuro eq(5): Compute u(x,t+dt)
     #Kürger et al, p. 241 eq. (6.29) & Table 6.1
     #1. Shan-Chen - A=tau*dt
-    A = tau*dt
+    #A = tau*dt
     #2. Kürger et al. eq(6.28)
     A = 1/2
 
