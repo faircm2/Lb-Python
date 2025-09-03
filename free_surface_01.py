@@ -349,7 +349,6 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
 
 def force_(F_lattice, rho):
     _force = F_lattice[:, None, None]* rho  # shape (2,202,52)
-    #_force = (E[:, None, None] * dot_) / Cs**2  # (9,Xn,Yn)
 
     return _force
 
