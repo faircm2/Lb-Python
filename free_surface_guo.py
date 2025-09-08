@@ -333,6 +333,7 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
         d_dx, d_dy = np.gradient(mu_div_u[0,0], dx, dy, edge_order=2)
         # Then compute the term for this direction
         div_term = 3 * E[i] * c[i,0] / rho * d_dy * dx
+        #print("div_term: {0}".format(div_term))        
 
         _forceDensity = ForceDensity(F_lattice, rho)
         c_minus_u = c[i, :, None, None] - u_ckl 
@@ -341,14 +342,14 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
         portion1 = (1 - dt/(2*tau)) * E[i] * (
             c_minus_u / Cs**2 + c_dot_u_c / Cs**4
         ) 
-        source_term = np.einsum('aij,aij->ij', portion1, _forceDensity) 
+        force_term = np.einsum('aij,aij->ij', portion1, _forceDensity) 
+        #print("force_term: {0}".format(force_term))
 
         _gi[i,:,:] = (
             _gi_old[i,:,:]
             - (1/tau_g) * (_gi_old[i,:,:] - _gi_c[i,:,:])
             + div_term
-            + source_term
-            #+ (1-dt/(2*tau))*_force[i]
+            + force_term
         )
 
     return _gi
@@ -711,6 +712,7 @@ while iteration < TOTAL_ITERATION:
 
     forcing_term = A * ForceDensity(F_lattice, rho)*dt
     u_ckl_star = (1/rho) * (np.einsum('ia,ijk->ajk', c, _gi) + forcing_term)
+    #print("forcing_term: {0}".format(forcing_term))
 
     #Step2a. calculate h, p
     epsilon0 = epsilon_cutoff * 10.0
@@ -733,6 +735,7 @@ while iteration < TOTAL_ITERATION:
     #use eq(6.29) from Krüger et al.
     forcing_term = A * ForceDensity(F_lattice, rho)*dt
     u_ckl = (1/rho) * (np.einsum('ijk,ia->ajk', _gi, c) + forcing_term)
+    #print("forcing_term: {0}".format(forcing_term))
 
     u_ckl_x_min = np.min(u_ckl)
     u_ckl_x_max = np.max(u_ckl)
