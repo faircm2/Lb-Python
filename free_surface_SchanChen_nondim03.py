@@ -752,13 +752,16 @@ def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
     return filtered_velocities   
 
 
-def plot_bounds(results, context):
+def plot_bounds(results, context, k=0):
     # Unpack results
     iterations = [r[0] for r in results]
 
     # Create figure
     plt.figure(figsize=(8, 5))
     plt.xlabel("Iteration")    
+
+    # Ensure filename ends with .png
+    filename = "{0}_{1}.png".format(SCRIPT_FILENAME, context)
 
     match context:
         case "Invariants":
@@ -778,22 +781,35 @@ def plot_bounds(results, context):
             plt.title("AuxField1: steepest pressure gradients; \n AuxField2: peak interface curvature accel. vs Iteration")
             plt.plot(iterations, AuxFields1, label="AuxField1")
             plt.plot(iterations, AuxFields2, label="AuxField2")
-        case "u_ckl_bounds":
+        case "u_ckl_x_bounds":
             u_ckl_x_min_vals = [r[1] for r in results]
             u_ckl_x_max_vals = [r[2] for r in results]
             plt.ylabel("u_ckl_x")
             plt.title("u_ckl_x_min and u_ckl_x_max vs Iteration")
             plt.plot(iterations, u_ckl_x_min_vals, label="u_ckl_x_min")
             plt.plot(iterations, u_ckl_x_max_vals, label="u_ckl_x_max")
+            filename = "{0}_{1}_Kf{2}.png".format(SCRIPT_FILENAME, context, k)
+        case "u_ckl_y_bounds":
+            u_ckl_y_min_vals = [r[1] for r in results]
+            u_ckl_y_max_vals = [r[2] for r in results]
+            plt.ylabel("u_ckl_y")
+            plt.title("u_ckl_y_min and u_ckl_y_max vs Iteration")
+            plt.plot(iterations, u_ckl_y_min_vals, label="u_ckl_y_min")
+            plt.plot(iterations, u_ckl_y_max_vals, label="u_ckl_y_max")  
+            filename = "{0}_{1}_Kf{2}.png".format(SCRIPT_FILENAME, context, k)          
+        case "rho_bounds":
+            rho_min_vals = [r[1] for r in results]
+            rho_max_vals = [r[2] for r in results]
+            plt.ylabel("rho")
+            plt.title("rho_min and rho_max vs Iteration")
+            plt.plot(iterations, rho_min_vals, label="rho_min")
+            plt.plot(iterations, rho_max_vals, label="rho_max")            
         case _:
             return
 
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-
-    # Ensure filename ends with .png
-    filename = "{0}_{1}.png".format(SCRIPT_FILENAME, context)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
     images_dir = os.path.join(script_dir, "Milestone-Images")
@@ -929,7 +945,7 @@ _gi_c = np.zeros((9, Xn+2, Yn+2),dtype=np.float64)
 _gi = np.zeros((9, Xn+2, Yn+2),dtype=np.float64)
 
 
-alpha = 30.0
+alpha = 0.0
 g = 9.81
 alpha_rad = np.radians(alpha)
 g_x = g * np.sin(alpha_rad)
@@ -963,7 +979,9 @@ print(f"Initial h_eq check: sum h[1:] mean={np.mean(initial_p_check):.3f}, shoul
 
 u_ckl_x_min = 0
 u_ckl_x_max = 0
-u_bounds = []
+u_x_bounds = []
+u_y_bounds = []
+rho_bounds = []
 
 Invariants = []
 GrowthMetric = []
@@ -1044,13 +1062,19 @@ while iteration < TOTAL_ITERATION:
     #Step 3: Compute u(x,t+n_dt) using eq. (20)
     #Inamuro eq(20): corrected current velocity u which satisfies the continuity equation div.u=0
     u_ckl = -gradient_p(p)*n_dt/(rho*Sh) + u_ckl_star
-    u_ckl_x_min = np.min(u_ckl)
-    u_ckl_x_max = np.max(u_ckl)
+    u_ckl_x_min = np.min(u_ckl[0])
+    u_ckl_x_max = np.max(u_ckl[0])
+    u_ckl_y_min = np.min(u_ckl[1])
+    u_ckl_y_max = np.max(u_ckl[1])    
     # store tuple
     # In main loop, after u_ckl update:total_mom_x = np.sum(rho * u_ckl[0])  # Add this
     invariant = np.sum(rho*u_ckl[0])
     MomentumBounds.append((iteration, u_ckl_x_min, u_ckl_x_max, invariant))
-    u_bounds.append((iteration, u_ckl_x_min, u_ckl_x_max))
+    u_x_bounds.append((iteration, u_ckl_x_min, u_ckl_x_max))
+    u_y_bounds.append((iteration, u_ckl_y_min, u_ckl_y_max))
+    rho_min = np.min(rho)
+    rho_max = np.max(rho)    
+    rho_bounds.append((iteration, rho_min, rho_max))
     max_abs_u_ckl_x = np.max(np.abs(u_ckl[0]))
     print(f"Iteration {iteration}: max|u_x|={max_abs_u_ckl_x:.2e}, invariant={invariant:.2e}")
     Invariants.append((iteration, invariant))
@@ -1127,7 +1151,7 @@ fig, ax = plt.subplots(
 )
 
 # Row 0, Col 0: Amplitude plot (now in narrower column, width 2)
-sectionPosition = Xn-1
+sectionPosition = int(Xn/2)
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
 amplitude_plot(ax[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn, None)
 
@@ -1137,7 +1161,9 @@ velocity_map(ax[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "vel
 velocity_map(ax[0, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "velocity_map-u_ckl_list_y_")
 
 plot_momentum_bounds(MomentumBounds, "MomentumBounds")
-plot_bounds(u_bounds, "u_ckl_bounds")
+plot_bounds(u_x_bounds, "u_ckl_x_bounds", Kf)
+plot_bounds(u_y_bounds, "u_ckl_y_bounds", Kf)
+plot_bounds(rho_bounds, "rho_bounds")
 plot_bounds(Invariants, "Invariants")
 plot_bounds(GrowthMetric, "GrowthMetric")
 plot_bounds(AuxFields, "AuxFields")
