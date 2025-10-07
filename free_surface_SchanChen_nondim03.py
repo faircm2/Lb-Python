@@ -293,7 +293,8 @@ def tau_h(_rho):
 
 #Inamuro eq(22,24): evolution equation of the velocity distribution function h(i) and pressure
 def ph(hn, _rho, u_ckl_star, n_dx=1.0, n_dy=1.0):
-    _p = np.zeros(hn.shape[1:])
+    #_p = np.zeros(hn.shape[1:])
+    #_p = np.zeros((Xn+2, Yn+2), dtype=np.float64)
     _p = np.sum(hn[1:], axis=0)  
 
     shift_x = c * n_dx
@@ -316,7 +317,9 @@ def ph(hn, _rho, u_ckl_star, n_dx=1.0, n_dy=1.0):
     hn_plus1 = np.zeros_like(hn)
     hn_plus1[0] = collision[0]
     for k in range(1,9):
-        hn_plus1[k] = np.roll(collision[k],shift=(int(x_shifts[k]),int(y_shifts[k])), axis=(0,1))
+        #hn_plus1[k] = np.roll(collision[k],shift=(int(x_shifts[k]),int(y_shifts[k])), axis=(0,1))
+        temp = np.roll(collision[k], shift=x_shifts[k], axis=0)
+        hn_plus1[k] = np.roll(temp,shift=y_shifts[k], axis=1)
 
     _p = np.sum(hn_plus1[1:], axis=0)        
 
@@ -389,6 +392,52 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
         )
 
     return _gi
+
+
+#Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
+def giExt(_gi, _gi_c, u_ckl, rho, mu, _tau_g=1):
+    u_x, u_y = u_ckl[0], u_ckl[1]
+
+    du_x_dx, du_x_dy = c_first_derivative(u_x, n_dx, n_dy)
+    du_y_dx, du_y_dy = c_first_derivative(u_y, n_dx, n_dy)
+
+    S_xx = du_x_dx + du_x_dx
+    S_xy = du_x_dy + du_y_dx
+    S_yx = S_xy 
+    S_yy = du_y_dy + du_y_dy
+
+    mu_S_xx = mu * S_xx
+    mu_S_xy = mu * S_xy
+    mu_S_yx = mu * S_yx
+    mu_S_yy = mu * S_yy   
+
+    div_sigma_xx_dx = (np.roll(mu_S_xx, -1, axis=0) - np.roll(mu_S_xx, 1, axis=0)) / (2 * n_dx)
+    div_sigma_xy_dy = (np.roll(mu_S_xy, -1, axis=1) - np.roll(mu_S_xy, 1, axis=1)) / (2 * n_dy)
+    vForce_x = (div_sigma_xx_dx + div_sigma_xy_dy) / rho
+
+    div_sigma_yx_dx = (np.roll(mu_S_yx, -1, axis=0) - np.roll(mu_S_yx, 1, axis=0)) / (2 * n_dx)
+    div_sigma_yy_dy = (np.roll(mu_S_yy, -1, axis=1) - np.roll(mu_S_yy, 1, axis=1)) / (2 * n_dy)
+    vForce_y = (div_sigma_yx_dx + div_sigma_yy_dy) / rho
+
+    vForce = np.stack([vForce_x, vForce_y], axis=0)
+
+    _force = np.zeros((9,))
+    _gi_old = np.copy(_gi)
+
+    for i in range(9):
+        # Take derivative along the lattice direction c[i]
+        # Then compute the term for this direction
+        viscous_force_term =  3 * E[i] * (c[i,0] * vForce[0] + c[i,1] * vForce[1]) * n_dt
+
+        _gi[i,:,:] = (
+            _gi_old[i,:,:]
+            - (1/_tau_g) * (_gi_old[i,:,:] - _gi_c[i,:,:])
+            + viscous_force_term
+            #+ _force
+        )
+
+    return _gi
+
 
 
 def force_(F_lattice, rho):
@@ -834,11 +883,11 @@ def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
 
 #initialise
 #average velocity, cartesion x,y-directions, k is y-position, l is x-position
-rho_in_k = np.full((Yn+2), rho_in, dtype=np.float32)
-rho_out_k = np.full((Yn+2), rho_out, dtype=np.float32)
-u_ckl = np.zeros((2, Xn+2, Yn+2), dtype=np.float32)
+rho_in_k = np.full((Yn+2), rho_in, dtype=np.float64)
+rho_out_k = np.full((Yn+2), rho_out, dtype=np.float64)
+u_ckl = np.zeros((2, Xn+2, Yn+2), dtype=np.float64)
 INIT_RHO = 1 #0.001
-rho = np.full((Xn+2, Yn+2), INIT_RHO, dtype=np.float32)
+rho = np.full((Xn+2, Yn+2), INIT_RHO, dtype=np.float64)
 
 # Simulation parameters
 R = D / 2  # Radius of the pipe
@@ -861,23 +910,26 @@ T=3.5e-2
 Kf = 0.5 * n_dx**2 / 2.
 Kg = 2.5e-4 * n_dx**2
 C = 0
-Sh = U/Cs
+Sh = U_nd/Cs
+#used in Inamuro as scaling factor
+Sh = 1.0
 
 rho_G = 1
 rho_L = 50
-_phi = np.ones((Xn+2, Yn+2))
+_phi = np.ones((Xn+2, Yn+2),dtype=np.float64)
 phi_star_G = 1.5e-2
 phi_star_L = 9.2e-2
 mu_G = 1.6e-4*n_dx
 mu_L = 8e-3*n_dx
-h0 = np.zeros((9,Xn+2, Yn+2))
-_p0 = np.zeros((9,Xn+2, Yn+2))
-_fi_c = np.zeros((9,Xn+2, Yn+2))
-_fi = np.zeros((9,Xn+2, Yn+2))
-_gi_c = np.zeros((9, Xn+2, Yn+2))
-_gi = np.zeros((9, Xn+2, Yn+2))
-h = np.zeros((9,Xn+2, Yn+2))
-alpha = 0.0
+h0 = np.zeros((9,Xn+2, Yn+2),dtype=np.float64)
+_p0 = np.zeros((Xn+2, Yn+2),dtype=np.float64)
+_fi_c = np.zeros((9,Xn+2, Yn+2),dtype=np.float64)
+_fi = np.zeros((9,Xn+2, Yn+2),dtype=np.float64)
+_gi_c = np.zeros((9, Xn+2, Yn+2),dtype=np.float64)
+_gi = np.zeros((9, Xn+2, Yn+2),dtype=np.float64)
+
+
+alpha = 30.0
 g = 9.81
 alpha_rad = np.radians(alpha)
 g_x = g * np.sin(alpha_rad)
@@ -893,6 +945,21 @@ xi = 0.75
 x,y = np.meshgrid(np.arange(Xn+2),np.arange(Yn+2),indexing='ij')
 _phi = (phi_star_L + phi_star_G)/2 - (phi_star_L - phi_star_G)/2 * np.tanh((y-y0)/xi)
 rho, mu = density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L)
+
+#Bootstrap h and _p0 to equilibrium (prevents ph divergence on iter 0)
+# FIXED: Bootstrap h and _p0 to equilibrium (prevents ph divergence on iter 0)
+p_eq = rho / 3.0 # Lattice p_eq = rho * Cs^2 = rho / 3
+scale_factor = 9./5.
+h = np.zeros((9, Xn+2, Yn+2), dtype=np.float64)
+h[0] = 0.0
+for i in range(9):
+    h[i] = E[i] * scale_factor * p_eq # h_eq[i] = w_i * p_eq (u=0 initial, no velocity terms)
+
+_p0 = p_eq.copy()  # Initial _p0 = p_eq for ph loop
+
+initial_p_check = np.sum(h[1:], axis=0)
+print(f"Initial h_eq check: sum h[1:] mean={np.mean(initial_p_check):.3f}, should = p_eq mean={np.mean(p_eq):.3f}")
+
 
 u_ckl_x_min = 0
 u_ckl_x_max = 0
@@ -913,8 +980,12 @@ while iteration < TOTAL_ITERATION:
     #Inamuro §2.3 Algorithm of computation:
     #Step 1. Using eqs (1) and (2), compute (fi(x, t+n_dt) and g(x, t+n_dt), and then compute phi(x, t+n_dt) and _u(x, t+n_dt)= with eqs (4) and (5).
     #Also rho(x, t+n_dt) is calculated with eq (4)
-    #if iteration > 0:
-    _fi_c = fi_c(u_ckl, Kf, F, _phi)
+    if iteration == 0:
+        u_zero = np.zeros_like(u_ckl)
+        _fi_c = fi_c(u_zero, Kf, F, _phi)
+        print(f"Iter 0: _fi_c with u=0 (no advection)")
+    else:
+        _fi_c = fi_c(u_ckl, Kf, F, _phi)
 
     #Inamuro eq(2): calculation of the order parameter which distiguishes the two phases
     _fi = fi(_fi, _fi_c, tau_f)
@@ -933,7 +1004,9 @@ while iteration < TOTAL_ITERATION:
         title = "Density map"
         density_map_standalone(rho, rho_min, rho_max, title, iteration)
 
-    _gi = gi(_gi, _gi_c, u_ckl, rho, mu)        
+    _gi = gi(_gi, _gi_c, u_ckl, rho, mu) 
+    #_gi = giExt(_gi, _gi_c, u_ckl, rho, mu) 
+      
 
     #=> here the boundary conditions
     #Bounce-Back Top and Bottom
@@ -955,10 +1028,15 @@ while iteration < TOTAL_ITERATION:
 
     #Step2a. calculate h, p
     epsilon0 = epsilon_cutoff * 10.0
-    epsilon = np.full_like(h, epsilon0, dtype=np.float32)
-    while np.all(epsilon > epsilon_cutoff):
+    epsilon = np.full_like((Xn+2, Yn+2), epsilon0, dtype=np.float64)
+    ph_iter = 0
+    max_ph_iters = 100
+    while np.all(epsilon > epsilon_cutoff) and ph_iter < max_ph_iters:
         p, h = ph(h, rho, u_ckl_star)
-        epsilon = np.abs(p-_p0)/rho
+        if p.shape != _p0.shape:
+            print(f"Warning: p shape {p.shape} != _p0 {_p0.shape} at iter {iteration}")
+        epsilon = np.abs(p-_p0) / rho
+        ph_iter += 1
 
     #Inamuro eq(22 & 24): assign resultant p to _p0 for next iteration
     _p0 = p
