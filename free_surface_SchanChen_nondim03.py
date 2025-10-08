@@ -618,6 +618,37 @@ def bounceBackTopBottom2(f, nx, ny):
     return f   
 
 
+def bounceBackTopBottom3(f, nx, ny):
+    '''
+    Performs the bounce-back step for no-slip boundary conditions at top and bottom walls.
+    
+    Arguments
+    -----------
+    f: np.array (9, nx+2, ny+2)
+        Probability density function
+    nx: int
+        Number of grid points in x direction (should equal Xn)
+    ny: int
+        Number of grid points in y direction (should equal Yn)
+    
+    Returns
+    ---------
+    f: np.array (9, nx+2, ny+2)
+        Probability density function after bounce-back
+    '''
+    # Bottom wall (y=1): swap opposite directions
+    f[2, 1:nx+1, 1] = f[4, 1:nx+1, 0]  # Up = down from ghost
+    f[5, 1:nx+1, 1] = f[7, 1:nx+1, 0]  # Up-right = down-left from ghost
+    f[6, 1:nx+1, 1] = f[8, 1:nx+1, 0]  # Up-left = down-right from ghost
+    
+    # Top wall (y=ny): swap opposite directions
+    f[4, 1:nx+1, ny] = f[2, 1:nx+1, ny+1]  # Down = up from ghost
+    f[7, 1:nx+1, ny] = f[5, 1:nx+1, ny+1]  # Down-left = up-right from ghost
+    f[8, 1:nx+1, ny] = f[6, 1:nx+1, ny+1]  # Down-right = up-left from ghost
+    
+    return f
+
+
 def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, title, nx, ny, poiseuille_velocities=None):
     for iteration, combined_u_ckl in u_full_range.items():
         u = combined_u_ckl[nx, 1:ny + 1]
