@@ -10,7 +10,6 @@ import math
 import os
 import matplotlib.pyplot as plt
 
-
 VERBOSE1=True
 VERBOSE2=True
 VERBOSE_MAX_RHO=False
@@ -166,9 +165,10 @@ if(VERBOSE1): print("Weights: {0}".format(E))
 
 #Inamuro eq(4): particle velocity distribution
 def phi(_f):
-    _f = np.sum(_f, axis=0)
+    __phi = np.sum(_f, axis=0)
+    #__phi = np.sum(_f[1:, :, :], axis=0)
 
-    return _f
+    return __phi
 
 #Inamuro eq(11): bulk free-energy density
 def psi(_phi):
@@ -305,7 +305,7 @@ def ph(hn, _rho, u_ckl_star, n_dx=1.0, n_dy=1.0):
     p_exp = np.expand_dims(_p, axis=0)
     E_p = E_exp * p_exp
 
-    tau = 1/_rho + 1/2 #(Xn,Yn)
+    tau = 1./_rho + 1./2. #(Xn,Yn)
     tau_exp = np.expand_dims(1./tau, axis=0)
 
     du_dx, du_dy = c_first_derivative(u_ckl_star[0])
@@ -346,7 +346,7 @@ def velocity_gradient(u_ckl, n_dx=1.0, n_dy=1.0):
 
 
 #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
-def gi(_gi, _gi_c, u_ckl, rho, mu):
+def gi(_gi, _gi_c, u_ckl, rho, mu, iteration):
     du_dx_x, du_dy_x = c_first_derivative(u_ckl[0,:,:], n_dx, n_dy)
     du_dx_y, du_dy_y = c_first_derivative(u_ckl[1,:,:], n_dx, n_dy)
 
@@ -366,6 +366,11 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
                    np.roll(sigma_yy, -1, axis=0) - np.roll(sigma_yy, 1, axis=0)) / (2 * n_dx)
 
     viscous_force_term = div_sigma_x + div_sigma_y
+    abs_div_sigma_x = np.max(np.abs(div_sigma_x))
+    GrowthMetric_gi_div_sigma_x.append((iteration, abs_div_sigma_x))    
+    abs_div_sigma_y = np.max(np.abs(div_sigma_y))
+    GrowthMetric_gi_div_sigma_y.append((iteration, abs_div_sigma_y))
+    
 
     du_b_dx_a = velocity_gradient(u_ckl)          
     du_a_dx_b = np.swapaxes(du_b_dx_a, 0, 1)      
@@ -395,7 +400,7 @@ def gi(_gi, _gi_c, u_ckl, rho, mu):
 
 
 #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
-def giExt(_gi, _gi_c, u_ckl, rho, mu, _tau_g=1):
+def gi_ext(_gi, _gi_c, u_ckl, rho, mu, _tau_g=1):
     u_x, u_y = u_ckl[0], u_ckl[1]
 
     du_x_dx, du_x_dy = c_first_derivative(u_x, n_dx, n_dy)
@@ -453,7 +458,7 @@ def force(i, F_lattice):
 
 
 #Inamuro eq(7): calculation of predicted velocity of the two phase fluid - collision term
-def gi_c(u, rho, tau_g, Kg, F):
+def gi_c(u, rho, tau_g, Kg, F, iteration):
     grad_rho_x,grad_rho_y = c_first_derivative(rho)
     _gi_c = np.zeros((9, Xn+2, Yn+2))
     ones = np.ones((Xn+2, Yn+2))
@@ -493,10 +498,17 @@ def gi_c(u, rho, tau_g, Kg, F):
 
         term1 = E[i]*ones
         term2 = E[i]*3*c_dot_u
+        abs_term2 = np.max(np.abs(term2))
+        GrowthMetric_gi_c_term2.append((iteration, abs_term2))
+
         term3 = E[i]*(3/2)*u_dot_u
         term4 = E[i]*(9/2)*c_dot_u_tensor
         term5 = E[i]*(3/2)*(tau_g - 1/2)*n_dx*velocity_gradient_term
         term6 = E[i]*(Kg/rho)*_Gab
+
+        abs_term6 = np.max(np.abs(term6))
+        GrowthMetric_gi_c_term6_Gab.append((iteration, abs_term6))
+    
         term7 = (2/3)*F[i]*(Kg/rho)*grad_rho_x**2
 
         _gi_c[i] = term1 + term2 - term3 + term4 + term5 + term6 - term7
@@ -769,11 +781,16 @@ def plot_bounds(results, context, k=0):
             plt.ylabel("Invariants (global x-momentum)")
             plt.title("Invariants (global x-momentum) vs Iteration")
             plt.plot(iterations, Invariants, label="Invariants")
-        case "GrowthMetric":
-            GrowthMetric = [r[1] for r in results]            
-            plt.ylabel("GrowthMetric (peak abs. x-velocity)")
-            plt.title("GrowthMetric (peak abs. x-velocity) vs Iteration")
-            plt.plot(iterations, GrowthMetric, label="GrowthMetric")
+        case "GrowthMetric_uckl_x":
+            GrowthMetric_uckl_x = [r[1] for r in results]            
+            plt.ylabel("GrowthMetric_uckl_x (peak abs. x-velocity)")
+            plt.title("GrowthMetric_uckl_x (peak abs. x-velocity) vs Iteration")
+            plt.plot(iterations, GrowthMetric_uckl_x, label="GrowthMetric_uckl_x")
+        case "GrowthMetric_uckl_y":
+            GrowthMetric_uckl_y = [r[1] for r in results]            
+            plt.ylabel("GrowthMetric_uckl_y (peak abs. y-velocity)")
+            plt.title("GrowthMetric_uckl_y (peak abs. y-velocity) vs Iteration")
+            plt.plot(iterations, GrowthMetric_uckl_y, label="GrowthGrowthMetric_uckl_yMetric_y")            
         case "AuxFields":
             AuxFields1 = [r[1] for r in results]  
             AuxFields2 = [r[2] for r in results]  
@@ -821,6 +838,87 @@ def plot_bounds(results, context, k=0):
     plt.close()
 
     print(f"Plot saved to {save_path}")
+
+
+def plot_bounds_ext(results, context, series_labels=None, k=None, script_filename=None):
+    """
+    Generic and robust plotter for iterative results with 2+ data series.
+
+    Parameters
+    ----------
+    results : list of tuples/lists or numpy.ndarray
+        Each element should be (iteration, val1, val2, [val3, ...])
+    context : str
+        Name of the dataset (used for labels, title, and filename)
+    series_labels : list of str, optional
+        Names for each data series (excluding iteration column)
+    k : int or None, optional
+        Optional index to include in filename (e.g. "_Kf3")
+    script_filename : str, optional
+        Name of the current script (used in filename). If None, auto-detected.
+    """
+
+    # --- Handle input errors and conversion ---
+    if results is None:
+        raise ValueError("results cannot be None.")
+
+    if isinstance(results, np.ndarray):
+        results = results.tolist()
+
+    if not isinstance(results, (list, tuple)) or not results:
+        raise TypeError(f"'results' must be a non-empty list of (iteration, values), got {type(results).__name__}")
+
+    if not isinstance(results[0], (list, tuple)) or len(results[0]) < 2:
+        raise TypeError(
+            f"Each element in 'results' must be a list/tuple like (iteration, val1, [val2,...]); got {results[0]}"
+        )
+
+    # --- Extract data ---
+    iterations = [r[0] for r in results]
+    data_series = list(zip(*[r[1:] for r in results]))
+    n_series = len(data_series)
+
+    # Auto-generate labels if missing
+    if not series_labels or len(series_labels) != n_series:
+        series_labels = [f"{context}_{i+1}" for i in range(n_series)]
+
+    ylabel = context
+    title = f"{context} vs Iteration"
+
+    # --- Create plot ---
+    plt.figure(figsize=(8, 5))
+    plt.xlabel("Iteration")
+    plt.ylabel(ylabel)
+    plt.title(title)
+
+    for series, label in zip(data_series, series_labels):
+        plt.plot(iterations, series, label=label)
+
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # --- Filename handling ---
+    # Default script name if not given
+    if script_filename is None:
+        script_filename = os.path.splitext(os.path.basename(__file__))[0]
+
+    # Recreate the same naming pattern as the original version
+    if k is not None:
+        filename = f"{script_filename}_{context}_Kf{k}.png"
+    else:
+        filename = f"{script_filename}_{context}.png"
+
+    # --- Save ---
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    images_dir = os.path.join(script_dir, "Milestone-Images")
+    os.makedirs(images_dir, exist_ok=True)
+    save_path = os.path.join(images_dir, filename)
+
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    print(f"✅ Plot saved to {save_path}")
 
 
 # New plot function (add after existing):
@@ -984,9 +1082,27 @@ u_y_bounds = []
 rho_bounds = []
 
 Invariants = []
-GrowthMetric = []
+GrowthMetric_uckl_x = []
+GrowthMetric_uckl_y = []
 AuxFields = []
 MomentumBounds = []
+
+GrowthMetric_uckl_star_y = []
+GrowthMetric_grad_p_y = []
+GrowthMetric_forcing_term_y = []
+GrowthMetric_du_dv_div_u = []
+
+GrowthMetric_gi_y_contribution = []
+
+GrowthMetric_gi_c_term6_Gab = []
+GrowthMetric_gi_div_sigma_x = []
+GrowthMetric_gi_div_sigma_y = []
+GrowthMetric_gi_c_term2 = []
+
+GrowthMetric_bounceBackTopBottom2_u_ckl_bottom = []
+GrowthMetric_bounceBackTopBottom2_u_ckl_top = []
+GrowthMetric_bounceBackTopBottom2_gi_up = []
+GrowthMetric_bounceBackTopBottom2_gi_down = []
 
 rho_min = np.min(rho)
 rho_max = np.max(rho)
@@ -1014,15 +1130,17 @@ while iteration < TOTAL_ITERATION:
 
     #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid        
     if iteration > 0:
-        _gi_c = gi_c(u_ckl, rho, tau_g, Kg, F)
+        _gi_c = gi_c(u_ckl, rho, tau_g, Kg, F, iteration)
+
     rho, mu = density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G, mu_L)
+
     if iteration in [1, 100, 500, 1000]:
         rho_min = np.min(rho)
         rho_max = np.max(rho)
         title = "Density map"
         density_map_standalone(rho, rho_min, rho_max, title, iteration)
 
-    _gi = gi(_gi, _gi_c, u_ckl, rho, mu) 
+    _gi = gi(_gi, _gi_c, u_ckl, rho, mu, iteration) 
     #_gi = giExt(_gi, _gi_c, u_ckl, rho, mu) 
       
 
@@ -1075,10 +1193,40 @@ while iteration < TOTAL_ITERATION:
     rho_min = np.min(rho)
     rho_max = np.max(rho)    
     rho_bounds.append((iteration, rho_min, rho_max))
-    max_abs_u_ckl_x = np.max(np.abs(u_ckl[0]))
-    print(f"Iteration {iteration}: max|u_x|={max_abs_u_ckl_x:.2e}, invariant={invariant:.2e}")
     Invariants.append((iteration, invariant))
-    GrowthMetric.append((iteration, max_abs_u_ckl_x))
+    max_abs_u_ckl_x = np.max(np.abs(u_ckl[0]))
+    max_abs_u_ckl_y = np.max(np.abs(u_ckl[1]))
+    print(f"Iteration {iteration}: max|u_x|={max_abs_u_ckl_x:.2e}, invariant={invariant:.2e}")    
+    GrowthMetric_uckl_x.append((iteration, max_abs_u_ckl_x))
+    GrowthMetric_uckl_y.append((iteration, max_abs_u_ckl_y))
+
+    uckl_star_y = np.max(np.abs(u_ckl_star[1]))
+    GrowthMetric_uckl_star_y.append((iteration, uckl_star_y))
+    grad_p_y = np.max(np.abs(gradient_p(p)[1]))
+    GrowthMetric_grad_p_y.append((iteration, grad_p_y))
+    forcing_term_y = np.max(np.abs(forcing_term[1]))
+    GrowthMetric_forcing_term_y.append((iteration, forcing_term_y))
+    du_dx, du_dy = c_first_derivative(u_ckl_star[0])
+    dv_dx, dv_dy = c_first_derivative(u_ckl_star[1])
+    div_u = du_dx + dv_dy
+    GrowthMetric_du_dv_div_u.append((iteration, 
+        np.max(np.abs(du_dx)), 
+        np.max(np.abs(du_dy)), 
+        np.max(np.abs(dv_dx)), 
+        np.max(np.abs(dv_dy)), 
+        np.max(np.abs(div_u)))) 
+    gi_y_contribution = np.einsum('i,ijk->jk', c[:,1], _gi)
+    GrowthMetric_gi_y_contribution.append((iteration, np.max(np.abs(gi_y_contribution))))
+
+    item = np.max(np.abs(u_ckl[1, :, 1]))
+    GrowthMetric_bounceBackTopBottom2_u_ckl_bottom.append((iteration, item))
+    item = np.max(np.abs(u_ckl[1, :, Yn]))    
+    GrowthMetric_bounceBackTopBottom2_u_ckl_top.append((iteration, item))
+    item = np.max(np.abs(_gi[2, :, 1]))        
+    GrowthMetric_bounceBackTopBottom2_gi_up.append((iteration, item))
+    item = np.max(np.abs(_gi[4, :, 1]))    
+    GrowthMetric_bounceBackTopBottom2_gi_down.append((iteration, item))
+
     spuriousField1 = np.max(np.abs(np.gradient(p)))
     laplacian_phi = c_second_derivative(_phi)
     spuriousField2 = np.max(np.abs(laplacian_phi))
@@ -1165,9 +1313,26 @@ plot_bounds(u_x_bounds, "u_ckl_x_bounds", Kf)
 plot_bounds(u_y_bounds, "u_ckl_y_bounds", Kf)
 plot_bounds(rho_bounds, "rho_bounds")
 plot_bounds(Invariants, "Invariants")
-plot_bounds(GrowthMetric, "GrowthMetric")
+plot_bounds(GrowthMetric_uckl_x, "GrowthMetric_uckl_x")
+plot_bounds(GrowthMetric_uckl_y, "GrowthMetric_uckl_y")
 plot_bounds(AuxFields, "AuxFields")
 
+plot_bounds_ext(GrowthMetric_uckl_star_y, "GrowthMetric_uckl_star_y")
+plot_bounds_ext(GrowthMetric_grad_p_y, "GrowthMetric_grad_p_y")
+plot_bounds_ext(GrowthMetric_forcing_term_y, "GrowthMetric_forcing_term_y")
+series_labels = ["du_dx","du_dy","dv_dx","dv_dy","div_u"]
+plot_bounds_ext(GrowthMetric_du_dv_div_u, "GrowthMetric_du_dv_div_u", series_labels)
+plot_bounds_ext(GrowthMetric_gi_y_contribution, "GrowthMetric_gi_y_contribution")
+
+plot_bounds_ext(GrowthMetric_gi_c_term6_Gab, "GrowthMetric_gi_c_term6_Gab")
+plot_bounds_ext(GrowthMetric_gi_div_sigma_x, "GrowthMetric_gi_div_sigma_x")
+plot_bounds_ext(GrowthMetric_gi_div_sigma_y, "GrowthMetric_gi_div_sigma_y")
+plot_bounds_ext(GrowthMetric_gi_c_term2, "GrowthMetric_gi_c_term2")
+
+plot_bounds_ext(GrowthMetric_bounceBackTopBottom2_u_ckl_bottom, "GrowthMetric_bounceBackTopBottom2_u_ckl_bottom")
+plot_bounds_ext(GrowthMetric_bounceBackTopBottom2_u_ckl_top, "GrowthMetric_bounceBackTopBottom2_u_ckl_top")
+plot_bounds_ext(GrowthMetric_bounceBackTopBottom2_gi_up, "GrowthMetric_bounceBackTopBottom2_gi_up")
+plot_bounds_ext(GrowthMetric_bounceBackTopBottom2_gi_down, "GrowthMetric_bounceBackTopBottom2_gi_down")
 
 # Row 1, Col 0: Density profile (now in narrower column, width 2)
 density_profile(ax[1, 0], _rho_full_range, Xn, Yn, iteration)
