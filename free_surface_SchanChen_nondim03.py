@@ -1176,12 +1176,19 @@ while iteration < TOTAL_ITERATION:
 
 
     #update ghost nodes
-    rho_wall = rho[:, 1]
-    for i in range(9):
-        _gi[i, :, 0] = E[i] * rho_wall
-    rho_wall = rho[:, Yn]
-    for i in range(9):
-        _gi[i, :, Yn+1] = E[i] * rho_wall      
+    # Before bounceBackTopBottom2
+    for i in [2, 5, 6]:  # Directions with c[i,1] > 0 (upward)
+        _gi[i, :, 0] = _gi[i+2, :, 1]  # Mirror to opposite direction (2->4, 5->7, 6->8)
+    for i in [4, 7, 8]:  # Directions with c[i,1] < 0 (downward)
+        _gi[i, :, 0] = _gi[i-2, :, 1]
+    for i in [0, 1, 3]:  # Directions with c[i,1] = 0
+        _gi[i, :, 0] = _gi[i, :, 1]
+    for i in [2, 5, 6]:  # Top ghost
+        _gi[i, :, Yn+1] = _gi[i+2, :, Yn]
+    for i in [4, 7, 8]:
+        _gi[i, :, Yn+1] = _gi[i-2, :, Yn]
+    for i in [0, 1, 3]:
+        _gi[i, :, Yn+1] = _gi[i, :, Yn]     
 
     #=> here the boundary conditions
     #Bounce-Back Top and Bottom
