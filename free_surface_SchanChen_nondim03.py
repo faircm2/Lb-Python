@@ -1173,11 +1173,19 @@ while iteration < TOTAL_ITERATION:
 
     _gi = gi(_gi, _gi_c, u_ckl, rho, mu, iteration) 
     #_gi = giExt(_gi, _gi_c, u_ckl, rho, mu) 
-      
+
+
+    #update ghost nodes
+    rho_wall = rho[:, 1]
+    for i in range(9):
+        _gi[i, :, 0] = E[i] * rho_wall
+    rho_wall = rho[:, Yn]
+    for i in range(9):
+        _gi[i, :, Yn+1] = E[i] * rho_wall      
 
     #=> here the boundary conditions
     #Bounce-Back Top and Bottom
-    _gi = bounceBackTopBottom2(_gi, Xn, Yn)    
+    _gi = bounceBackTopBottom3(_gi, Xn, Yn)    
 
     #4.1b. assign inlet boundary values -> B)
     _gi[:, 0, :] = _gi[:,Xn,:]
