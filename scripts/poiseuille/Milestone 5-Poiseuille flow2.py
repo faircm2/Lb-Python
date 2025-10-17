@@ -14,7 +14,6 @@ import math
 import numpy as np
 
 TOTAL_TIME = 0.01/4.
-INIT_DENSITY = 1. #0.001
 VERBOSE1=False
 VERBOSE2=False
 
@@ -34,8 +33,13 @@ if(VERBOSE1): print("D_nd: {0}".format(D_nd))
 L=0.1 #m
 
 Ny=D_nd
-if(VERBOSE1): print("Ny: {0}".format(Ny))
 Nx=int(Ny*L/D)
+
+#set Nx and Ny
+Ny = 100 + 1
+Nx = Ny * 100 + 2 #2 xtra external boundaray points
+
+if(VERBOSE1): print("Ny: {0}".format(Ny))
 if(VERBOSE1): print("Nx: {0}".format(Nx))
 
 dx=D/D_nd #old->5*10**(-5)
@@ -50,9 +54,10 @@ dRho=dP/Cs**2
 
 p_out=1.
 p_in=p_out+dP
-#roh_in=p_in/Cs**2
-roh_out=1.
-roh_in=roh_out+dRho
+roh_in=p_in/Cs**2
+roh_out=p_out/Cs**2
+dRho=dP/Cs**2
+INIT_ROH = roh_out #0.001
 
 if(VERBOSE1): 
     print("p_in: {0}".format(p_in))
@@ -60,7 +65,7 @@ if(VERBOSE1):
     print("roh_in: {0}".format(roh_in))
     print("roh_out: {0}".format(roh_out))
 
-nu=3e-6 #m^2/s 
+nu=4e-6 #m^2/s 
 dt=Cs**2*(tau-1./2)*(dx**2/nu)
 if(VERBOSE1): print("dt: {0}".format(dt))
 
@@ -183,14 +188,14 @@ if(VERBOSE1): print("Weights: {0}".format(weights))
 #lattice for phase space; Nx+3 is due to periodic boundary conditions
 #Nx is the number of divisions in the x-direction, thus there are Nx+3 points when including the extra nodes 0 and N+1 in x-direction
 #lattice columns start with 0 and end with Nx+2, X(0) = X(0) and X(N+1) = X(Nx+2)
-lattice = np.full((9, Ny+1, Nx+3), INIT_DENSITY, dtype=float)
+lattice = np.zeros((9, Ny, Nx+2), dtype=float)
 
 # tmp storage arrays
 streamed_lattice = np.zeros_like(lattice)
 collision_lattice = np.zeros_like(lattice)
 prestream_lattice = np.zeros_like(lattice)
-roh_inlet = np.zeros(Ny+1)
-roh_outlet = np.zeros(Ny+1)
+roh_inlet = np.zeros(Ny)
+roh_outlet = np.zeros(Ny)
 outlet_midstream_avg_v = [] 
 outlet_midstream_roh = [] 
 
@@ -198,25 +203,28 @@ index = 0
 
 
 #collision equilibrium distribution function feq(0->8)
-def feq_i(i, rho, u_avg):
+def feq_i(i, _rho, _u_avg):
     c_i = discrete_velocities[i]
 
-    if u_avg.ndim == 2:
-        _dot = np.dot(c_i.T, u_avg) 
-    elif u_avg.ndim == 3:
-        _dot = np.einsum('k,kij->ij', c_i, u_avg)
+    if _u_avg.ndim == 2:
+        _dot = np.dot(c_i.T, _u_avg) 
+    elif _u_avg.ndim == 3:
+        _dot = np.einsum('k,kij->ij', c_i, _u_avg)
 
-    if u_avg.ndim == 2:
-        dot_product_u_avg = np.einsum('ki,ki->i', u_avg, u_avg)
-    elif u_avg.ndim == 3:
-        dot_product_u_avg = np.einsum('kij,kij->ij', u_avg, u_avg)
-        dot_product_u_avg1= np.sum(u_avg**2, axis=0)
+    if _u_avg.ndim == 2:
+        dot_product_u_avg = np.einsum('ki,ki->i', _u_avg, _u_avg)
+    elif _u_avg.ndim == 3:
+        dot_product_u_avg = np.einsum('kij,kij->ij', _u_avg, _u_avg)
+        dot_product_u_avg1= np.sum(_u_avg**2, axis=0)
         
     _ones = np.ones(_dot.shape)
 
-    feq0_8 = weights[i] * rho * (
-        _ones + 3. * _dot / Cs**2 + (9. / 2) * _dot**2 / Cs**4 - (3. / 2) * dot_product_u_avg / Cs**2
+    feq0_8 = weights[i] * _rho * (
+        _ones + 3. * _dot / Cs**2 + (9. / 2.) * _dot**2 / Cs**4 - (3. / 2.) * dot_product_u_avg / Cs**2
     )
+
+    if(np.min(feq0_8)<0):
+        print(feq0_8)
 
     if False:
         # detailed computation
@@ -224,14 +232,14 @@ def feq_i(i, rho, u_avg):
         _part2 = (9. / 2) * _dot**2 / Cs**4
         _part3 = (3. / 2) * dot_product_u_avg / Cs**2
         dets = _ones + _part1 + _part2 - _part3
-        feq0_8 = weights[i] * rho * dets
+        feq0_8 = weights[i] * _rho * dets
 
     return feq0_8
 
 
 #collision equilibrium distribution function feq(0-8) for each lattice slice at inlet/outlet
-def f_eq_slc(j, roh_nd, u_avg):
-    _slice = np.stack([feq_i(i, roh_nd, u_avg) for i in range(0, 9)], axis=0) 
+def f_eq_slc(j, _roh, _u_avg):
+    _slice = np.stack([feq_i(i, _roh, _u_avg) for i in range(0, 9)], axis=0) 
     return _slice
 
 
@@ -242,56 +250,78 @@ def streamLtc(_ltc):
     
     return shifted_lattice
 
+def streamLtc_nested(_ltc):
+    # Get the shape of _ltc
+    num_directions, height, width = _ltc.shape
+
+    # Initialize an array to store the shifted lattice values
+    shifted_lattice = np.zeros_like(_ltc)
+
+    # Loop over each direction and apply the shifts explicitly
+    for direction in range(num_directions):
+        # Extract the dx and dy for this direction
+        dx, dy = discrete_velocities[direction]
+        
+        # Create a shifted version of the current 2D slice in _ltc
+        shifted_slice = np.roll(_ltc[direction, :, :], shift=dy, axis=0)
+        shifted_slice = np.roll(shifted_slice, shift=dx, axis=1)
+        
+        # Store the shifted slice in the output array
+        shifted_lattice[direction, :, :] = shifted_slice
+        
+        # Print out the shifts applied for debugging/verification
+        #print(f"Direction {direction}: shift (dx, dy) = ({dx}, {dy})")
+        #print("Shifted slice:")
+        #print(shifted_slice)  # Prints the 2D shifted array for this direction
+
+    return shifted_lattice
+
 
 #update the first 2 moments (density, current density, u_avg)
 def updateMoments(u_avg_TEST, _ltc):
     # density:
-    roh = np.sum(_ltc, axis=0)
-    roh_reshaped = roh[np.newaxis, :, :]
-
-    '''
-    roh_reshaped0 = np.zeros((1, _ltc.shape[1], _ltc.shape[2]))
-    for i in range(0,_ltc.shape[1]):
-        for j in range(0,_ltc.shape[2]):
-            sum = 0
-            for k in range(0,9):
-                sum += _ltc[k,i,j]
-            roh_reshaped0[0,i,j] = sum
-    roh_reshaped = roh_reshaped0
-    '''
-    printSelMoments(index, "roh", roh_reshaped)
+    _roh = np.sum(_ltc, axis=0)
+    #roh_reshaped = roh[np.newaxis, :, :]
+    #printSelMoments(index, "roh", roh)
 
 
     # current density:
-    #discrete_velocities_reshaped = discrete_velocities[:, :, np.newaxis, np.newaxis]
-    #_ltc_reshaped = _ltc[:, np.newaxis, :, :]
-    #current_density_arr0 = _ltc_reshaped * discrete_velocities_reshaped
-    #current_density = np.sum(current_density_arr0, axis=0)
-    current_density2 = np.einsum('kl,kij->lij', discrete_velocities, _ltc)
-
-    '''
-    current_density_arr0 = np.zeros((2, _ltc.shape[1], _ltc.shape[2]))
-    for i in range(0,_ltc.shape[1]):
-        for j in range(0,_ltc.shape[2]):
-            sumx = 0
-            sumy = 0
-            for k in range(0,9):
-                vec = _ltc[k,i,j] * discrete_velocities[k]
-                sumx += vec[0]
-                sumy += vec[1]
-            current_density_arr0[:,i,j] = [sumx, sumy]
-
-    #current_density = current_density_arr0
-    '''
-    printSelMoments(index, "current_density", current_density2)
+    #old version
+    #current_density = np.einsum('kl,kij->lij', discrete_velocities, _ltc)
+    #new version
+    #proof
+    if False:
+        _ltc_node = np.array([
+            0.457777778,
+            0.111111111,
+            0,
+            0.114444444,
+            0.027777778,
+            0,
+            0,
+            0.027777778,
+            0.738888889
+        ])
+        _ltc[:] = _ltc_node[:, np.newaxis, np.newaxis]
+    # Step 2: Sum along the first axis (axis=0) to aggregate the velocities for each 2D grid
+    discrete_velocities_reshaped = discrete_velocities[:, :, np.newaxis, np.newaxis]  # Shape: (9, 2, 1, 1)
+    # Expand _ltc to shape (9, 2, 101, 10003) using np.expand_dims
+    _ltc_expanded = np.expand_dims(_ltc, axis=1)
+    # Now replicate the values along the new dimension (axis=1) to match shape (9, 2, 101, 10003)
+    _ltc_expanded = np.repeat(_ltc_expanded, 2, axis=1)
+    # Step 3: Perform element-wise multiplication (now both arrays are compatible)
+    weighted_vectors = discrete_velocities_reshaped * _ltc_expanded  # Shape: (9, 2, 101, 10003)
+    # Step 4: Sum along axis 0 to aggregate the velocities
+    current_density = np.sum(weighted_vectors, axis=0)  # Shape: (2, 101, 10003)
+    #printSelMoments(index, "current_density", current_density)
 
 
     # average velocity
-    u_avg = current_density2 / roh_reshaped
-    #u_avg = u_avg_TEST
-    printSelMoments(index, "u_avg", u_avg)
+    #u_avg = current_density / roh_reshaped
+    _u_avg = current_density / _roh
+    #printSelMoments(index, "u_avg", u_avg)
 
-    return roh, current_density2, u_avg
+    return _roh, current_density, _u_avg
 
 
 #2D Poiseuille inlet velocity u(y) for comparison with numerical result
@@ -308,7 +338,7 @@ def Poiseuille2DUy(y):
 def bounceBackTopBottom(_ltc, _index_mapping_top, _index_mapping_bottom):
     # row indices for top and bottom boundaries
     upper_boundary = 0
-    lower_boundary = Ny
+    lower_boundary = Ny-1
 
     # swaps on the top boundary
     for i, swap_needed in enumerate(_index_mapping_top):
@@ -324,25 +354,25 @@ def bounceBackTopBottom(_ltc, _index_mapping_top, _index_mapping_bottom):
 
 
 #calulate boundary nodes X(0) and X(N+1) for periodic BC with presssure difference
-def calculateXtraNodeLayers(_roh_N, u_avg_N, _roh_inlet, _roh_1, u_avg_1, _roh_outlet, _ltc): 
+def calculateXtraNodeLayers(_roh_N, _u_avg_N, _roh_inlet, _roh_1, _u_avg_1, _roh_outlet, _ltc): 
     #N==Nx+1
     #1==1
     #X(0) = X(0)
     #X(N+1) = X(Nx+2)
 
     #X0 : fi_prestream(X0,y,t) = fi_eq(roh_inlet, u_avg(Nx+1)) + [fi_prestream(Nx+1,y,t) - fi_eq(Nx+1,y,t)]
-    fi_in = f_eq_slc(Nx+1, _roh_inlet, u_avg_N)
-    fi_prestream = _ltc[:,:,Nx+1]
-    fi_eq_N = f_eq_slc(Nx+1, _roh_N, u_avg_N)
-    xNodes_inlet = fi_in + (fi_prestream - fi_eq_N)
+    fi_in = f_eq_slc(Nx, _roh_inlet, _u_avg_N)
+    fi_prestream = _ltc[:,:,Nx]
+    fi_eq_N = f_eq_slc(Nx, _roh_N, _u_avg_N)
+    fi_x0 = fi_in + (fi_prestream - fi_eq_N)
 
     #Nx+2 : fi_prestream(XNx+2,y,t) = fi_eq(roh_outlet, u_avg_1) + [fi_prestream(X1,y,t) - fi_eq(X1,y,t)]
-    fi_out = f_eq_slc(1, _roh_outlet, u_avg_1)
+    fi_out = f_eq_slc(1, _roh_outlet, _u_avg_1)
     fi_prestream = _ltc[:,:,1]
-    fi_eq_1 = f_eq_slc(1, _roh_1, u_avg_1)
-    xNodes_outlet = fi_out + (fi_prestream - fi_eq_1) 
+    fi_eq_1 = f_eq_slc(1, _roh_1, _u_avg_1)
+    fi_xNplus1 = fi_out + (fi_prestream - fi_eq_1) 
 
-    return xNodes_inlet, xNodes_outlet
+    return fi_x0, fi_xNplus1
 
 
 def print_min_max(arr):
@@ -368,9 +398,12 @@ def print_selected_columns(arr, number_of_central_rows, columns):
         central_row_start = (d_Ny - number_of_central_rows) // 2
         central_row_end = central_row_start + number_of_central_rows
 
-        print(f"arr in column {columns[0]} (middle rows):")
-        for i in range(central_row_start, central_row_end):
-            print(arr[i])
+        if number_of_central_rows==0 or number_of_central_rows==(d_Ny-1):
+            print(arr[number_of_central_rows])
+        else:
+            print(f"arr in column {columns[0]} (middle rows):")
+            for i in range(central_row_start, central_row_end):
+                print(arr[i])
 
     elif num_dims == 2:
         d_Ny, d_Nx = arr.shape
@@ -437,38 +470,48 @@ def print_selected_columns(arr, number_of_central_rows, columns):
 
 def printSelLtcPoints(index, name, arr):
     print("\nindex: {0}".format(index))
-    print(name + ":")
+    print(name + "-top boundary:")
+    print_selected_columns(arr, 1, [1])    
+    print(name + "-central rows:")
     print_selected_columns(arr, 2, [0])
     print_selected_columns(arr, 2, [1])
+    print_selected_columns(arr, 2, [Nx])
     print_selected_columns(arr, 2, [Nx+1])
-    print_selected_columns(arr, 2, [Nx+2])
-    print(name + "-top boundary:")
-    print_selected_columns(arr, 1, [1])
     print(name + "-bottom boundary:")
-    print_selected_columns(arr, Ny, [Nx+2])
+    print_selected_columns(arr, Ny-1, [Nx+1])
 
 def printSelLtcSlicePoints(index, name, arr):
     arr_reshaped = arr.transpose()
     print("\nindex: {0}".format(index))
-    print(name + f" [central rows 2]:")
-    print_selected_columns(arr_reshaped, 2, [0,1,2,3,4,5,6,7,8])
     print(name + "-top boundary:")
-    print_selected_columns(arr_reshaped, 0, [0,1,2,3,4,5,6,7,8])
+    print_selected_columns(arr_reshaped, 0, [0,1,2,3,4,5,6,7,8])    
+    print(name + "-central rows 2:")
+    print_selected_columns(arr_reshaped, 2, [0,1,2,3,4,5,6,7,8])
     print(name + "-bottom boundary:")
-    print_selected_columns(arr_reshaped, Ny, [0,1,2,3,4,5,6,7,8])
+    print_selected_columns(arr_reshaped, Ny-1, [0,1,2,3,4,5,6,7,8])
 
 def printSelMoments(index, name, arr):
     #arr_reshaped = arr.transpose()
     print("\nindex: {0}".format(index))
-    print(name + ":")
+    print(name + "-top boundary:")
+    print_selected_columns(arr, 1, [1])    
+    print(name + "-central rows:")
     print_selected_columns(arr, 2, [0])
     print_selected_columns(arr, 2, [1])
+    print_selected_columns(arr, 2, [Nx])
     print_selected_columns(arr, 2, [Nx+1])
-    print_selected_columns(arr, 2, [Nx+2])
-    print(name + "-top boundary:")
-    print_selected_columns(arr, 1, [1])
     print(name + "-bottom boundary:")
-    print_selected_columns(arr, Ny, [Nx+2]) 
+    print_selected_columns(arr, Ny-1, [Nx+1]) 
+
+def printSelRohSlicePoints(index, name, arr):
+    arr_reshaped = arr.transpose()
+    print("\nindex: {0}".format(index))
+    print(name + "-top boundary:")
+    print_selected_columns(arr_reshaped, 0, [0])    
+    print(name + "-central rows 2:")
+    print_selected_columns(arr_reshaped, 2, [0])
+    print(name + "-bottom boundary:")
+    print_selected_columns(arr_reshaped, Ny-1, [0])     
 
 
 #preliminary
@@ -479,47 +522,54 @@ _index_mapping_top = np.array([False, False, True, False, False, True, True, Fal
 _index_mapping_bottom = np.array([False, False, False, False, True, False, False, True, True])
 
 #initialise
-u_avg = np.zeros((2, Ny+1, Nx+3), dtype=float)
-u_avg[0,:,:] = 2.
-u_avg[1,:,:] = 3.
+u_avg = np.zeros((2, Ny, Nx+2), dtype=float)
 u_avg_TEST = u_avg.copy()
 
-roh_lattice = np.full((Ny+1, Nx+3), INIT_DENSITY, dtype=float)
-roh=roh_lattice
-_roh_N = np.full((Ny+1), INIT_DENSITY, dtype=float)
-_roh_1 = np.full((Ny+1), INIT_DENSITY, dtype=float)
+roh = np.full((Ny, Nx+2), INIT_ROH, dtype=float)
+_roh_1 = roh[:,1]
+_roh_N = roh[:,Nx]
+#_roh_N = np.full((Ny), INIT_ROH, dtype=float)
+#_roh_1 = np.full((Ny), INIT_ROH, dtype=float)
 
 #1st prestreamed lattice
-prestream_lattice = f_eq_slc(0, roh_lattice, u_avg)
+prestream_lattice = f_eq_slc(0, roh, u_avg)
 streamed_lattice = prestream_lattice.copy()
 printSelLtcPoints(index, "initialised prestream_lattice", prestream_lattice)
 
 while t < TOTAL_TIME:
     print("\n\nindex: {0} ------------------------------------------------".format(index))
 
+    u_avg = np.zeros((2, Ny, Nx+2), dtype=float)
+
     #update extra node layers 0 and N+1 -> A) & B)
-    #uN==Nx+1
-    u_avg_N = u_avg[:, :, Nx+1]
-    #u1==1
     u_avg_1 = u_avg[:, :, 1]
-    xNodes_inlet, xNodes_outlet = calculateXtraNodeLayers(_roh_N, u_avg_N, roh_inlet, _roh_1, u_avg_1, roh_outlet, prestream_lattice)
+    u_avg_N = u_avg[:, :, Nx]
+    #printSelRohSlicePoints(index, "_roh_1", _roh_1)
+    #printSelRohSlicePoints(index, "_roh_N", _roh_N)    
+    #printSelRohSlicePoints(index, "u_avg_1", u_avg_1)
+    #printSelRohSlicePoints(index, "u_avg_N", u_avg_N) 
+    #printSelRohSlicePoints(index, "streamed_lattice-PRE[:, :, 0]", streamed_lattice[:, :, 0]) 
+    fi_x0, fi_xNplus1 = calculateXtraNodeLayers(_roh_N, u_avg_N, roh_inlet, _roh_1, u_avg_1, roh_outlet, prestream_lattice)
     #assign inlet and outlet boundary values -> A)
     if TEST_STREAMING:
         printSelLtcPoints(index, "prestream_lattice BEFORE periodicBC", prestream_lattice)
-    streamed_lattice[:, :, 0] = xNodes_inlet
-    streamed_lattice[:, :, Nx+2] = xNodes_outlet
+    streamed_lattice[:, :, 0] = fi_x0
+    streamed_lattice[:, :, Nx+1] = fi_xNplus1
     if TEST_STREAMING:
         printSelLtcPoints(index, "streamed_lattice AFTER periodicBC", streamed_lattice)    
     #if TEST_MOMENTS:
-    #    printSelLtcSlicePoints(index, "xNodes_inlet AFTER periodicBC", xNodes_inlet)
-    #    printSelLtcSlicePoints(index, "xNodes_outlet AFTER periodicBC", xNodes_outlet)
+    #printSelRohSlicePoints(index, "streamed_lattice-POST[:, :, 0]", streamed_lattice[:, :, 0]) 
+    #printSelLtcSlicePoints(index, "xNodes_outlet AFTER periodicBC", xNodes_outlet)
 
     if TEST_BC:
         streamed_lattice[:, :, 0] = 1.
-        streamed_lattice[:, :, Nx+2] = 1.   
+        streamed_lattice[:, :, Nx+1] = 1.   
     
-    #stream lattice
-    streamed_lattice = streamLtc(streamed_lattice)
+    #stream lattice 
+    #printSelLtcPoints(index, "PRE: streamed_lattice-streamed", streamed_lattice)
+    streamed_lattice = streamLtc_nested(streamed_lattice)
+    #printSelLtcPoints(index, "POST: streamed_lattice-streamed", streamed_lattice)
+    #printSelLtcPoints(index, "streamed_lattice-streamed", streamed_lattice)
     if TEST_BC:
         streamed_lattice = prestream_lattice
     if TEST_STREAMING:
@@ -528,7 +578,7 @@ while t < TOTAL_TIME:
         printSelLtcPoints(index, "streamed_lattice-streamed", streamed_lattice)
 
     #assign inlet and outlet boundary values -> B)
-    streamed_lattice[:, :, 0] = xNodes_inlet
+    streamed_lattice[:, :, 0] = fi_x0
     if TEST_BC:
         streamed_lattice[:, :, 0] = 1.    
     
@@ -542,12 +592,11 @@ while t < TOTAL_TIME:
         printSelLtcPoints(index, "streamed_lattice-bouncebackBC", streamed_lattice)        
     
     #update moments at N
-    #if TEST_MOMENTS:
-    #    printSelLtcPoints(index, "pre-updateMoments: roh", roh)
-    #    printSelLtcPoints(index, "pre-updateMoments: u_avg", u_avg)   
     roh,current_density,u_avg = updateMoments(u_avg_TEST, streamed_lattice)
-    _roh_N = roh[:,Nx+1]                  
+    printSelMoments(index, "POST updateMoments: current_density", current_density)
+    _roh_N = roh[:,Nx]                  
     _roh_1 = roh[:,1]
+
     midstream_vel = u_avg[:,int(Ny/2),Nx+1]
     outlet_midstream_avg_v.append([t, midstream_vel[0]])
     outlet_midstream_roh.append([t, _roh_N[int(Ny/2)]])
@@ -555,13 +604,8 @@ while t < TOTAL_TIME:
         roh[:] = 1.
         u_avg = u_avg_TEST
 
-    #if TEST_MOMENTS:
-    #    printSelLtcPoints(index, "post-updateMoments: roh", roh)
-    #    printSelLtcPoints(index, "post-updateMoments: u_avg", u_avg)   
-
     #calculate collision
     feq = f_eq_slc(streamed_lattice, roh, u_avg)
-    
     collision_lattice = (1-omega_nd) * streamed_lattice + omega_nd * feq
     if TEST_BC or TEST_STREAMING:
         collision_lattice = streamed_lattice
