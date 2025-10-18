@@ -4,6 +4,9 @@
 # Add at top of script (Python 3.7+ for forward refs in annotations)
 from __future__ import annotations
 
+import matplotlib
+
+matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
 
 plt.rc('text', usetex=False)
@@ -26,7 +29,7 @@ RAISE_LESS_THAN_ZERO_ERROR = False
 RAISE_NaN_ERROR = False
 PRESSURE_IN_DENSITY_MAP = False
 ADD_FORCING_TERM = 1
-TOTAL_ITERATIONS = 48004
+TOTAL_ITERATIONS = 1000 # 12001 * 4
 FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))
 NO_DATA_DUMP_SLICES = 11
 
@@ -876,12 +879,8 @@ def density_profile(ax1, den_eq, nx, ny, iteration=0):
 
     ax1.legend(loc='best')  # Add legend to distinguish the three lines
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist   
-
     # Save in same directory as the script
-    filename = "{0}_{1}_{2}.png".format(SCRIPT_FILENAME, "density_profile", iteration)
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
 
     ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -912,16 +911,12 @@ def density_profile_transition(ax1, den_eq, x__position, y_position, nx, ny, gra
 
     ax1.legend(loc='best')  # Add legend
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist   
-
     # Save in same directory as the script
-    filename = "{0}_{1}_{2}.png".format(SCRIPT_FILENAME, "density_profile", iteration)
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_transition_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
 
     ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved density profile: %s', save_path)
+    debug_log('INIT', 'Saved density profile transition: %s', save_path)
 
 
 # Plot density profiles saved at given iterations
@@ -1036,15 +1031,10 @@ def velocity_map(ax, u_magnitude, _iteration, title):
     os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist     
 
     # Save image
-    filename = "{0}_{1}.png".format(SCRIPT_FILENAME, title)
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist 
-
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
     ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved velocity map: %s', images_dir)
+    debug_log('INIT', 'Saved velocity map: %s', save_path)
 
 
 def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
@@ -1066,30 +1056,38 @@ def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, scrip
     
     ylabel, title = context, f"{context} vs Iteration"
     
-    # Use existing ax if provided, else create new figure
-    if ax is None:
-        plt.figure(figsize=(8, 5))
-    else:
-        plt.sca(ax)
+    # Create a new figure for standalone plot
+    fig_standalone = plt.figure(figsize=(8, 5))
+    for series, label in zip(data_series, series_labels):
+        plt.plot(iterations, series, label=label)
     plt.xlabel("Iteration")
     plt.ylabel(ylabel)
     plt.title(title)
-    
-    for series, label in zip(data_series, series_labels):
-        plt.plot(iterations, series, label=label)
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
     
-    if ax is None:
-        if script_filename is None: script_filename = os.path.splitext(os.path.basename(__file__))[0]
-        filename = f"{script_filename}_{context}_Kf{k}.png" if k else f"{script_filename}_{context}.png"
-        images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
-        os.makedirs(images_dir, exist_ok=True)
-        save_path = os.path.join(images_dir, filename)
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        plt.close()
-        debug_log('INIT', 'Plot saved to: %s', save_path)
+    # Save standalone plot
+    if script_filename is None: script_filename = SCRIPT_FILENAME
+    filename = f"TOTAL_ITERATIONS{script_filename}_{USE_CASE_TAG}_{context}.png"
+    images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
+    os.makedirs(images_dir, exist_ok=True)
+    save_path = os.path.join(images_dir, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close(fig_standalone)
+    debug_log('INIT', 'Standalone plot saved to: %s', save_path)
+    
+    # If ax is provided, plot on the provided axes (for subplot grid)
+    if ax is not None:
+        plt.sca(ax)
+        for series, label in zip(data_series, series_labels):
+            plt.plot(iterations, series, label=label)
+        plt.xlabel("Iteration")
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
 
 
 # New plot function (add after existing):
@@ -1097,11 +1095,8 @@ def plot_momentum_bounds(results, _filename, ax=None):
     iterations = [r[0] for r in results]
     invariant = [r[3] for r in results]  # Index 3
     
-    # Use existing ax if provided, else create new figure
-    if ax is not None:
-        plt.sca(ax)
-    else:
-        plt.figure(figsize=(8, 5))
+    # Create a new figure for standalone plot
+    fig_standalone = plt.figure(figsize=(8, 5))
     plt.plot(iterations, invariant, label="total_mom_x", color="green")
     plt.axhline(0, color="black", linestyle="--", alpha=0.5)
     plt.xlabel("Iteration")
@@ -1111,16 +1106,27 @@ def plot_momentum_bounds(results, _filename, ax=None):
     plt.grid(True)
     plt.tight_layout()
 
-    # Save only if new figure
-    if ax is None:
-        filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        images_dir = os.path.join(script_dir, "FreesurfaceImages")
-        os.makedirs(images_dir, exist_ok=True)
-        save_path = os.path.join(images_dir, filename)
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        plt.close()
-        debug_log('INIT', 'Momentum plot saved to: %s', save_path)
+    # Save standalone plot
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    images_dir = os.path.join(script_dir, "FreesurfaceImages")
+    os.makedirs(images_dir, exist_ok=True)
+    save_path = os.path.join(images_dir, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close(fig_standalone)
+    debug_log('INIT', 'Standalone momentum plot saved to: %s', save_path)
+
+    # If ax is provided, plot on the provided axes (for subplot grid)
+    if ax is not None:
+        plt.sca(ax)
+        plt.plot(iterations, invariant, label="total_mom_x", color="green")
+        plt.axhline(0, color="black", linestyle="--", alpha=0.5)
+        plt.xlabel("Iteration")
+        plt.ylabel("Total invariant")
+        plt.title("Total invariant conservation")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
 
 
 def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
@@ -1151,9 +1157,9 @@ def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
     plt.xlabel('x-index')
     plt.ylabel('y-index')
 
-    # Save PNG
+    # Save PNG with USE_CASE_TAG
     _filename = f'phi_snapshot_iter_{iteration:0{FILENAME_PADDING_WIDTH}d}'
-    filename = "{0}_{1}.png".format(SCRIPT_FILENAME, _filename)
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
     save_path = os.path.join(images_dir, filename)
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close()
@@ -1163,7 +1169,7 @@ def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
     phi_max = np.max(_phi)
     phi_mean = np.mean(_phi)
     debug_log('ITER', 'phi at iter %d: min=%.3f, max=%.3f, mean=%.3f', 
-          iteration, phi_min, phi_max, phi_mean)
+              iteration, phi_min, phi_max, phi_mean)
     debug_log('INIT', 'Saved phi snapshot: %s', save_path)
 
 
@@ -1717,10 +1723,12 @@ fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hsp
 script_dir = os.path.dirname(os.path.abspath(__file__))
 images_dir = os.path.join(script_dir, "FreesurfaceImages")
 os.makedirs(images_dir, exist_ok=True)
+
+plt.tight_layout()
 save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
-plt.show(block=False)
+plt.close(fig1)
 
 
 # 3 rows, 4 columns
@@ -1758,8 +1766,8 @@ plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
 plt.tight_layout()
 save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_metrics.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
-debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
-plt.show(block=False)
+debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
+plt.close(fig2)
 
 
 ########### upload this file and results to GitHub repo
