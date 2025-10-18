@@ -842,27 +842,51 @@ def bounceBackTopBottom2(f, nx, ny):
 
 
 def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, title, nx=Xn, ny=Yn, angle=45, font_size=10):
+    # Create standalone figure
+    fig_standalone = plt.figure(figsize=(10, 6))
+    ax_standalone = fig_standalone.add_subplot(111)
+    for iteration, combined_u_ckl in u_full_range.items():
+        u = combined_u_ckl[nx, 1:ny + 1]
+        ax_standalone.plot(u, axis, label=f"t={iteration}")
+    ax_standalone.grid()
+    ax_standalone.set_xlabel(xlabel)
+    ax_standalone.set_ylabel(ylabel)
+    ax_standalone.set_title(title)
+    ax_standalone.set_ylim(-1, 51)
+    ax_standalone.set_yticks(np.arange(0, 51, 10))
+    ax_standalone.legend(ncol=1, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=font_size)
+    plt.setp(ax_standalone.get_xticklabels(), rotation=angle, ha='right', fontsize=font_size)
+    ax_standalone.tick_params(axis='x', labelsize=font_size)
+    ax_standalone.margins(x=0, y=0)
+    x_min, x_max = ax_standalone.get_xlim()
+    ax_standalone.set_xlim(x_min, x_max + 0.1*(x_max-x_min))
+    
+    # Save standalone plot
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    images_dir = os.path.join(script_dir, "FreesurfaceImages")
+    os.makedirs(images_dir, exist_ok=True)
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_amplitude_plot_{listIterations[-1]:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(images_dir, filename)
+    fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved amplitude plot: %s', save_path)
+    plt.close(fig_standalone)
+
+    # Plot on provided ax (for subplot grid)
     for iteration, combined_u_ckl in u_full_range.items():
         u = combined_u_ckl[nx, 1:ny + 1]
         ax1.plot(u, axis, label=f"t={iteration}")
     ax1.grid()
-    ax1.set_xlabel(xlabel); ax1.set_ylabel(ylabel); ax1.set_title(title)
-    ax1.set_ylim(-1, 51); ax1.set_yticks(np.arange(0, 51, 10))
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel)
+    ax1.set_title(title)
+    ax1.set_ylim(-1, 51)
+    ax1.set_yticks(np.arange(0, 51, 10))
     ax1.legend(ncol=1, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=font_size)
     plt.setp(ax1.get_xticklabels(), rotation=angle, ha='right', fontsize=font_size)
     ax1.tick_params(axis='x', labelsize=font_size)
     ax1.margins(x=0, y=0)
     x_min, x_max = ax1.get_xlim()
     ax1.set_xlim(x_min, x_max + 0.1*(x_max-x_min))
-    ax1.figure.tight_layout()
-    ax1.get_figure().set_size_inches(10, 6)
-
-    # Save in same directory as the script
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_amplitude_plot_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-
-    ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved amplitude_plot: %s', save_path)    
 
 
 # Density profile
@@ -1659,7 +1683,7 @@ height_ratios = [top_row_height, bottom_row_height, bottom_row_height] if 'top_r
 
 
 # 3x2 multi-plot grid
-paneLabel = f"Dashboard D2Q9 LB method for incompressible two-phase ﬂows Inamuro et al 2004 Lattice [{Xn} {Yn}] Single processor"
+paneLabel = f"Dashboard D2Q9 LB method for incompressible two-phase flows Inamuro et al 2004 Lattice [{Xn} {Yn}] Single processor"
 fig1, ax1 = plt.subplots(
     3, 2,
     figsize=(15, 10),
@@ -1675,18 +1699,15 @@ fig1, ax1 = plt.subplots(
 
 sectionPosition = int(Xn/2)
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
-#amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, title, nx=Xn, ny=Yn, angle=45, font_size=10):
 amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
 amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
 
 _iteration = -1
-velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map") # "velocity_map-u_ckl_list_x_")
-velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map") # "velocity_map-u_ckl_list_y_")
+velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
+velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
-#density_profile_transition(ax1[2, 0], _rho_full_range, density_profile_x_position, density_profile_y_position, Xn, Yn, 20, iteration)
-density_profiles(ax1[2, 0], density_slices, density_profile_x_position,  Xn, Yn)
+density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn)
 
-# Row 1, Col 1: Density map (now in wider column, width 4)
 if PRESSURE_IN_DENSITY_MAP:
     min_value = 0 
     _pressure_full_range = (_rho_full_range - min_value) * Cs**2 
@@ -1701,17 +1722,15 @@ else:
 text = f"Run-time: {diff:.1f} s"
 fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
 fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
+# Remove: ax1.figure.tight_layout()
 script_dir = os.path.dirname(os.path.abspath(__file__))
-images_dir = os.path.join(script_dir, IMAGES_SUBDIR)
+images_dir = os.path.join(script_dir, "FreesurfaceImages")
 os.makedirs(images_dir, exist_ok=True)
-
-plt.tight_layout()
-_filename = f'Dashboard_{iteration:0{FILENAME_PADDING_WIDTH}d}'
-filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
-save_path = os.path.join(images_dir, filename)
+save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
-debug_log('Dashboard_', 'Saved 3x4 grid: %s', save_path)
-plt.close(fig1)
+debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
+plt.close(fig1)  # Close the figure
+plt.show(block=False)
 
 
 # 3 rows, 4 columns
