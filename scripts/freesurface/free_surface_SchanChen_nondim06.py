@@ -861,17 +861,18 @@ def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, titl
     x_min, x_max = ax_standalone.get_xlim()
     ax_standalone.set_xlim(x_min, x_max + 0.1*(x_max-x_min))
     
-    # Save standalone plot
+    # Save standalone plot with unique filename
     script_dir = os.path.dirname(os.path.abspath(__file__))
     images_dir = os.path.join(script_dir, "FreesurfaceImages")
     os.makedirs(images_dir, exist_ok=True)
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_amplitude_plot_{listIterations[-1]:0{FILENAME_PADDING_WIDTH}d}.png"
+    # Use xlabel to differentiate u_x and u_y
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_amplitude_plot_{xlabel.replace(' ', '_')}_{listIterations[-1]:0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
     fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved amplitude plot: %s', save_path)
     plt.close(fig_standalone)
 
-    # Plot on provided ax (for subplot grid)
+    # Plot on provided ax
     for iteration, combined_u_ckl in u_full_range.items():
         u = combined_u_ckl[nx, 1:ny + 1]
         ax1.plot(u, axis, label=f"t={iteration}")
@@ -1042,19 +1043,33 @@ def density_map_standalone(full_range, min, max, title, _iteration):
 
 # 2D Velocity map
 def velocity_map(ax, u_magnitude, _iteration, title):
-    im = ax.imshow(u_magnitude.T, interpolation='nearest', origin='lower', cmap='plasma')  
-    ax.set_xlabel("x-axis")
-    ax.set_ylabel("y-axis")
-    ax.set_title(title)
-    ax.margins(x=0, y=0)
-    ax.set_aspect('auto')
-    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    # Create standalone figure
+    fig_standalone = plt.figure(figsize=(8, 5))
+    ax_standalone = fig_standalone.add_subplot(111)
+    im = ax_standalone.imshow(u_magnitude.T, cmap='viridis', origin='lower')
+    ax_standalone.set_xlabel('x')
+    ax_standalone.set_ylabel('y')
+    ax_standalone.set_title(title)
+    plt.colorbar(im, ax=ax_standalone, label='Velocity')
+    
+    # Save standalone plot
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    images_dir = os.path.join(script_dir, "FreesurfaceImages")
+    os.makedirs(images_dir, exist_ok=True)
+    # Use positive iteration
+    iteration_str = f"{_iteration if _iteration >= 0 else TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}"
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_velocity_map_{title.replace(' ', '_')}_{iteration_str}.png"
+    save_path = os.path.join(images_dir, filename)
+    fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved velocity map: %s', save_path)
+    plt.close(fig_standalone)
 
-    # Save image
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_velocity_map_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-    ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved velocity_map: %s', save_path)
+    # Plot on provided ax
+    im = ax.imshow(u_magnitude.T, cmap='viridis', origin='lower')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_title(title)
+    plt.colorbar(im, ax=ax, label='Velocity')
 
 
 def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
@@ -1064,7 +1079,6 @@ def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
 
 
 def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, script_filename=None):
-    """Generic plotter for iterative results with 2+ data series."""
     if results is None or not isinstance(results, (list, tuple)) or not results or len(results[0]) < 2:
         raise ValueError("results must be non-empty list of (iteration, values)")
     if isinstance(results, np.ndarray): results = results.tolist()
@@ -1076,7 +1090,7 @@ def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, scrip
     
     ylabel, title = context, f"{context} vs Iteration"
     
-    # Create a new figure for standalone plot
+    # Create standalone figure
     fig_standalone = plt.figure(figsize=(8, 5))
     for series, label in zip(data_series, series_labels):
         plt.plot(iterations, series, label=label)
@@ -1085,14 +1099,18 @@ def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, scrip
     plt.title(title)
     plt.legend()
     plt.grid(True)
-    plt.tight_layout()
     
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_plot_bounds_ext_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved plot_bounds_ext: %s', save_path)    
+    # Save standalone plot with unique context
+    if script_filename is None: script_filename = SCRIPT_FILENAME
+    filename = f"TOTAL_ITERATIONS{script_filename}_{USE_CASE_TAG}_{context.replace(' ', '_')}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
+    images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
+    os.makedirs(images_dir, exist_ok=True)
+    save_path = os.path.join(images_dir, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close(fig_standalone)
+    debug_log('INIT', 'Saved plot_bounds_ext: %s', save_path)
     
-    # If ax is provided, plot on the provided axes (for subplot grid)
+    # Plot on provided ax
     if ax is not None:
         plt.sca(ax)
         for series, label in zip(data_series, series_labels):
@@ -1102,15 +1120,13 @@ def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, scrip
         plt.title(title)
         plt.legend()
         plt.grid(True)
-        plt.tight_layout()
 
 
-# New plot function (add after existing):
 def plot_momentum_bounds(results, _filename, ax=None):
     iterations = [r[0] for r in results]
-    invariant = [r[3] for r in results]  # Index 3
+    invariant = [r[3] for r in results]
     
-    # Create a new figure for standalone plot
+    # Create standalone figure
     fig_standalone = plt.figure(figsize=(8, 5))
     plt.plot(iterations, invariant, label="total_mom_x", color="green")
     plt.axhline(0, color="black", linestyle="--", alpha=0.5)
@@ -1119,15 +1135,17 @@ def plot_momentum_bounds(results, _filename, ax=None):
     plt.title("Total invariant conservation")
     plt.legend()
     plt.grid(True)
-    plt.tight_layout()
-
+    
     # Save standalone plot
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_plot_momentum_bounds_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved plot_momentum_bounds: %s', save_path)       
-
-    # If ax is provided, plot on the provided axes (for subplot grid)
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
+    images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
+    os.makedirs(images_dir, exist_ok=True)
+    save_path = os.path.join(images_dir, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close(fig_standalone)
+    debug_log('INIT', 'Saved plot_momentum_bounds: %s', save_path)
+    
+    # Plot on provided ax
     if ax is not None:
         plt.sca(ax)
         plt.plot(iterations, invariant, label="total_mom_x", color="green")
@@ -1137,7 +1155,6 @@ def plot_momentum_bounds(results, _filename, ax=None):
         plt.title("Total invariant conservation")
         plt.legend()
         plt.grid(True)
-        plt.tight_layout()
 
 
 def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
@@ -1702,7 +1719,7 @@ U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
 amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
 amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
 
-_iteration = -1
+_iteration = TOTAL_ITERATIONS  # Use positive iteration
 velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
 velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
@@ -1722,15 +1739,12 @@ else:
 text = f"Run-time: {diff:.1f} s"
 fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
 fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
-# Remove: ax1.figure.tight_layout()
-script_dir = os.path.dirname(os.path.abspath(__file__))
-images_dir = os.path.join(script_dir, "FreesurfaceImages")
+images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
 os.makedirs(images_dir, exist_ok=True)
 save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
-plt.close(fig1)  # Close the figure
-plt.show(block=False)
+plt.close(fig1)
 
 
 # 3 rows, 4 columns
@@ -1765,10 +1779,10 @@ plot_bounds_ext(AuxFields, "AuxFields", ax2[2, 1], series_labels)
 plot_bounds_ext(DivU_max, "DivU_max", ax2[2, 2])
 plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
 
-plt.tight_layout()
-_filename = f'Metrics_{iteration:0{FILENAME_PADDING_WIDTH}d}'
-filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
-save_path = os.path.join(IMAGES_SUBDIR, filename)
+fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
+images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
+os.makedirs(images_dir, exist_ok=True)
+save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_Metrics_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
