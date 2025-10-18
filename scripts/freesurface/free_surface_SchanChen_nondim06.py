@@ -840,7 +840,7 @@ def bounceBackTopBottom2(f, nx, ny):
 
     return f   
 
-
+#amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
 def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, title, nx=Xn, ny=Yn, angle=45, font_size=10):
     # Create standalone figure
     fig_standalone = plt.figure(figsize=(10, 6))
@@ -866,8 +866,7 @@ def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, titl
     images_dir = os.path.join(script_dir, "FreesurfaceImages")
     os.makedirs(images_dir, exist_ok=True)
     # Differentiate u_x and u_y explicitly
-    plot_type = 'amplitude_ux' if 'u$_x$' in xlabel else 'amplitude_uy' if 'u$_y$' in xlabel else 'amplitude'
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{plot_type}_{max(listIterations[-1], TOTAL_ITERATIONS):0{FILENAME_PADDING_WIDTH}d}.png"
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{title}_{max(listIterations[-1], TOTAL_ITERATIONS):0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
     fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved amplitude plot: %s', save_path)
@@ -1061,7 +1060,7 @@ def velocity_map(ax, u_magnitude, _iteration, title):
     iteration_str = f"{max(_iteration, TOTAL_ITERATIONS):0{FILENAME_PADDING_WIDTH}d}"
     # Simplify title for filename (e.g., 'Velocity_ux' or 'Velocity_uy')
     simplified_title = title.replace('Velocity [u$_x$] map', 'velocity_ux').replace('Velocity [u$_y$] map', 'velocity_uy')
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{simplified_title}_{iteration_str}.png"
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{simplified_title}_{iteration_str}.png"
     save_path = os.path.join(images_dir, filename)
     fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved velocity map: %s', save_path)
@@ -1105,7 +1104,7 @@ def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, scrip
     
     # Save standalone plot with unique context
     if script_filename is None: script_filename = SCRIPT_FILENAME
-    filename = f"TOTAL_ITERATIONS{script_filename}_{USE_CASE_TAG}_{context.replace(' ', '_')}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
+    filename = f"{script_filename}_{USE_CASE_TAG}_{context.replace(' ', '_')}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
     images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
     os.makedirs(images_dir, exist_ok=True)
     save_path = os.path.join(images_dir, filename)
@@ -1140,7 +1139,7 @@ def plot_momentum_bounds(results, _filename, ax=None):
     plt.grid(True)
     
     # Save standalone plot
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
     images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
     os.makedirs(images_dir, exist_ok=True)
     save_path = os.path.join(images_dir, filename)
@@ -1745,7 +1744,7 @@ fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
 fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
 images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
 os.makedirs(images_dir, exist_ok=True)
-save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
+save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
 plt.close(fig1)
@@ -1786,7 +1785,7 @@ plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
 fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
 images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
 os.makedirs(images_dir, exist_ok=True)
-save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_Metrics_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png")
+save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_Metrics_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
