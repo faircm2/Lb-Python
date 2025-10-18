@@ -50,6 +50,9 @@ SCRIPT_FULL_PATH = os.path.abspath(__file__)
 SCRIPTS_PATH = "scripts/freesurface/"
 PLOTS_PATH = "results/freesurface/"  # GitHub path prefix
 IMAGES_SUBDIR = "FreesurfaceImages"  # Local subdir
+script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
+images_dir = os.path.join(script_dir, IMAGES_SUBDIR)
+os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist  
 LOG_FILE = 'lbm_debug.log'
 
 ######### logging ####################################################################################################
@@ -854,6 +857,13 @@ def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, titl
     ax1.figure.tight_layout()
     ax1.get_figure().set_size_inches(10, 6)
 
+    # Save in same directory as the script
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_amplitude_plot_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
+
+    ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved amplitude_plot: %s', save_path)    
+
 
 # Density profile
 def density_profile(ax1, den_eq, nx, ny, iteration=0):
@@ -880,8 +890,8 @@ def density_profile(ax1, den_eq, nx, ny, iteration=0):
     ax1.legend(loc='best')  # Add legend to distinguish the three lines
 
     # Save in same directory as the script
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(images_dir, filename)
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
 
     ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved density profile: %s', save_path)
@@ -912,8 +922,8 @@ def density_profile_transition(ax1, den_eq, x__position, y_position, nx, ny, gra
     ax1.legend(loc='best')  # Add legend
 
     # Save in same directory as the script
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_transition_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(images_dir, filename)
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_transition_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
 
     ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved density profile transition: %s', save_path)
@@ -933,9 +943,11 @@ def density_profiles(ax, density_slices, x__position, nx, ny):
     ax.grid()
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), ncol=1, fontsize='small')
     ax.figure.tight_layout()
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    images_dir = os.path.join(script_dir, "FreesurfaceImages"); os.makedirs(images_dir, exist_ok=True)
-    save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_evolution.png")
+
+    # Save in same directory as the script
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profiles_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
+
     ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved density profiles: %s', save_path)
 
@@ -954,15 +966,12 @@ def density_mapExt(ax, full_range, min, max, title, _iteration):
     #cbar.set_ticks([min, (min + max) / 2, max])  
     cbar.set_ticks(np.linspace(min, max, 3)) 
 
-    # --- Save in subfolder 'images' ---
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist    
-
     # Save in same directory as the script
-    filename = "{0}_{1}_{2}.png".format(SCRIPT_FILENAME, title, _iteration)
-    save_path = os.path.join(images_dir, filename)
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_mapExt_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
+
     ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved density_mapExt: %s', save_path)
 
 
 def density_map_standalone(full_range, min, max, title, _iteration):
@@ -999,19 +1008,12 @@ def density_map_standalone(full_range, min, max, title, _iteration):
     cbar.set_ticks(np.linspace(min, max, 3))  # min, mid, max
     cbar.set_label("Density")
 
-    # --- Save in subfolder 'FreesurfaceImages' ---
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)
-
     # Save PNG with dynamic zero-padding
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(images_dir, filename)
-    fig.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close(fig)  # close the figure to free memory
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_map_standalone_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
 
-    # Optional: Log the saved file for debugging
-    debug_log('INIT', f"Saved density map: {save_path}")
+    ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved density_map_standalone: %s', save_path)
  
 
 # 2D Velocity map
@@ -1024,17 +1026,11 @@ def velocity_map(ax, u_magnitude, _iteration, title):
     ax.set_aspect('auto')
     cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
-    # Get folder where the script is located
-    # --- Save in subfolder 'images' ---
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist     
-
     # Save image
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(images_dir, filename)
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_velocity_map_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
     ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved velocity map: %s', save_path)
+    debug_log('INIT', 'Saved velocity_map: %s', save_path)
 
 
 def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
@@ -1067,15 +1063,10 @@ def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, scrip
     plt.grid(True)
     plt.tight_layout()
     
-    # Save standalone plot
-    if script_filename is None: script_filename = SCRIPT_FILENAME
-    filename = f"TOTAL_ITERATIONS{script_filename}_{USE_CASE_TAG}_{context}.png"
-    images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)
-    save_path = os.path.join(images_dir, filename)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close(fig_standalone)
-    debug_log('INIT', 'Standalone plot saved to: %s', save_path)
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_plot_bounds_ext_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved plot_bounds_ext: %s', save_path)    
     
     # If ax is provided, plot on the provided axes (for subplot grid)
     if ax is not None:
@@ -1107,14 +1098,10 @@ def plot_momentum_bounds(results, _filename, ax=None):
     plt.tight_layout()
 
     # Save standalone plot
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)
-    save_path = os.path.join(images_dir, filename)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close(fig_standalone)
-    debug_log('INIT', 'Standalone momentum plot saved to: %s', save_path)
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_plot_momentum_bounds_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved plot_momentum_bounds: %s', save_path)       
 
     # If ax is provided, plot on the provided axes (for subplot grid)
     if ax is not None:
@@ -1143,12 +1130,6 @@ def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
     Returns:
         None (saves PNG and prints stats).
     """
-    # Ensure filename ends with .png
-    # Save in the same directory as the script
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist 
-
     # Create plot
     plt.figure(figsize=(8, 6))
     im = plt.imshow(_phi.T, origin='lower', cmap='RdBu', vmin=phi_star_G, vmax=phi_star_L)
@@ -1159,8 +1140,8 @@ def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
 
     # Save PNG with USE_CASE_TAG
     _filename = f'phi_snapshot_iter_{iteration:0{FILENAME_PADDING_WIDTH}d}'
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
-    save_path = os.path.join(images_dir, filename)
+    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
+    save_path = os.path.join(IMAGES_SUBDIR, filename)
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close()
 
@@ -1721,13 +1702,15 @@ text = f"Run-time: {diff:.1f} s"
 fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
 fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
 script_dir = os.path.dirname(os.path.abspath(__file__))
-images_dir = os.path.join(script_dir, "FreesurfaceImages")
+images_dir = os.path.join(script_dir, IMAGES_SUBDIR)
 os.makedirs(images_dir, exist_ok=True)
 
 plt.tight_layout()
-save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
+_filename = f'Dashboard_{iteration:0{FILENAME_PADDING_WIDTH}d}'
+filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
+save_path = os.path.join(images_dir, filename)
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
-debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
+debug_log('Dashboard_', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig1)
 
 
@@ -1764,7 +1747,9 @@ plot_bounds_ext(DivU_max, "DivU_max", ax2[2, 2])
 plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
 
 plt.tight_layout()
-save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_metrics.png")
+_filename = f'Metrics_{iteration:0{FILENAME_PADDING_WIDTH}d}'
+filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
+save_path = os.path.join(IMAGES_SUBDIR, filename)
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
