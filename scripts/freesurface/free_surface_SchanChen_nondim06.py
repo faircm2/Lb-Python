@@ -25,19 +25,25 @@ from github_uploader import GitHubUploader
 RAISE_LESS_THAN_ZERO_ERROR = False
 RAISE_NaN_ERROR = False
 PRESSURE_IN_DENSITY_MAP = False
-PHI_NONLINEAR = True
 ADD_FORCING_TERM = 1
-# ramped lattice gravity (F_lattice from globals, iteration from func arg)
-RAMP_FACTOR = 1000 # Ramp over 5000 steps
-TOTAL_ITERATIONS = 12001 * 4
-# Calculate padding width based on TOTAL_ITERATIONS
-FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))  # Number of digits needed
+TOTAL_ITERATIONS = 48004
+FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))
 NO_DATA_DUMP_SLICES = 11
+
+# --- Simulation use-cases ---
+USE_CASES = {
+    "nonlinear": {"PHI_NONLINEAR": True, "alpha": 0.0},
+    "linear": {"PHI_NONLINEAR": False, "alpha": 30.0},
+}
+ACTIVE_CASE = "nonlinear"   # or "linear"
+PHI_NONLINEAR = USE_CASES[ACTIVE_CASE]["PHI_NONLINEAR"]
+alpha = USE_CASES[ACTIVE_CASE]["alpha"]
+USE_CASE_TAG = f"{ACTIVE_CASE}_a{alpha:g}"
 
 
 # Constants
-SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0]  # e.g., 'free_surface_SchanChen_nondim06'
-SCRIPT_FULL_PATH = os.path.abspath(__file__)  # e.g., 'C:/.../free_surface_SchanChen_nondim06.py'
+SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
+SCRIPT_FULL_PATH = os.path.abspath(__file__) 
 SCRIPTS_PATH = "scripts/freesurface/"
 PLOTS_PATH = "results/freesurface/"  # GitHub path prefix
 IMAGES_SUBDIR = "FreesurfaceImages"  # Local subdir
@@ -479,8 +485,7 @@ def ph(hn, _rho, u_ckl_star, iteration, n_dx=1.0, n_dy=1.0):
     div_u_exp = div_u[np.newaxis, :, :]  # (1, nx, ny)
 
 
-    ############ 1. Inspect and Damp the Source Term (div_u) Directly ###############################
-    # In ph(), before forcing_like_term
+    ############ 1. Damp the Source Term (div_u) directly ###############################
     du_dx, _ = c_first_derivative(u_ckl_star[0], n_dx, n_dy)
     _, dv_dy = c_first_derivative(u_ckl_star[1], n_dx, n_dy)
     div_u_raw = du_dx + dv_dy
@@ -935,7 +940,7 @@ def density_profiles(ax, density_slices, x__position, nx, ny):
     ax.figure.tight_layout()
     script_dir = os.path.dirname(os.path.abspath(__file__))
     images_dir = os.path.join(script_dir, "FreesurfaceImages"); os.makedirs(images_dir, exist_ok=True)
-    save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_density_profile_evolution.png")
+    save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_evolution.png")
     ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved density profiles: %s', save_path)
 
@@ -963,8 +968,6 @@ def density_mapExt(ax, full_range, min, max, title, _iteration):
     filename = "{0}_{1}_{2}.png".format(SCRIPT_FILENAME, title, _iteration)
     save_path = os.path.join(images_dir, filename)
     ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-
-
 
 
 def density_map_standalone(full_range, min, max, title, _iteration):
@@ -1007,7 +1010,7 @@ def density_map_standalone(full_range, min, max, title, _iteration):
     os.makedirs(images_dir, exist_ok=True)
 
     # Save PNG with dynamic zero-padding
-    filename = f"{SCRIPT_FILENAME}_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
     fig.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close(fig)  # close the figure to free memory
@@ -1110,7 +1113,7 @@ def plot_momentum_bounds(results, _filename, ax=None):
 
     # Save only if new figure
     if ax is None:
-        filename = f"{SCRIPT_FILENAME}_{_filename}.png"
+        filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
         script_dir = os.path.dirname(os.path.abspath(__file__))
         images_dir = os.path.join(script_dir, "FreesurfaceImages")
         os.makedirs(images_dir, exist_ok=True)
@@ -1362,7 +1365,6 @@ mu_G = 1.6e-4*n_dx
 mu_L = 8.0e-3*n_dx
 
 #inclination and force
-alpha = 0.0
 g = 9.81
 alpha_rad = np.radians(alpha)
 g_x = g * np.sin(alpha_rad)
@@ -1715,7 +1717,7 @@ fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hsp
 script_dir = os.path.dirname(os.path.abspath(__file__))
 images_dir = os.path.join(script_dir, "FreesurfaceImages")
 os.makedirs(images_dir, exist_ok=True)
-save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_channel_parameters.png")
+save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
 plt.show(block=False)
@@ -1754,7 +1756,7 @@ plot_bounds_ext(DivU_max, "DivU_max", ax2[2, 2])
 plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
 
 plt.tight_layout()
-save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_channel_metrics.png")
+save_path = os.path.join(images_dir, f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_metrics.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
 plt.show(block=False)
