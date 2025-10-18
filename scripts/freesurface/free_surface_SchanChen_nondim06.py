@@ -29,7 +29,7 @@ PHI_NONLINEAR = True
 ADD_FORCING_TERM = 1
 # ramped lattice gravity (F_lattice from globals, iteration from func arg)
 RAMP_FACTOR = 1000 # Ramp over 5000 steps
-TOTAL_ITERATIONS = 12001 * 2
+TOTAL_ITERATIONS = 12001 * 4
 # Calculate padding width based on TOTAL_ITERATIONS
 FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))  # Number of digits needed
 NO_DATA_DUMP_SLICES = 11
@@ -1286,41 +1286,35 @@ def apply_periodic_boundary_conditions(_fi, _gi):
 
 def get_iterations_of_interest(total_iterations, no_slices=11, early_fraction=0.3, exp_factor=4.0):
     """
-    Generate iteration indices at which data dumps are made.
+    Generate iteration indices for data dumps, including first, midpoint, and last iterations.
     
-    Parameters:
-        total_iterations (int): Total number of iterations in the simulation.
-        no_slices (int): Total number of snapshots to take.
-        early_fraction (float): Fraction of iterations to capture with high granularity.
-        exp_factor (float): Controls steepness of exponential spacing for early iterations.
+    Args:
+        total_iterations (int): Total simulation iterations.
+        no_slices (int): Number of snapshots.
+        early_fraction (float): Fraction for high-granularity early iterations.
+        exp_factor (float): Exponential spacing steepness.
     
     Returns:
-        List[int]: Sorted list of iteration indices for data dumps.
+        List[int]: Sorted unique iteration indices, including 0, total_iterations // 2, and total_iterations - 1.
     """
     if total_iterations <= 0 or no_slices <= 0:
         return []
 
-    # Always include the first iteration
-    fixed = [0]
-
-    # Early iterations with high granularity
-    early_iterations = max(2, int(total_iterations * early_fraction))  # at least 2 to avoid empty slice
+    # Include first, midpoint, and last iterations
+    fixed = [0, total_iterations // 2, total_iterations - 1]
+    early_iterations = max(2, int(total_iterations * early_fraction))
     n_rem = no_slices - len(fixed)
 
-    # Exponential spacing for early iterations
-    exp = np.linspace(0, 1, n_rem + 1)[1:]  # skip 0
-    post = np.floor((np.exp(exp * exp_factor) - 1) / (np.exp(exp_factor) - 1) * (early_iterations - 1)).astype(int)
-    post = post.tolist()  # convert to Python list
+    post = []
+    if n_rem > 0:
+        exp = np.linspace(0, 1, n_rem + 1)[1:]
+        post = np.floor((np.exp(exp * exp_factor) - 1) / (np.exp(exp_factor) - 1) * (early_iterations - 1)).astype(int).tolist()
 
-    # Sparse spacing for later iterations
     n_late = n_rem - len(post)
-    late_iterations = []
-    if n_late > 0:
-        late_iterations = np.linspace(early_iterations, total_iterations - 1, n_late, dtype=int).tolist()
+    late_iterations = np.linspace(early_iterations, total_iterations - 1, n_late + 1, dtype=int)[:-1].tolist() if n_late > 0 else []
 
-    # Combine and return unique sorted iterations
-    iterations_of_interest = sorted(set(fixed + post + late_iterations))
-    return iterations_of_interest
+    return sorted(set(fixed + post + late_iterations))
+
 
 #preliminary
 #lattice for phase space; Nx+3 is due to periodic boundary conditions
@@ -1724,7 +1718,7 @@ os.makedirs(images_dir, exist_ok=True)
 save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_channel_parameters.png")
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
-plt.show(block=True)
+plt.show(block=False)
 
 
 # 3 rows, 4 columns
@@ -1763,7 +1757,7 @@ plt.tight_layout()
 save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_channel_metrics.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
-plt.show(block=True)
+plt.show(block=False)
 
 
 ########### upload this file and results to GitHub repo
