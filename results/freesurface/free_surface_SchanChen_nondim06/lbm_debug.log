@@ -22031,3 +22031,176 @@ DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_IT
 DEBUG:INIT: Uploaded 33 images to results/freesurface/free_surface_SchanChen_nondim06/
 DEBUG:INIT: Uploading log to results/freesurface/free_surface_SchanChen_nondim06/lbm_debug.log...
 DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/lbm_debug.log on GitHub
+DEBUG:INIT: Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/results/freesurface/free_surface_SchanChen_nondim06
+DEBUG:INIT: Yn={Yn}, Xn={Xn}, dx={dx:.3e}, dy={dy:.3e}, dt={dt:.3e}
+DEBUG:INIT: U=%(U).2f, Re=%(Re).2f, Ma=%(Ma).3e, Kn=%(Kn).3e
+DEBUG:INIT: Cl=%(Cl).2f, n_dx=%(n_dx).2f
+DEBUG:INIT: Crho=%(Crho).2f, rho_nd=%(rho_nd).2f
+DEBUG:INIT: Ct=%(Ct).2f, dt_nd=%(n_dt).2f
+DEBUG:INIT: Ct=%(Cu).2f, dt_nd=%(U_nd).2f
+DEBUG:INIT: CF=%(CF).2f
+DEBUG:INIT: CF=%(Cf).2f
+DEBUG:INIT: nu_nd=%(nu_nd).2f
+DEBUG:INIT: tau_nd=%(tau_nd).2f
+DEBUG:INIT: omega=%(omega).2f
+DEBUG:INIT: omega_nd=%(omega_nd).2f
+DEBUG:INIT: c=%(c).2f
+DEBUG:INIT: Initial h_eq check: sum h[1:] mean=0.000, should = p_eq mean=9.161
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0000.png
+DEBUG:ITER: phi at iter 0: min=0.015, max=0.092, mean=0.057
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0000.png
+DEBUG:ITER: Iter 0: phi min=1.500e-02, max=9.200e-02
+DEBUG:ITER: Iter 0: _fi_c with u=0 (no advection)
+DEBUG:ITER: phi at iter 0: min=0.015, max=0.092, mean=0.057
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0000.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0000.png
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: phi at iter 3: min=0.016, max=0.085, mean=0.054
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0003.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0003.png
+DEBUG:ITER: phi at iter 9: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0009.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0009.png
+DEBUG:ITER: phi at iter 19: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0019.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0019.png
+DEBUG:ITER: phi at iter 35: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0035.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0035.png
+DEBUG:ITER: phi at iter 62: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0062.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0062.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 100; 10.0 %
+DEBUG:ITER: Iter 100: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 100 ph_start: max|div_u_raw|=2.072e-06
+DEBUG:ITER: phi at iter 106: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0106.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0106.png
+DEBUG:ITER: phi at iter 179: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0179.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0179.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 200; 20.0 %
+DEBUG:ITER: Iter 200: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 200 ph_start: max|div_u_raw|=2.854e-06
+DEBUG:ITER: phi at iter 299: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0299.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0299.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 300; 30.0 %
+DEBUG:ITER: Iter 300: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 300 ph_start: max|div_u_raw|=3.351e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 400; 40.0 %
+DEBUG:ITER: Iter 400: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 400 ph_start: max|div_u_raw|=3.708e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 500; 50.0 %
+DEBUG:ITER: Iter 500: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: phi at iter 500: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0500.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0500.png
+DEBUG:ITER: Iter 500 ph_start: max|div_u_raw|=3.967e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 600; 60.0 %
+DEBUG:ITER: Iter 600: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 600 ph_start: max|div_u_raw|=4.145e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 700; 70.0 %
+DEBUG:ITER: Iter 700: phi min=1.651e-02, max=8.280e-02
+DEBUG:ITER: Iter 700 ph_start: max|div_u_raw|=4.256e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 800; 80.0 %
+DEBUG:ITER: Iter 800: phi min=1.651e-02, max=8.280e-02
+DEBUG:ITER: Iter 800 ph_start: max|div_u_raw|=4.313e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 900; 90.0 %
+DEBUG:ITER: Iter 900: phi min=1.651e-02, max=8.280e-02
+DEBUG:ITER: Iter 900 ph_start: max|div_u_raw|=4.330e-06
+DEBUG:ITER: phi at iter 999: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0999.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0999.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 1000; iteration: 1000; 100.0 %
+DEBUG:INIT: Saved amplitude plot: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_amplitude_plot_y-axis_0999.png
+DEBUG:INIT: Saved amplitude plot: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_amplitude_plot_y-axis_0999.png
+DEBUG:INIT: Saved velocity map: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_velocity_map_Velocity_[u$_x$]_map_1000.png
+DEBUG:INIT: Saved velocity map: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_velocity_map_Velocity_[u$_y$]_map_1000.png
+DEBUG:INIT: Saved density profiles: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_profiles_1000.png
+DEBUG:INIT: Saved density_mapExt: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_mapExt_1000.png
+DEBUG:INIT: Saved 3x2 grid: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_channel_parameters.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_x_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_y_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_star_y_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_rho_bounds_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_epsilon_u_ckl_growth_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_Invariants_1000.png
+DEBUG:INIT: Saved plot_momentum_bounds: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_MomentumBounds_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_PhIters_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_div_u_raw_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_AuxFields_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_DivU_max_1000.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_PhEps_max_1000.png
+DEBUG:INIT: Saved 3x4 grid: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_Metrics_1000.png
+DEBUG:INIT: Simulation complete. Preparing upload to GitHub...
+DEBUG:INIT: Uploading script to scripts/freesurface/free_surface_SchanChen_nondim06.py...
+DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
+DEBUG:INIT: Overwrote scripts/freesurface/free_surface_SchanChen_nondim06.py on GitHub
+DEBUG:INIT: Uploading images to results/freesurface/free_surface_SchanChen_nondim06/...
+DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_amplitude_plot_0999.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_Dashboard_1000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_mapExt_1000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0003.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0009.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0019.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0035.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0062.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0106.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0179.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0299.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0500.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_0999.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_profiles_1000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_Metrics_1000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0003.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0009.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0019.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0035.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0062.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0106.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0179.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0299.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0500.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_0999.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_plot_bounds_ext_1000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_plot_momentum_bounds_1000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_velocity_map_Velocity [u$_x$] map_-001.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_velocity_map_Velocity [u$_y$] map_-001.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_amplitude_plot_0999.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_amplitude_plot_y-axis_0999.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_AuxFields_1000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_channel_parameters.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_DivU_max_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_epsilon_u_ckl_growth_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_div_u_raw_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_star_y_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_x_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_y_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_Invariants_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_Metrics_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_MomentumBounds_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_PhEps_max_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_PhIters_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_rho_bounds_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_velocity_map_Velocity_[u$_x$]_map_1000.png on GitHub
+DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/TOTAL_ITERATIONSfree_surface_SchanChen_nondim06_nonlinear_a0_velocity_map_Velocity_[u$_y$]_map_1000.png on GitHub
+DEBUG:INIT: Uploaded 49 images to results/freesurface/free_surface_SchanChen_nondim06/
+DEBUG:INIT: Uploading log to results/freesurface/free_surface_SchanChen_nondim06/lbm_debug.log...
+DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
