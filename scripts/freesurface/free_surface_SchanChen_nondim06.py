@@ -38,7 +38,7 @@ USE_CASES = {
     "nonlinear": {"PHI_NONLINEAR": True, "alpha": 0.0},
     "linear": {"PHI_NONLINEAR": False, "alpha": 30.0},
 }
-ACTIVE_CASE = "nonlinear"   # or "linear"
+ACTIVE_CASE = "linear" # "nonlinear"   # or "linear"
 PHI_NONLINEAR = USE_CASES[ACTIVE_CASE]["PHI_NONLINEAR"]
 alpha = USE_CASES[ACTIVE_CASE]["alpha"]
 USE_CASE_TAG = f"{ACTIVE_CASE}_a{alpha:g}"
