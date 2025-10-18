@@ -29,7 +29,9 @@ PHI_NONLINEAR = True
 ADD_FORCING_TERM = 1
 # ramped lattice gravity (F_lattice from globals, iteration from func arg)
 RAMP_FACTOR = 1000 # Ramp over 5000 steps
-TOTAL_ITERATIONS = 2000 # 12001 * 2
+TOTAL_ITERATIONS = 12001 * 2
+# Calculate padding width based on TOTAL_ITERATIONS
+FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))  # Number of digits needed
 NO_DATA_DUMP_SLICES = 11
 
 
@@ -963,12 +965,27 @@ def density_mapExt(ax, full_range, min, max, title, _iteration):
     ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
 
 
+
+
 def density_map_standalone(full_range, min, max, title, _iteration):
+    """
+    Save a density map plot to a PNG file with zero-padded iteration number.
+
+    Args:
+        full_range: 2D numpy array of density values (Ny, Nx).
+        min: Lower bound for colorbar (float).
+        max: Upper bound for colorbar (float).
+        title: Plot title (str).
+        _iteration: Current iteration number (int).
+
+    Returns:
+        None (saves PNG).
+    """
     debug_log('FIELD', 'Debug density_map: min=%.6f, max=%.6f, rho_out=%.6f, rho_in=%.6f', 
-          np.min(full_range), np.max(full_range), min, max)
+              np.min(full_range), np.max(full_range), min, max)
 
     # Create a new figure and axes
-    fig, ax = plt.subplots(figsize=(6,6))  # you can adjust the size
+    fig, ax = plt.subplots(figsize=(6, 6))  # you can adjust the size
 
     # Plot the image
     im = ax.imshow(full_range.T, interpolation='nearest', origin='lower',
@@ -989,10 +1006,14 @@ def density_map_standalone(full_range, min, max, title, _iteration):
     images_dir = os.path.join(script_dir, "FreesurfaceImages")
     os.makedirs(images_dir, exist_ok=True)
 
-    filename = f"{SCRIPT_FILENAME}_{title}_{_iteration}.png"
+    # Save PNG with dynamic zero-padding
+    filename = f"{SCRIPT_FILENAME}_{title}_{_iteration:0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
     fig.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close(fig)  # close the figure to free memory
+
+    # Optional: Log the saved file for debugging
+    debug_log('INIT', f"Saved density map: {save_path}")
  
 
 # 2D Velocity map
@@ -1128,7 +1149,7 @@ def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
     plt.ylabel('y-index')
 
     # Save PNG
-    _filename = f'phi_snapshot_iter_{iteration:05d}'
+    _filename = f'phi_snapshot_iter_{iteration:0{FILENAME_PADDING_WIDTH}d}'
     filename = "{0}_{1}.png".format(SCRIPT_FILENAME, _filename)
     save_path = os.path.join(images_dir, filename)
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
