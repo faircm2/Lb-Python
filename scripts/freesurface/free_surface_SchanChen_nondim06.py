@@ -865,14 +865,15 @@ def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, titl
     script_dir = os.path.dirname(os.path.abspath(__file__))
     images_dir = os.path.join(script_dir, "FreesurfaceImages")
     os.makedirs(images_dir, exist_ok=True)
-    # Use xlabel to differentiate u_x and u_y
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_amplitude_plot_{xlabel.replace(' ', '_')}_{listIterations[-1]:0{FILENAME_PADDING_WIDTH}d}.png"
+    # Differentiate u_x and u_y explicitly
+    plot_type = 'amplitude_ux' if 'u$_x$' in xlabel else 'amplitude_uy' if 'u$_y$' in xlabel else 'amplitude'
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{plot_type}_{max(listIterations[-1], TOTAL_ITERATIONS):0{FILENAME_PADDING_WIDTH}d}.png"
     save_path = os.path.join(images_dir, filename)
     fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved amplitude plot: %s', save_path)
     plt.close(fig_standalone)
 
-    # Plot on provided ax
+    # Plot on provided ax for subplot grid
     for iteration, combined_u_ckl in u_full_range.items():
         u = combined_u_ckl[nx, 1:ny + 1]
         ax1.plot(u, axis, label=f"t={iteration}")
@@ -1056,15 +1057,17 @@ def velocity_map(ax, u_magnitude, _iteration, title):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     images_dir = os.path.join(script_dir, "FreesurfaceImages")
     os.makedirs(images_dir, exist_ok=True)
-    # Use positive iteration
-    iteration_str = f"{_iteration if _iteration >= 0 else TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}"
-    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_velocity_map_{title.replace(' ', '_')}_{iteration_str}.png"
+    # Use TOTAL_ITERATIONS for consistency if _iteration is negative
+    iteration_str = f"{max(_iteration, TOTAL_ITERATIONS):0{FILENAME_PADDING_WIDTH}d}"
+    # Simplify title for filename (e.g., 'Velocity_ux' or 'Velocity_uy')
+    simplified_title = title.replace('Velocity [u$_x$] map', 'velocity_ux').replace('Velocity [u$_y$] map', 'velocity_uy')
+    filename = f"TOTAL_ITERATIONS{SCRIPT_FILENAME}_{USE_CASE_TAG}_{simplified_title}_{iteration_str}.png"
     save_path = os.path.join(images_dir, filename)
     fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
     debug_log('INIT', 'Saved velocity map: %s', save_path)
     plt.close(fig_standalone)
 
-    # Plot on provided ax
+    # Plot on provided ax for subplot grid
     im = ax.imshow(u_magnitude.T, cmap='viridis', origin='lower')
     ax.set_xlabel('x')
     ax.set_ylabel('y')
@@ -1714,12 +1717,13 @@ fig1, ax1 = plt.subplots(
     num=paneLabel
 )
 
+# In the fig1, ax1 section
 sectionPosition = int(Xn/2)
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
 amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
 amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
 
-_iteration = TOTAL_ITERATIONS  # Use positive iteration
+_iteration = TOTAL_ITERATIONS
 velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
 velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
