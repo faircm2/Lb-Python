@@ -23,6 +23,7 @@ from matplotlib.colors import Normalize
 from scipy.special import erf
 
 from github_uploader import GitHubUploader
+from ThreeDVisualization import ThreeDVisualization
 
 #flags
 RAISE_LESS_THAN_ZERO_ERROR = False
@@ -31,14 +32,15 @@ PRESSURE_IN_DENSITY_MAP = False
 ADD_FORCING_TERM = 1
 TOTAL_ITERATIONS = 12001 * 4
 FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))
-NO_DATA_DUMP_SLICES = 11
+NO_DATA_DUMP_SLICES = 51  # 51 slices for 3D model
+Z_SLICES = 21  # z-slices for 3D (channel width)
 
 # --- Simulation use-cases ---
 USE_CASES = {
     "nonlinear": {"PHI_NONLINEAR": True, "alpha": 0.0},
     "linear": {"PHI_NONLINEAR": False, "alpha": 30.0},
 }
-ACTIVE_CASE = "linear" # "nonlinear"   # or "linear"
+ACTIVE_CASE = "nonlinear" # "nonlinear"   # or "linear"
 PHI_NONLINEAR = USE_CASES[ACTIVE_CASE]["PHI_NONLINEAR"]
 alpha = USE_CASES[ACTIVE_CASE]["alpha"]
 USE_CASE_TAG = f"{ACTIVE_CASE}_a{alpha:g}"
@@ -1317,36 +1319,77 @@ def apply_periodic_boundary_conditions(_fi, _gi):
     _fi[:, Xn+1, :] = _fi[:,1,:]    
 
 
-def get_iterations_of_interest(total_iterations, no_slices=11, early_fraction=0.3, exp_factor=4.0):
+def get_iterations_of_interest(total_iterations, no_slices=51, early_fraction=0.2, exp_factor=3.0):
     """
-    Generate iteration indices for data dumps, including first, midpoint, and last iterations.
-    
-    Args:
-        total_iterations (int): Total simulation iterations.
-        no_slices (int): Number of snapshots.
-        early_fraction (float): Fraction for high-granularity early iterations.
-        exp_factor (float): Exponential spacing steepness.
-    
-    Returns:
-        List[int]: Sorted unique iteration indices, including 0, total_iterations // 2, and total_iterations - 1.
+    Generate HIGH granularity iteration indices for 3D reconstruction
     """
     if total_iterations <= 0 or no_slices <= 0:
         return []
 
-    # Include first, midpoint, and last iterations
-    fixed = [0, total_iterations // 2, total_iterations - 1]
-    early_iterations = max(2, int(total_iterations * early_fraction))
+    # More frequent early sampling for transient + dense late sampling
+    fixed = [0, 50, 100, 200, 500]  # Critical transients
+    early_end = int(total_iterations * 0.3)
     n_rem = no_slices - len(fixed)
+    
+    # Dense linear spacing in early transient
+    early_dense = np.linspace(early_end//4, early_end, 15, dtype=int).tolist()
+    
+    # Exponential spacing in mid-regime
+    mid_end = int(total_iterations * 0.7)
+    exp_samples = 20
+    exp = np.linspace(0, 1, exp_samples + 1)[1:]
+    mid_samples = np.floor((np.exp(exp * exp_factor) - 1) / (np.exp(exp_factor) - 1) * 
+                          (mid_end - early_end)).astype(int) + early_end
+    mid_samples = mid_samples.tolist()
+    
+    # Dense linear spacing in final convergence
+    late_samples = np.linspace(mid_end, total_iterations - 1, 16, dtype=int).tolist()
+    
+    all_iters = sorted(set(fixed + early_dense + mid_samples + late_samples))
+    return all_iters[:no_slices]
 
-    post = []
-    if n_rem > 0:
-        exp = np.linspace(0, 1, n_rem + 1)[1:]
-        post = np.floor((np.exp(exp * exp_factor) - 1) / (np.exp(exp_factor) - 1) * (early_iterations - 1)).astype(int).tolist()
 
-    n_late = n_rem - len(post)
-    late_iterations = np.linspace(early_iterations, total_iterations - 1, n_late + 1, dtype=int)[:-1].tolist() if n_late > 0 else []
+def poiseuille_profile(z, z_center, channel_width, U_max):
+    """
+    Parabolic Poiseuille velocity profile: u_z(z) = U_max * (1 - ((z-z_center)/half_width)^2)
+    """
+    half_width = channel_width / 2
+    return U_max * (1.0 - ((z - z_center) / half_width) ** 2)
 
-    return sorted(set(fixed + post + late_iterations))
+
+def generate_3d_fields(phi_2d, rho_2d, ux_2d, uy_2d):
+    """
+    FIXED: Handle velocity (200,52) vs phi (200,50) shape mismatch
+    """
+    # Get dimensions - velocities have 2 extra boundary points
+    Yn = phi_2d.shape[0]   # 200
+    Xn = phi_2d.shape[1]   # 50
+    
+    # TRIM velocities to match interior phi/rho
+    ux_2d_trim = ux_2d[:, :Xn]  # (200, 52) → (200, 50)
+    uy_2d_trim = uy_2d[:, :Xn]  # (200, 52) → (200, 50)
+    
+    z = np.linspace(0, channel_width, Z_SLICES)
+    z_center = channel_width / 2
+    U_max = np.max(ux_2d_trim)
+    
+    # 3D arrays
+    phi_3d = np.zeros((Yn, Xn, Z_SLICES))
+    rho_3d = np.zeros((Yn, Xn, Z_SLICES))
+    ux_3d = np.zeros((Yn, Xn, Z_SLICES))
+    uy_3d = np.zeros((Yn, Xn, Z_SLICES))
+    uz_3d = np.zeros((Yn, Xn, Z_SLICES))
+    
+    for k, z_pos in enumerate(z):
+        uz_profile = U_max * (1.0 - ((z_pos - z_center) / (channel_width/2)) ** 2)
+        
+        phi_3d[:, :, k] = phi_2d      # (200,50)
+        rho_3d[:, :, k] = rho_2d      # (200,50)
+        ux_3d[:, :, k] = ux_2d_trim * uz_profile / U_max  # (200,50)
+        uy_3d[:, :, k] = uy_2d_trim * uz_profile / U_max  # (200,50)
+        uz_3d[:, :, k] = uz_profile
+    
+    return phi_3d, rho_3d, ux_3d, uy_3d, uz_3d
 
 
 #preliminary
@@ -1488,6 +1531,17 @@ u_ckl_midpoint0 = u_ckl[0,int(Xn/2),int(Yn/2)]
 epsilon_u_ckl = 0
 epsilon_u_ckl_list = []
 
+# 3D Data Storage
+phi_3d_data = {}  # {iteration: (X, Y, Z) phi array}
+rho_3d_data = {}
+ux_3d_data = {}
+uy_3d_data = {}
+iterationsOfInterest_3d = []
+
+# Poiseuille profile parameters
+channel_width = 4.0 * D  # Full channel width (4x diameter typical)
+z_center = channel_width / 2
+
 while iteration < TOTAL_ITERATIONS:
     if iteration % 100 == 0:
         debug_log('ITER', 'Iter %d: phi min=%.3e, max=%.3e', iteration, np.min(_phi), np.max(_phi))
@@ -1526,6 +1580,7 @@ while iteration < TOTAL_ITERATIONS:
         )    
         
     if iteration in iterationsOfInterest:
+        #phi mapping
         save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L)
 
     #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid        
@@ -1549,6 +1604,18 @@ while iteration < TOTAL_ITERATIONS:
     ########################################################################################################
 
     if iteration in iterationsOfInterest:
+        # Store 2D data (existing)
+        list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
+        list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
+        
+        # NEW: Generate & store 3D data
+        phi_3d, rho_3d, ux_3d, uy_3d, uz_3d = generate_3d_fields(
+            _phi[1:-1, 1:-1], rho[1:-1, 1:-1], 
+            u_ckl[0, 1:-1, :], u_ckl[1, 1:-1, :]
+        )
+        phi_3d_data[iteration] = (phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
+
+        # density mapping
         rho_min = np.min(rho)
         rho_max = np.max(rho)
         title = "Density map"
@@ -1812,3 +1879,32 @@ except Exception as e:
 # Assuming SCRIPT_FILENAME = 'your_script.py'
 # uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
 # uploader.upload_results()
+
+# =============================================
+# 3D VISUALIZATION
+# =============================================
+debug_log('INIT', 'Generating 3D visualizations...')
+
+# Initialize 3D visualizer
+viz = ThreeDVisualization(
+    phi_3d_data=phi_3d_data,
+    iterations=iterationsOfInterest_3d,
+    Xn=50, Yn=200, Z_SLICES=21,
+    channel_width=4.0 * D,
+    D=D
+)
+
+# 1. Create animated 3D flow
+anim_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_3d_flow.mp4")
+viz.animate_3d_flow(anim_path, fps=8)
+
+# 2. Create static 3D slices
+key_iters = [0, len(iterationsOfInterest_3d)//2, -1]
+slice_dir = os.path.join(images_dir, "3D_Slices")
+viz.batch_static_slices(key_iters, slice_dir)
+
+# 3. Upload 3D results
+uploader.upload_3d_results(images_dir, ['*.mp4'])
+uploader.upload_3d_results(slice_dir, ['*.png'])
+
+debug_log('INIT', '3D visualization COMPLETE!')
