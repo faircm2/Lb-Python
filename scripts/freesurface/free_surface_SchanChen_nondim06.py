@@ -1889,7 +1889,7 @@ except Exception as e:
 # uploader.upload_results()
 
 # =============================================
-# 3D VISUALIZATION
+# 3D VISUALIZATION - NOW WORKS!
 # =============================================
 print("Generating 3D visualizations...")
 
@@ -1901,11 +1901,9 @@ viz = ThreeDVisualization(
     D=D
 )
 
-# Animation
 anim_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_3d_flow.gif")
 viz.animate_3d_flow(anim_path, fps=6)
 
-# Slices
 key_iters = [0, len(iterationsOfInterest_3d)//2, -1]
 slice_dir = os.path.join(images_dir, "3D_Slices")
 viz.batch_static_slices(key_iters, slice_dir)
