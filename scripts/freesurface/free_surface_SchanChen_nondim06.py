@@ -1410,6 +1410,7 @@ iteration = 0
 iterations = []
 
 list_avg_velocities_x = {}
+phi_3d_data = {}  # ← ADD THIS
 list_avg_velocities_y = {}
 
 start = time.perf_counter()
@@ -1607,6 +1608,13 @@ while iteration < TOTAL_ITERATIONS:
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
+        
+        # 3D DATA
+        phi_3d, rho_3d, ux_3d, uy_3d, uz_3d = generate_3d_fields(
+            _phi[1:-1, 1:-1], rho[1:-1, 1:-1], 
+            u_ckl[0, 1:-1, :], u_ckl[1, 1:-1, :]
+        )
+        phi_3d_data[iteration] = (phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
         
         # NEW: Generate & store 3D data
         phi_3d, rho_3d, ux_3d, uy_3d, uz_3d = generate_3d_fields(
@@ -1883,9 +1891,8 @@ except Exception as e:
 # =============================================
 # 3D VISUALIZATION
 # =============================================
-debug_log('INIT', 'Generating 3D visualizations...')
+print("Generating 3D visualizations...")
 
-# Initialize 3D visualizer
 viz = ThreeDVisualization(
     phi_3d_data=phi_3d_data,
     iterations=iterationsOfInterest_3d,
@@ -1894,17 +1901,14 @@ viz = ThreeDVisualization(
     D=D
 )
 
-# 1. Create animated 3D flow
 anim_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_3d_flow.mp4")
 viz.animate_3d_flow(anim_path, fps=8)
 
-# 2. Create static 3D slices
 key_iters = [0, len(iterationsOfInterest_3d)//2, -1]
 slice_dir = os.path.join(images_dir, "3D_Slices")
 viz.batch_static_slices(key_iters, slice_dir)
 
-# 3. Upload 3D results
 uploader.upload_3d_results(images_dir, ['*.mp4'])
 uploader.upload_3d_results(slice_dir, ['*.png'])
 
-debug_log('INIT', '3D visualization COMPLETE!')
+print("✅ 3D visualization COMPLETE!")
