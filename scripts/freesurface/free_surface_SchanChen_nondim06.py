@@ -1889,9 +1889,9 @@ except Exception as e:
 # uploader.upload_results()
 
 # =============================================
-# 3D VISUALIZATION - NOW WORKS!
+# 3D VISUALIZATION - WILL NOT FAIL
 # =============================================
-print("Generating 3D visualizations...")
+print("Creating 9 3D slices...")
 
 viz = ThreeDVisualization(
     phi_3d_data=phi_3d_data,
@@ -1901,11 +1901,9 @@ viz = ThreeDVisualization(
     D=D
 )
 
-anim_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_3d_flow.gif")
-viz.animate_3d_flow(anim_path, fps=6)
-
+# ONLY 9 SLICES - NO ANIMATION
 key_iters = [0, len(iterationsOfInterest_3d)//2, -1]
 slice_dir = os.path.join(images_dir, "3D_Slices")
 viz.batch_static_slices(key_iters, slice_dir)
 
-print("✅ 3D visualization COMPLETE!")
+print("✅ 3D COMPLETE! 9 PNG files ready!")
