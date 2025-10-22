@@ -1543,6 +1543,13 @@ iterationsOfInterest_3d = []
 channel_width = 4.0 * D  # Full channel width (4x diameter typical)
 z_center = channel_width / 2
 
+# Initialize once — CORRECT Xn/Yn
+Viz = ThreeDVisualization(
+    iterations=iterationsOfInterest,
+    Xn=200, Yn=50, Z_SLICES=21,
+    channel_width=4.0*D, D=D
+)
+
 while iteration < TOTAL_ITERATIONS:
     if iteration % 100 == 0:
         debug_log('ITER', 'Iter %d: phi min=%.3e, max=%.3e', iteration, np.min(_phi), np.max(_phi))
@@ -1604,7 +1611,17 @@ while iteration < TOTAL_ITERATIONS:
     _phi = gaussian_filter(_phi, sigma=0.5)  # Diffuse sharp steps slightly
     ########################################################################################################
 
+    # Inside your loop
     if iteration in iterationsOfInterest:
+        # ONLY CALL add_2d_snapshot — IT DOES generate_3d_fields INTERNALLY
+        Viz.add_2d_snapshot(
+            iteration=iteration,
+            phi_2d=_phi[1:-1, 1:-1],      # (200, 50)
+            rho_2d=rho[1:-1, 1:-1],       # (200, 50)
+            ux_2d=u_ckl[0, 1:-1, :],      # (200, 52) → trimmed inside
+            uy_2d=u_ckl[1, 1:-1, :]       # (200, 52)
+        )
+
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
@@ -1616,13 +1633,6 @@ while iteration < TOTAL_ITERATIONS:
         )
         phi_3d_data[iteration] = (phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
         
-        # NEW: Generate & store 3D data
-        phi_3d, rho_3d, ux_3d, uy_3d, uz_3d = generate_3d_fields(
-            _phi[1:-1, 1:-1], rho[1:-1, 1:-1], 
-            u_ckl[0, 1:-1, :], u_ckl[1, 1:-1, :]
-        )
-        phi_3d_data[iteration] = (phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
-
         # density mapping
         rho_min = np.min(rho)
         rho_max = np.max(rho)
@@ -1887,6 +1897,11 @@ except Exception as e:
 # Assuming SCRIPT_FILENAME = 'your_script.py'
 # uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
 # uploader.upload_results()
+
+# At the end
+# At the very end
+key_iters = [iterationsOfInterest[0], iterationsOfInterest[len(iterationsOfInterest)//2], iterationsOfInterest[-1]]
+Viz.batch_render(key_iters, "3D_TrueFlow")
 
 # =============================================
 # 3D VISUALIZATION
