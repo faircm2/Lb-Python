@@ -1607,6 +1607,9 @@ while iteration < TOTAL_ITERATIONS:
     if iteration in iterationsOfInterest:
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
+
+        # Store 2D data (existing)
+        list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
         
         # 3D DATA
