@@ -1607,9 +1607,6 @@ while iteration < TOTAL_ITERATIONS:
     if iteration in iterationsOfInterest:
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
-
-        # Store 2D data (existing)
-        list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
         
         # 3D DATA
@@ -1894,13 +1891,26 @@ except Exception as e:
 # =============================================
 # 3D VISUALIZATION
 # =============================================
-print("\nCreating REAL 3D flow views...")
-
 print("\nRENDERING TRUE 3D FLOW...")
-key_iters = [0, len(iterationsOfInterest_3d)//2, iterationsOfInterest_3d[-1]]
-view_dir = os.path.join(images_dir, "3D_TrueFlow")
 
-Viz = ThreeDVisualization(phi_3d_data, iterationsOfInterest_3d, 50, 200, 21, 4.0*D, D)
-Viz.batch_render(key_iters, view_dir)
+# Use iterationsOfInterest (which IS populated)
+if not iterationsOfInterest:
+    print("ERROR: No iterations collected! Cannot render 3D.")
+else:
+    # Safe key_iters
+    n = len(iterationsOfInterest)
+    key_iters = [
+        iterationsOfInterest[0],
+        iterationsOfInterest[n // 2],
+        iterationsOfInterest[-1]
+    ]
+    print(f"3D rendering at iterations: {key_iters}")
 
-print("TRUE 3D DONE! Open 3D_TrueFlow/")
+    view_dir = os.path.join(images_dir, "3D_TrueFlow")
+    os.makedirs(view_dir, exist_ok=True)
+
+    # Use iterationsOfInterest (not _3d)
+    Viz = ThreeDVisualization(phi_3d_data, iterationsOfInterest, 50, 200, 21, 4.0*D, D)
+    Viz.batch_render(key_iters, view_dir)
+
+    print("TRUE 3D DONE! Open 3D_TrueFlow/")
