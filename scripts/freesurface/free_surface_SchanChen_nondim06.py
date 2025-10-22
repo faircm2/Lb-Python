@@ -1891,13 +1891,3 @@ except Exception as e:
 # =============================================
 # 3D VISUALIZATION
 # =============================================
-print("\nCreating REAL 3D flow views...")
-
-print("\nRENDERING TRUE 3D FLOW...")
-key_iters = [0, len(iterationsOfInterest_3d)//2, iterationsOfInterest_3d[-1]]
-view_dir = os.path.join(images_dir, "3D_TrueFlow")
-
-Viz = ThreeDVisualization(phi_3d_data, iterationsOfInterest_3d, 50, 200, 21, 4.0*D, D)
-Viz.batch_render(key_iters, view_dir)
-
-print("TRUE 3D DONE! Open 3D_TrueFlow/")
