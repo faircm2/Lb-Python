@@ -1893,17 +1893,11 @@ except Exception as e:
 # =============================================
 print("\nCreating REAL 3D flow views...")
 
-key_iters = [0, len(iterationsOfInterest_3d)//2, -1]
-view_dir = os.path.join(images_dir, "3D_Views")
+print("\nRENDERING TRUE 3D FLOW...")
+key_iters = [0, len(iterationsOfInterest_3d)//2, iterationsOfInterest_3d[-1]]
+view_dir = os.path.join(images_dir, "3D_TrueFlow")
 
-viz = ThreeDVisualization(
-    phi_3d_data=phi_3d_data,
-    iterations=iterationsOfInterest_3d,
-    Xn=50, Yn=200, Z_SLICES=21,
-    channel_width=4.0 * D,
-    D=D
-)
+Viz = ThreeDVisualization(phi_3d_data, iterationsOfInterest_3d, 50, 200, 21, 4.0*D, D)
+Viz.batch_render(key_iters, view_dir)
 
-viz.batch_static_slices(key_iters, view_dir)
-
-print("REAL 3D COMPLETE! Check 3D_Views/")
+print("TRUE 3D DONE! Open 3D_TrueFlow/")
