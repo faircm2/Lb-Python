@@ -39334,3 +39334,1847 @@ DEBUG:INIT: Created results/freesurface/free_surface_SchanChen_nondim06/3D_Views
 DEBUG:INIT: Uploaded 188 images to results/freesurface/free_surface_SchanChen_nondim06/
 DEBUG:INIT: Uploading log to results/freesurface/free_surface_SchanChen_nondim06/lbm_debug.log...
 DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/lbm_debug.log on GitHub
+DEBUG:INIT: Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/results/freesurface/free_surface_SchanChen_nondim06
+DEBUG:INIT: Yn={Yn}, Xn={Xn}, dx={dx:.3e}, dy={dy:.3e}, dt={dt:.3e}
+DEBUG:INIT: U=%(U).2f, Re=%(Re).2f, Ma=%(Ma).3e, Kn=%(Kn).3e
+DEBUG:INIT: Cl=%(Cl).2f, n_dx=%(n_dx).2f
+DEBUG:INIT: Crho=%(Crho).2f, rho_nd=%(rho_nd).2f
+DEBUG:INIT: Ct=%(Ct).2f, dt_nd=%(n_dt).2f
+DEBUG:INIT: Ct=%(Cu).2f, dt_nd=%(U_nd).2f
+DEBUG:INIT: CF=%(CF).2f
+DEBUG:INIT: CF=%(Cf).2f
+DEBUG:INIT: nu_nd=%(nu_nd).2f
+DEBUG:INIT: tau_nd=%(tau_nd).2f
+DEBUG:INIT: omega=%(omega).2f
+DEBUG:INIT: omega_nd=%(omega_nd).2f
+DEBUG:INIT: c=%(c).2f
+DEBUG:INIT: Initial h_eq check: sum h[1:] mean=0.000, should = p_eq mean=9.161
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00000.png
+DEBUG:ITER: phi at iter 0: min=0.015, max=0.092, mean=0.057
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00000.png
+DEBUG:ITER: Iter 0: phi min=1.500e-02, max=9.200e-02
+DEBUG:ITER: Iter 0: _fi_c with u=0 (no advection)
+DEBUG:ITER: phi at iter 0: min=0.015, max=0.092, mean=0.057
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00000.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00000.png
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: Iter 0 ph_start: max|div_u_raw|=8.710e-08
+DEBUG:ITER: phi at iter 50: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00050.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00050.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 100; 0.2 %
+DEBUG:ITER: Iter 100: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: phi at iter 100: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00100.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00100.png
+DEBUG:ITER: Iter 100 ph_start: max|div_u_raw|=2.072e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 200; 0.4 %
+DEBUG:ITER: Iter 200: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: phi at iter 200: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00200.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00200.png
+DEBUG:ITER: Iter 200 ph_start: max|div_u_raw|=2.854e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 300; 0.6 %
+DEBUG:ITER: Iter 300: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 300 ph_start: max|div_u_raw|=3.351e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 400; 0.8 %
+DEBUG:ITER: Iter 400: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 400 ph_start: max|div_u_raw|=3.708e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 500; 1.0 %
+DEBUG:ITER: Iter 500: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: phi at iter 500: min=0.016, max=0.083, mean=0.053
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00500.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00500.png
+DEBUG:ITER: Iter 500 ph_start: max|div_u_raw|=3.967e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 600; 1.2 %
+DEBUG:ITER: Iter 600: phi min=1.650e-02, max=8.280e-02
+DEBUG:ITER: Iter 600 ph_start: max|div_u_raw|=4.145e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 700; 1.5 %
+DEBUG:ITER: Iter 700: phi min=1.651e-02, max=8.280e-02
+DEBUG:ITER: Iter 700 ph_start: max|div_u_raw|=4.256e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 800; 1.7 %
+DEBUG:ITER: Iter 800: phi min=1.651e-02, max=8.280e-02
+DEBUG:ITER: Iter 800 ph_start: max|div_u_raw|=4.313e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 900; 1.9 %
+DEBUG:ITER: Iter 900: phi min=1.651e-02, max=8.280e-02
+DEBUG:ITER: Iter 900 ph_start: max|div_u_raw|=4.330e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1000; 2.1 %
+DEBUG:ITER: Iter 1000: phi min=1.652e-02, max=8.280e-02
+DEBUG:ITER: Iter 1000 ph_start: max|div_u_raw|=4.318e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1100; 2.3 %
+DEBUG:ITER: Iter 1100: phi min=1.652e-02, max=8.280e-02
+DEBUG:ITER: Iter 1100 ph_start: max|div_u_raw|=4.284e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1200; 2.5 %
+DEBUG:ITER: Iter 1200: phi min=1.652e-02, max=8.280e-02
+DEBUG:ITER: Iter 1200 ph_start: max|div_u_raw|=4.236e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1300; 2.7 %
+DEBUG:ITER: Iter 1300: phi min=1.653e-02, max=8.280e-02
+DEBUG:ITER: Iter 1300 ph_start: max|div_u_raw|=4.179e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1400; 2.9 %
+DEBUG:ITER: Iter 1400: phi min=1.653e-02, max=8.280e-02
+DEBUG:ITER: Iter 1400 ph_start: max|div_u_raw|=4.116e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1500; 3.1 %
+DEBUG:ITER: Iter 1500: phi min=1.653e-02, max=8.280e-02
+DEBUG:ITER: Iter 1500 ph_start: max|div_u_raw|=4.049e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1600; 3.3 %
+DEBUG:ITER: Iter 1600: phi min=1.654e-02, max=8.280e-02
+DEBUG:ITER: Iter 1600 ph_start: max|div_u_raw|=3.982e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1700; 3.5 %
+DEBUG:ITER: Iter 1700: phi min=1.654e-02, max=8.280e-02
+DEBUG:ITER: Iter 1700 ph_start: max|div_u_raw|=3.915e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1800; 3.7 %
+DEBUG:ITER: Iter 1800: phi min=1.654e-02, max=8.280e-02
+DEBUG:ITER: Iter 1800 ph_start: max|div_u_raw|=3.850e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 1900; 4.0 %
+DEBUG:ITER: Iter 1900: phi min=1.654e-02, max=8.280e-02
+DEBUG:ITER: Iter 1900 ph_start: max|div_u_raw|=3.787e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2000; 4.2 %
+DEBUG:ITER: Iter 2000: phi min=1.655e-02, max=8.280e-02
+DEBUG:ITER: Iter 2000 ph_start: max|div_u_raw|=3.727e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2100; 4.4 %
+DEBUG:ITER: Iter 2100: phi min=1.655e-02, max=8.280e-02
+DEBUG:ITER: Iter 2100 ph_start: max|div_u_raw|=3.671e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2200; 4.6 %
+DEBUG:ITER: Iter 2200: phi min=1.655e-02, max=8.280e-02
+DEBUG:ITER: Iter 2200 ph_start: max|div_u_raw|=3.619e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2300; 4.8 %
+DEBUG:ITER: Iter 2300: phi min=1.655e-02, max=8.280e-02
+DEBUG:ITER: Iter 2300 ph_start: max|div_u_raw|=3.571e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2400; 5.0 %
+DEBUG:ITER: Iter 2400: phi min=1.655e-02, max=8.280e-02
+DEBUG:ITER: Iter 2400 ph_start: max|div_u_raw|=3.526e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2500; 5.2 %
+DEBUG:ITER: Iter 2500: phi min=1.656e-02, max=8.279e-02
+DEBUG:ITER: Iter 2500 ph_start: max|div_u_raw|=3.485e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2600; 5.4 %
+DEBUG:ITER: Iter 2600: phi min=1.656e-02, max=8.279e-02
+DEBUG:ITER: Iter 2600 ph_start: max|div_u_raw|=3.448e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2700; 5.6 %
+DEBUG:ITER: Iter 2700: phi min=1.656e-02, max=8.279e-02
+DEBUG:ITER: Iter 2700 ph_start: max|div_u_raw|=3.414e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2800; 5.8 %
+DEBUG:ITER: Iter 2800: phi min=1.656e-02, max=8.279e-02
+DEBUG:ITER: Iter 2800 ph_start: max|div_u_raw|=3.384e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 2900; 6.0 %
+DEBUG:ITER: Iter 2900: phi min=1.656e-02, max=8.279e-02
+DEBUG:ITER: Iter 2900 ph_start: max|div_u_raw|=3.357e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3000; 6.2 %
+DEBUG:ITER: Iter 3000: phi min=1.658e-02, max=8.279e-02
+DEBUG:ITER: Iter 3000 ph_start: max|div_u_raw|=3.333e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3100; 6.5 %
+DEBUG:ITER: Iter 3100: phi min=1.661e-02, max=8.279e-02
+DEBUG:ITER: Iter 3100 ph_start: max|div_u_raw|=3.312e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3200; 6.7 %
+DEBUG:ITER: Iter 3200: phi min=1.664e-02, max=8.279e-02
+DEBUG:ITER: Iter 3200 ph_start: max|div_u_raw|=3.293e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3300; 6.9 %
+DEBUG:ITER: Iter 3300: phi min=1.668e-02, max=8.279e-02
+DEBUG:ITER: Iter 3300 ph_start: max|div_u_raw|=3.276e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3400; 7.1 %
+DEBUG:ITER: Iter 3400: phi min=1.672e-02, max=8.279e-02
+DEBUG:ITER: Iter 3400 ph_start: max|div_u_raw|=3.262e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3500; 7.3 %
+DEBUG:ITER: Iter 3500: phi min=1.677e-02, max=8.279e-02
+DEBUG:ITER: Iter 3500 ph_start: max|div_u_raw|=3.249e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3600; 7.5 %
+DEBUG:ITER: Iter 3600: phi min=1.681e-02, max=8.279e-02
+DEBUG:ITER: phi at iter 3600: min=0.017, max=0.083, mean=0.052
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_03600.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_03600.png
+DEBUG:ITER: Iter 3600 ph_start: max|div_u_raw|=3.238e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3700; 7.7 %
+DEBUG:ITER: Iter 3700: phi min=1.685e-02, max=8.278e-02
+DEBUG:ITER: Iter 3700 ph_start: max|div_u_raw|=3.228e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3800; 7.9 %
+DEBUG:ITER: Iter 3800: phi min=1.690e-02, max=8.278e-02
+DEBUG:ITER: Iter 3800 ph_start: max|div_u_raw|=3.220e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 3900; 8.1 %
+DEBUG:ITER: Iter 3900: phi min=1.694e-02, max=8.278e-02
+DEBUG:ITER: Iter 3900 ph_start: max|div_u_raw|=3.212e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4000; 8.3 %
+DEBUG:ITER: Iter 4000: phi min=1.699e-02, max=8.278e-02
+DEBUG:ITER: Iter 4000 ph_start: max|div_u_raw|=3.205e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4100; 8.5 %
+DEBUG:ITER: Iter 4100: phi min=1.703e-02, max=8.278e-02
+DEBUG:ITER: Iter 4100 ph_start: max|div_u_raw|=3.198e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4200; 8.7 %
+DEBUG:ITER: Iter 4200: phi min=1.708e-02, max=8.278e-02
+DEBUG:ITER: Iter 4200 ph_start: max|div_u_raw|=3.192e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4300; 9.0 %
+DEBUG:ITER: Iter 4300: phi min=1.712e-02, max=8.278e-02
+DEBUG:ITER: Iter 4300 ph_start: max|div_u_raw|=3.186e-06
+DEBUG:ITER: phi at iter 4371: min=0.017, max=0.083, mean=0.052
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_04371.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_04371.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4400; 9.2 %
+DEBUG:ITER: Iter 4400: phi min=1.716e-02, max=8.278e-02
+DEBUG:ITER: Iter 4400 ph_start: max|div_u_raw|=3.180e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4500; 9.4 %
+DEBUG:ITER: Iter 4500: phi min=1.720e-02, max=8.278e-02
+DEBUG:ITER: Iter 4500 ph_start: max|div_u_raw|=3.175e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4600; 9.6 %
+DEBUG:ITER: Iter 4600: phi min=1.725e-02, max=8.278e-02
+DEBUG:ITER: Iter 4600 ph_start: max|div_u_raw|=3.169e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4700; 9.8 %
+DEBUG:ITER: Iter 4700: phi min=1.729e-02, max=8.278e-02
+DEBUG:ITER: Iter 4700 ph_start: max|div_u_raw|=3.163e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4800; 10.0 %
+DEBUG:ITER: Iter 4800: phi min=1.733e-02, max=8.278e-02
+DEBUG:ITER: Iter 4800 ph_start: max|div_u_raw|=3.157e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 4900; 10.2 %
+DEBUG:ITER: Iter 4900: phi min=1.737e-02, max=8.278e-02
+DEBUG:ITER: Iter 4900 ph_start: max|div_u_raw|=3.151e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5000; 10.4 %
+DEBUG:ITER: Iter 5000: phi min=1.740e-02, max=8.278e-02
+DEBUG:ITER: Iter 5000 ph_start: max|div_u_raw|=3.145e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5100; 10.6 %
+DEBUG:ITER: Iter 5100: phi min=1.744e-02, max=8.278e-02
+DEBUG:ITER: Iter 5100 ph_start: max|div_u_raw|=3.139e-06
+DEBUG:ITER: phi at iter 5143: min=0.017, max=0.083, mean=0.052
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_05143.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_05143.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5200; 10.8 %
+DEBUG:ITER: Iter 5200: phi min=1.748e-02, max=8.278e-02
+DEBUG:ITER: Iter 5200 ph_start: max|div_u_raw|=3.133e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5300; 11.0 %
+DEBUG:ITER: Iter 5300: phi min=1.752e-02, max=8.278e-02
+DEBUG:ITER: Iter 5300 ph_start: max|div_u_raw|=3.126e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5400; 11.2 %
+DEBUG:ITER: Iter 5400: phi min=1.755e-02, max=8.278e-02
+DEBUG:ITER: Iter 5400 ph_start: max|div_u_raw|=3.120e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5500; 11.5 %
+DEBUG:ITER: Iter 5500: phi min=1.759e-02, max=8.278e-02
+DEBUG:ITER: Iter 5500 ph_start: max|div_u_raw|=3.113e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5600; 11.7 %
+DEBUG:ITER: Iter 5600: phi min=1.762e-02, max=8.278e-02
+DEBUG:ITER: Iter 5600 ph_start: max|div_u_raw|=3.107e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5700; 11.9 %
+DEBUG:ITER: Iter 5700: phi min=1.765e-02, max=8.278e-02
+DEBUG:ITER: Iter 5700 ph_start: max|div_u_raw|=3.100e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5800; 12.1 %
+DEBUG:ITER: Iter 5800: phi min=1.769e-02, max=8.278e-02
+DEBUG:ITER: Iter 5800 ph_start: max|div_u_raw|=3.093e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 5900; 12.3 %
+DEBUG:ITER: Iter 5900: phi min=1.772e-02, max=8.277e-02
+DEBUG:ITER: Iter 5900 ph_start: max|div_u_raw|=3.086e-06
+DEBUG:ITER: phi at iter 5914: min=0.018, max=0.083, mean=0.051
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_05914.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_05914.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6000; 12.5 %
+DEBUG:ITER: Iter 6000: phi min=1.775e-02, max=8.277e-02
+DEBUG:ITER: Iter 6000 ph_start: max|div_u_raw|=3.080e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6100; 12.7 %
+DEBUG:ITER: Iter 6100: phi min=1.778e-02, max=8.277e-02
+DEBUG:ITER: Iter 6100 ph_start: max|div_u_raw|=3.073e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6200; 12.9 %
+DEBUG:ITER: Iter 6200: phi min=1.781e-02, max=8.277e-02
+DEBUG:ITER: Iter 6200 ph_start: max|div_u_raw|=3.066e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6300; 13.1 %
+DEBUG:ITER: Iter 6300: phi min=1.784e-02, max=8.277e-02
+DEBUG:ITER: Iter 6300 ph_start: max|div_u_raw|=3.060e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6400; 13.3 %
+DEBUG:ITER: Iter 6400: phi min=1.787e-02, max=8.277e-02
+DEBUG:ITER: Iter 6400 ph_start: max|div_u_raw|=3.053e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6500; 13.5 %
+DEBUG:ITER: Iter 6500: phi min=1.789e-02, max=8.277e-02
+DEBUG:ITER: Iter 6500 ph_start: max|div_u_raw|=3.047e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6600; 13.7 %
+DEBUG:ITER: Iter 6600: phi min=1.792e-02, max=8.277e-02
+DEBUG:ITER: Iter 6600 ph_start: max|div_u_raw|=3.041e-06
+DEBUG:ITER: phi at iter 6686: min=0.018, max=0.083, mean=0.051
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_06686.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_06686.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6700; 14.0 %
+DEBUG:ITER: Iter 6700: phi min=1.795e-02, max=8.277e-02
+DEBUG:ITER: Iter 6700 ph_start: max|div_u_raw|=3.034e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6800; 14.2 %
+DEBUG:ITER: Iter 6800: phi min=1.797e-02, max=8.277e-02
+DEBUG:ITER: Iter 6800 ph_start: max|div_u_raw|=3.028e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 6900; 14.4 %
+DEBUG:ITER: Iter 6900: phi min=1.800e-02, max=8.277e-02
+DEBUG:ITER: Iter 6900 ph_start: max|div_u_raw|=3.023e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7000; 14.6 %
+DEBUG:ITER: Iter 7000: phi min=1.802e-02, max=8.277e-02
+DEBUG:ITER: Iter 7000 ph_start: max|div_u_raw|=3.017e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7100; 14.8 %
+DEBUG:ITER: Iter 7100: phi min=1.804e-02, max=8.277e-02
+DEBUG:ITER: Iter 7100 ph_start: max|div_u_raw|=3.011e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7200; 15.0 %
+DEBUG:ITER: Iter 7200: phi min=1.807e-02, max=8.277e-02
+DEBUG:ITER: Iter 7200 ph_start: max|div_u_raw|=3.005e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7300; 15.2 %
+DEBUG:ITER: Iter 7300: phi min=1.809e-02, max=8.277e-02
+DEBUG:ITER: Iter 7300 ph_start: max|div_u_raw|=3.000e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7400; 15.4 %
+DEBUG:ITER: Iter 7400: phi min=1.811e-02, max=8.277e-02
+DEBUG:ITER: Iter 7400 ph_start: max|div_u_raw|=2.994e-06
+DEBUG:ITER: phi at iter 7457: min=0.018, max=0.083, mean=0.051
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_07457.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_07457.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7500; 15.6 %
+DEBUG:ITER: Iter 7500: phi min=1.813e-02, max=8.277e-02
+DEBUG:ITER: Iter 7500 ph_start: max|div_u_raw|=2.989e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7600; 15.8 %
+DEBUG:ITER: Iter 7600: phi min=1.815e-02, max=8.277e-02
+DEBUG:ITER: Iter 7600 ph_start: max|div_u_raw|=2.984e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7700; 16.0 %
+DEBUG:ITER: Iter 7700: phi min=1.817e-02, max=8.277e-02
+DEBUG:ITER: Iter 7700 ph_start: max|div_u_raw|=2.979e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7800; 16.2 %
+DEBUG:ITER: Iter 7800: phi min=1.819e-02, max=8.277e-02
+DEBUG:ITER: Iter 7800 ph_start: max|div_u_raw|=2.974e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 7900; 16.5 %
+DEBUG:ITER: Iter 7900: phi min=1.821e-02, max=8.277e-02
+DEBUG:ITER: Iter 7900 ph_start: max|div_u_raw|=2.969e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8000; 16.7 %
+DEBUG:ITER: Iter 8000: phi min=1.823e-02, max=8.277e-02
+DEBUG:ITER: Iter 8000 ph_start: max|div_u_raw|=2.964e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8100; 16.9 %
+DEBUG:ITER: Iter 8100: phi min=1.825e-02, max=8.277e-02
+DEBUG:ITER: Iter 8100 ph_start: max|div_u_raw|=2.959e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8200; 17.1 %
+DEBUG:ITER: Iter 8200: phi min=1.827e-02, max=8.277e-02
+DEBUG:ITER: Iter 8200 ph_start: max|div_u_raw|=2.954e-06
+DEBUG:ITER: phi at iter 8229: min=0.018, max=0.083, mean=0.051
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_08229.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_08229.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8300; 17.3 %
+DEBUG:ITER: Iter 8300: phi min=1.828e-02, max=8.277e-02
+DEBUG:ITER: Iter 8300 ph_start: max|div_u_raw|=2.949e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8400; 17.5 %
+DEBUG:ITER: Iter 8400: phi min=1.830e-02, max=8.277e-02
+DEBUG:ITER: Iter 8400 ph_start: max|div_u_raw|=2.944e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8500; 17.7 %
+DEBUG:ITER: Iter 8500: phi min=1.832e-02, max=8.277e-02
+DEBUG:ITER: Iter 8500 ph_start: max|div_u_raw|=2.940e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8600; 17.9 %
+DEBUG:ITER: Iter 8600: phi min=1.833e-02, max=8.277e-02
+DEBUG:ITER: Iter 8600 ph_start: max|div_u_raw|=2.935e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8700; 18.1 %
+DEBUG:ITER: Iter 8700: phi min=1.835e-02, max=8.277e-02
+DEBUG:ITER: Iter 8700 ph_start: max|div_u_raw|=2.930e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8800; 18.3 %
+DEBUG:ITER: Iter 8800: phi min=1.836e-02, max=8.277e-02
+DEBUG:ITER: Iter 8800 ph_start: max|div_u_raw|=2.926e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 8900; 18.5 %
+DEBUG:ITER: Iter 8900: phi min=1.838e-02, max=8.277e-02
+DEBUG:ITER: Iter 8900 ph_start: max|div_u_raw|=2.921e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9000; 18.7 %
+DEBUG:ITER: Iter 9000: phi min=1.839e-02, max=8.277e-02
+DEBUG:ITER: phi at iter 9000: min=0.018, max=0.083, mean=0.051
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_09000.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_09000.png
+DEBUG:ITER: Iter 9000 ph_start: max|div_u_raw|=2.917e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9100; 19.0 %
+DEBUG:ITER: Iter 9100: phi min=1.841e-02, max=8.277e-02
+DEBUG:ITER: Iter 9100 ph_start: max|div_u_raw|=2.912e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9200; 19.2 %
+DEBUG:ITER: Iter 9200: phi min=1.842e-02, max=8.277e-02
+DEBUG:ITER: Iter 9200 ph_start: max|div_u_raw|=2.908e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9300; 19.4 %
+DEBUG:ITER: Iter 9300: phi min=1.843e-02, max=8.277e-02
+DEBUG:ITER: Iter 9300 ph_start: max|div_u_raw|=2.904e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9400; 19.6 %
+DEBUG:ITER: Iter 9400: phi min=1.845e-02, max=8.277e-02
+DEBUG:ITER: Iter 9400 ph_start: max|div_u_raw|=2.899e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9500; 19.8 %
+DEBUG:ITER: Iter 9500: phi min=1.846e-02, max=8.277e-02
+DEBUG:ITER: Iter 9500 ph_start: max|div_u_raw|=2.895e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9600; 20.0 %
+DEBUG:ITER: Iter 9600: phi min=1.847e-02, max=8.277e-02
+DEBUG:ITER: Iter 9600 ph_start: max|div_u_raw|=2.891e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9700; 20.2 %
+DEBUG:ITER: Iter 9700: phi min=1.848e-02, max=8.277e-02
+DEBUG:ITER: Iter 9700 ph_start: max|div_u_raw|=2.886e-06
+DEBUG:ITER: phi at iter 9772: min=0.018, max=0.083, mean=0.051
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_09772.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_09772.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9800; 20.4 %
+DEBUG:ITER: Iter 9800: phi min=1.849e-02, max=8.277e-02
+DEBUG:ITER: Iter 9800 ph_start: max|div_u_raw|=2.882e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 9900; 20.6 %
+DEBUG:ITER: Iter 9900: phi min=1.850e-02, max=8.277e-02
+DEBUG:ITER: Iter 9900 ph_start: max|div_u_raw|=2.878e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10000; 20.8 %
+DEBUG:ITER: Iter 10000: phi min=1.851e-02, max=8.277e-02
+DEBUG:ITER: Iter 10000 ph_start: max|div_u_raw|=2.874e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10100; 21.0 %
+DEBUG:ITER: Iter 10100: phi min=1.852e-02, max=8.277e-02
+DEBUG:ITER: Iter 10100 ph_start: max|div_u_raw|=2.870e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10200; 21.2 %
+DEBUG:ITER: Iter 10200: phi min=1.853e-02, max=8.277e-02
+DEBUG:ITER: Iter 10200 ph_start: max|div_u_raw|=2.865e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10300; 21.5 %
+DEBUG:ITER: Iter 10300: phi min=1.854e-02, max=8.277e-02
+DEBUG:ITER: Iter 10300 ph_start: max|div_u_raw|=2.861e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10400; 21.7 %
+DEBUG:ITER: Iter 10400: phi min=1.855e-02, max=8.277e-02
+DEBUG:ITER: Iter 10400 ph_start: max|div_u_raw|=2.857e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10500; 21.9 %
+DEBUG:ITER: Iter 10500: phi min=1.856e-02, max=8.277e-02
+DEBUG:ITER: Iter 10500 ph_start: max|div_u_raw|=2.853e-06
+DEBUG:ITER: phi at iter 10543: min=0.019, max=0.083, mean=0.051
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_10543.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_10543.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10600; 22.1 %
+DEBUG:ITER: Iter 10600: phi min=1.857e-02, max=8.277e-02
+DEBUG:ITER: Iter 10600 ph_start: max|div_u_raw|=2.849e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10700; 22.3 %
+DEBUG:ITER: Iter 10700: phi min=1.858e-02, max=8.277e-02
+DEBUG:ITER: Iter 10700 ph_start: max|div_u_raw|=2.845e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10800; 22.5 %
+DEBUG:ITER: Iter 10800: phi min=1.859e-02, max=8.277e-02
+DEBUG:ITER: Iter 10800 ph_start: max|div_u_raw|=2.842e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 10900; 22.7 %
+DEBUG:ITER: Iter 10900: phi min=1.860e-02, max=8.277e-02
+DEBUG:ITER: Iter 10900 ph_start: max|div_u_raw|=2.838e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11000; 22.9 %
+DEBUG:ITER: Iter 11000: phi min=1.861e-02, max=8.277e-02
+DEBUG:ITER: Iter 11000 ph_start: max|div_u_raw|=2.834e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11100; 23.1 %
+DEBUG:ITER: Iter 11100: phi min=1.861e-02, max=8.277e-02
+DEBUG:ITER: Iter 11100 ph_start: max|div_u_raw|=2.830e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11200; 23.3 %
+DEBUG:ITER: Iter 11200: phi min=1.862e-02, max=8.277e-02
+DEBUG:ITER: Iter 11200 ph_start: max|div_u_raw|=2.826e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11300; 23.5 %
+DEBUG:ITER: Iter 11300: phi min=1.863e-02, max=8.277e-02
+DEBUG:ITER: Iter 11300 ph_start: max|div_u_raw|=2.822e-06
+DEBUG:ITER: phi at iter 11315: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_11315.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_11315.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11400; 23.7 %
+DEBUG:ITER: Iter 11400: phi min=1.863e-02, max=8.277e-02
+DEBUG:ITER: Iter 11400 ph_start: max|div_u_raw|=2.819e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11500; 24.0 %
+DEBUG:ITER: Iter 11500: phi min=1.864e-02, max=8.277e-02
+DEBUG:ITER: Iter 11500 ph_start: max|div_u_raw|=2.815e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11600; 24.2 %
+DEBUG:ITER: Iter 11600: phi min=1.865e-02, max=8.277e-02
+DEBUG:ITER: Iter 11600 ph_start: max|div_u_raw|=2.811e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11700; 24.4 %
+DEBUG:ITER: Iter 11700: phi min=1.865e-02, max=8.277e-02
+DEBUG:ITER: Iter 11700 ph_start: max|div_u_raw|=2.808e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11800; 24.6 %
+DEBUG:ITER: Iter 11800: phi min=1.866e-02, max=8.277e-02
+DEBUG:ITER: Iter 11800 ph_start: max|div_u_raw|=2.804e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 11900; 24.8 %
+DEBUG:ITER: Iter 11900: phi min=1.867e-02, max=8.277e-02
+DEBUG:ITER: Iter 11900 ph_start: max|div_u_raw|=2.800e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12000; 25.0 %
+DEBUG:ITER: Iter 12000: phi min=1.867e-02, max=8.277e-02
+DEBUG:ITER: Iter 12000 ph_start: max|div_u_raw|=2.797e-06
+DEBUG:ITER: phi at iter 12086: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_12086.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_12086.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12100; 25.2 %
+DEBUG:ITER: Iter 12100: phi min=1.868e-02, max=8.277e-02
+DEBUG:ITER: Iter 12100 ph_start: max|div_u_raw|=2.793e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12200; 25.4 %
+DEBUG:ITER: Iter 12200: phi min=1.868e-02, max=8.277e-02
+DEBUG:ITER: Iter 12200 ph_start: max|div_u_raw|=2.790e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12300; 25.6 %
+DEBUG:ITER: Iter 12300: phi min=1.869e-02, max=8.277e-02
+DEBUG:ITER: Iter 12300 ph_start: max|div_u_raw|=2.786e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12400; 25.8 %
+DEBUG:ITER: Iter 12400: phi min=1.869e-02, max=8.277e-02
+DEBUG:ITER: Iter 12400 ph_start: max|div_u_raw|=2.783e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12500; 26.0 %
+DEBUG:ITER: Iter 12500: phi min=1.870e-02, max=8.277e-02
+DEBUG:ITER: Iter 12500 ph_start: max|div_u_raw|=2.779e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12600; 26.2 %
+DEBUG:ITER: Iter 12600: phi min=1.870e-02, max=8.276e-02
+DEBUG:ITER: Iter 12600 ph_start: max|div_u_raw|=2.776e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12700; 26.5 %
+DEBUG:ITER: Iter 12700: phi min=1.871e-02, max=8.276e-02
+DEBUG:ITER: Iter 12700 ph_start: max|div_u_raw|=2.772e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12800; 26.7 %
+DEBUG:ITER: Iter 12800: phi min=1.871e-02, max=8.276e-02
+DEBUG:ITER: Iter 12800 ph_start: max|div_u_raw|=2.769e-06
+DEBUG:ITER: phi at iter 12858: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_12858.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_12858.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 12900; 26.9 %
+DEBUG:ITER: Iter 12900: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 12900 ph_start: max|div_u_raw|=2.766e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13000; 27.1 %
+DEBUG:ITER: Iter 13000: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 13000 ph_start: max|div_u_raw|=2.762e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13100; 27.3 %
+DEBUG:ITER: Iter 13100: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 13100 ph_start: max|div_u_raw|=2.759e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13200; 27.5 %
+DEBUG:ITER: Iter 13200: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 13200 ph_start: max|div_u_raw|=2.756e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13300; 27.7 %
+DEBUG:ITER: Iter 13300: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 13300 ph_start: max|div_u_raw|=2.752e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13400; 27.9 %
+DEBUG:ITER: Iter 13400: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 13400 ph_start: max|div_u_raw|=2.749e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13500; 28.1 %
+DEBUG:ITER: Iter 13500: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 13500 ph_start: max|div_u_raw|=2.746e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13600; 28.3 %
+DEBUG:ITER: Iter 13600: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 13600 ph_start: max|div_u_raw|=2.742e-06
+DEBUG:ITER: phi at iter 13629: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_13629.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_13629.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13700; 28.5 %
+DEBUG:ITER: Iter 13700: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 13700 ph_start: max|div_u_raw|=2.739e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13800; 28.7 %
+DEBUG:ITER: Iter 13800: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 13800 ph_start: max|div_u_raw|=2.736e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 13900; 29.0 %
+DEBUG:ITER: Iter 13900: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 13900 ph_start: max|div_u_raw|=2.733e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14000; 29.2 %
+DEBUG:ITER: Iter 14000: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 14000 ph_start: max|div_u_raw|=2.730e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14100; 29.4 %
+DEBUG:ITER: Iter 14100: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 14100 ph_start: max|div_u_raw|=2.726e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14200; 29.6 %
+DEBUG:ITER: Iter 14200: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 14200 ph_start: max|div_u_raw|=2.723e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14300; 29.8 %
+DEBUG:ITER: Iter 14300: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 14300 ph_start: max|div_u_raw|=2.720e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14400; 30.0 %
+DEBUG:ITER: Iter 14400: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 14400 ph_start: max|div_u_raw|=2.717e-06
+DEBUG:ITER: phi at iter 14401: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14401.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14401.png
+DEBUG:ITER: phi at iter 14480: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14480.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14480.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14500; 30.2 %
+DEBUG:ITER: Iter 14500: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 14500 ph_start: max|div_u_raw|=2.714e-06
+DEBUG:ITER: phi at iter 14577: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14577.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14577.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14600; 30.4 %
+DEBUG:ITER: Iter 14600: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 14600 ph_start: max|div_u_raw|=2.711e-06
+DEBUG:ITER: phi at iter 14695: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14695.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14695.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14700; 30.6 %
+DEBUG:ITER: Iter 14700: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 14700 ph_start: max|div_u_raw|=2.708e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14800; 30.8 %
+DEBUG:ITER: Iter 14800: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 14800 ph_start: max|div_u_raw|=2.705e-06
+DEBUG:ITER: phi at iter 14840: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14840.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14840.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 14900; 31.0 %
+DEBUG:ITER: Iter 14900: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 14900 ph_start: max|div_u_raw|=2.702e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15000; 31.2 %
+DEBUG:ITER: Iter 15000: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 15000 ph_start: max|div_u_raw|=2.699e-06
+DEBUG:ITER: phi at iter 15016: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15016.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15016.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15100; 31.5 %
+DEBUG:ITER: Iter 15100: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 15100 ph_start: max|div_u_raw|=2.696e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15200; 31.7 %
+DEBUG:ITER: Iter 15200: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 15200 ph_start: max|div_u_raw|=2.693e-06
+DEBUG:ITER: phi at iter 15232: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15232.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15232.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15300; 31.9 %
+DEBUG:ITER: Iter 15300: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 15300 ph_start: max|div_u_raw|=2.690e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15400; 32.1 %
+DEBUG:ITER: Iter 15400: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 15400 ph_start: max|div_u_raw|=2.687e-06
+DEBUG:ITER: phi at iter 15495: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15495.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15495.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15500; 32.3 %
+DEBUG:ITER: Iter 15500: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 15500 ph_start: max|div_u_raw|=2.684e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15600; 32.5 %
+DEBUG:ITER: Iter 15600: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 15600 ph_start: max|div_u_raw|=2.681e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15700; 32.7 %
+DEBUG:ITER: Iter 15700: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 15700 ph_start: max|div_u_raw|=2.678e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15800; 32.9 %
+DEBUG:ITER: Iter 15800: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 15800 ph_start: max|div_u_raw|=2.675e-06
+DEBUG:ITER: phi at iter 15817: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15817.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15817.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 15900; 33.1 %
+DEBUG:ITER: Iter 15900: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 15900 ph_start: max|div_u_raw|=2.672e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16000; 33.3 %
+DEBUG:ITER: Iter 16000: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16000 ph_start: max|div_u_raw|=2.669e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16100; 33.5 %
+DEBUG:ITER: Iter 16100: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16100 ph_start: max|div_u_raw|=2.667e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16200; 33.7 %
+DEBUG:ITER: Iter 16200: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16200 ph_start: max|div_u_raw|=2.664e-06
+DEBUG:ITER: phi at iter 16209: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_16209.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_16209.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16300; 34.0 %
+DEBUG:ITER: Iter 16300: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16300 ph_start: max|div_u_raw|=2.661e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16400; 34.2 %
+DEBUG:ITER: Iter 16400: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16400 ph_start: max|div_u_raw|=2.658e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16500; 34.4 %
+DEBUG:ITER: Iter 16500: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16500 ph_start: max|div_u_raw|=2.655e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16600; 34.6 %
+DEBUG:ITER: Iter 16600: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16600 ph_start: max|div_u_raw|=2.652e-06
+DEBUG:ITER: phi at iter 16689: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_16689.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_16689.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16700; 34.8 %
+DEBUG:ITER: Iter 16700: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16700 ph_start: max|div_u_raw|=2.650e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16800; 35.0 %
+DEBUG:ITER: Iter 16800: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16800 ph_start: max|div_u_raw|=2.647e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 16900; 35.2 %
+DEBUG:ITER: Iter 16900: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 16900 ph_start: max|div_u_raw|=2.644e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17000; 35.4 %
+DEBUG:ITER: Iter 17000: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17000 ph_start: max|div_u_raw|=2.641e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17100; 35.6 %
+DEBUG:ITER: Iter 17100: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17100 ph_start: max|div_u_raw|=2.639e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17200; 35.8 %
+DEBUG:ITER: Iter 17200: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17200 ph_start: max|div_u_raw|=2.636e-06
+DEBUG:ITER: phi at iter 17275: min=0.019, max=0.083, mean=0.050
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_17275.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_17275.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17300; 36.0 %
+DEBUG:ITER: Iter 17300: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17300 ph_start: max|div_u_raw|=2.633e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17400; 36.2 %
+DEBUG:ITER: Iter 17400: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17400 ph_start: max|div_u_raw|=2.631e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17500; 36.5 %
+DEBUG:ITER: Iter 17500: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17500 ph_start: max|div_u_raw|=2.628e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17600; 36.7 %
+DEBUG:ITER: Iter 17600: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17600 ph_start: max|div_u_raw|=2.625e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17700; 36.9 %
+DEBUG:ITER: Iter 17700: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17700 ph_start: max|div_u_raw|=2.623e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17800; 37.1 %
+DEBUG:ITER: Iter 17800: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17800 ph_start: max|div_u_raw|=2.620e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 17900; 37.3 %
+DEBUG:ITER: Iter 17900: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 17900 ph_start: max|div_u_raw|=2.617e-06
+DEBUG:ITER: phi at iter 17991: min=0.019, max=0.083, mean=0.049
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_17991.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_17991.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18000; 37.5 %
+DEBUG:ITER: Iter 18000: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 18000 ph_start: max|div_u_raw|=2.615e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18100; 37.7 %
+DEBUG:ITER: Iter 18100: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 18100 ph_start: max|div_u_raw|=2.612e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18200; 37.9 %
+DEBUG:ITER: Iter 18200: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 18200 ph_start: max|div_u_raw|=2.609e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18300; 38.1 %
+DEBUG:ITER: Iter 18300: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 18300 ph_start: max|div_u_raw|=2.607e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18400; 38.3 %
+DEBUG:ITER: Iter 18400: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 18400 ph_start: max|div_u_raw|=2.604e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18500; 38.5 %
+DEBUG:ITER: Iter 18500: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 18500 ph_start: max|div_u_raw|=2.602e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18600; 38.7 %
+DEBUG:ITER: Iter 18600: phi min=1.878e-02, max=8.276e-02
+DEBUG:ITER: Iter 18600 ph_start: max|div_u_raw|=2.599e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18700; 39.0 %
+DEBUG:ITER: Iter 18700: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 18700 ph_start: max|div_u_raw|=2.597e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18800; 39.2 %
+DEBUG:ITER: Iter 18800: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 18800 ph_start: max|div_u_raw|=2.594e-06
+DEBUG:ITER: phi at iter 18866: min=0.019, max=0.083, mean=0.049
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_18866.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_18866.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 18900; 39.4 %
+DEBUG:ITER: Iter 18900: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 18900 ph_start: max|div_u_raw|=2.592e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19000; 39.6 %
+DEBUG:ITER: Iter 19000: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 19000 ph_start: max|div_u_raw|=2.589e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19100; 39.8 %
+DEBUG:ITER: Iter 19100: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 19100 ph_start: max|div_u_raw|=2.587e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19200; 40.0 %
+DEBUG:ITER: Iter 19200: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 19200 ph_start: max|div_u_raw|=2.584e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19300; 40.2 %
+DEBUG:ITER: Iter 19300: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 19300 ph_start: max|div_u_raw|=2.582e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19400; 40.4 %
+DEBUG:ITER: Iter 19400: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 19400 ph_start: max|div_u_raw|=2.579e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19500; 40.6 %
+DEBUG:ITER: Iter 19500: phi min=1.877e-02, max=8.276e-02
+DEBUG:ITER: Iter 19500 ph_start: max|div_u_raw|=2.577e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19600; 40.8 %
+DEBUG:ITER: Iter 19600: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 19600 ph_start: max|div_u_raw|=2.574e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19700; 41.0 %
+DEBUG:ITER: Iter 19700: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 19700 ph_start: max|div_u_raw|=2.572e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19800; 41.2 %
+DEBUG:ITER: Iter 19800: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 19800 ph_start: max|div_u_raw|=2.569e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 19900; 41.5 %
+DEBUG:ITER: Iter 19900: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 19900 ph_start: max|div_u_raw|=2.567e-06
+DEBUG:ITER: phi at iter 19933: min=0.019, max=0.083, mean=0.049
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_19933.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_19933.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20000; 41.7 %
+DEBUG:ITER: Iter 20000: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 20000 ph_start: max|div_u_raw|=2.565e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20100; 41.9 %
+DEBUG:ITER: Iter 20100: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 20100 ph_start: max|div_u_raw|=2.562e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20200; 42.1 %
+DEBUG:ITER: Iter 20200: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 20200 ph_start: max|div_u_raw|=2.560e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20300; 42.3 %
+DEBUG:ITER: Iter 20300: phi min=1.876e-02, max=8.276e-02
+DEBUG:ITER: Iter 20300 ph_start: max|div_u_raw|=2.557e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20400; 42.5 %
+DEBUG:ITER: Iter 20400: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 20400 ph_start: max|div_u_raw|=2.555e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20500; 42.7 %
+DEBUG:ITER: Iter 20500: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 20500 ph_start: max|div_u_raw|=2.553e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20600; 42.9 %
+DEBUG:ITER: Iter 20600: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 20600 ph_start: max|div_u_raw|=2.550e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20700; 43.1 %
+DEBUG:ITER: Iter 20700: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 20700 ph_start: max|div_u_raw|=2.548e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20800; 43.3 %
+DEBUG:ITER: Iter 20800: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 20800 ph_start: max|div_u_raw|=2.546e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 20900; 43.5 %
+DEBUG:ITER: Iter 20900: phi min=1.875e-02, max=8.276e-02
+DEBUG:ITER: Iter 20900 ph_start: max|div_u_raw|=2.543e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21000; 43.7 %
+DEBUG:ITER: Iter 21000: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 21000 ph_start: max|div_u_raw|=2.541e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21100; 44.0 %
+DEBUG:ITER: Iter 21100: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 21100 ph_start: max|div_u_raw|=2.539e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21200; 44.2 %
+DEBUG:ITER: Iter 21200: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 21200 ph_start: max|div_u_raw|=2.536e-06
+DEBUG:ITER: phi at iter 21238: min=0.019, max=0.083, mean=0.049
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_21238.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_21238.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21300; 44.4 %
+DEBUG:ITER: Iter 21300: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 21300 ph_start: max|div_u_raw|=2.534e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21400; 44.6 %
+DEBUG:ITER: Iter 21400: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 21400 ph_start: max|div_u_raw|=2.532e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21500; 44.8 %
+DEBUG:ITER: Iter 21500: phi min=1.874e-02, max=8.276e-02
+DEBUG:ITER: Iter 21500 ph_start: max|div_u_raw|=2.529e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21600; 45.0 %
+DEBUG:ITER: Iter 21600: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 21600 ph_start: max|div_u_raw|=2.527e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21700; 45.2 %
+DEBUG:ITER: Iter 21700: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 21700 ph_start: max|div_u_raw|=2.525e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21800; 45.4 %
+DEBUG:ITER: Iter 21800: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 21800 ph_start: max|div_u_raw|=2.523e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 21900; 45.6 %
+DEBUG:ITER: Iter 21900: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 21900 ph_start: max|div_u_raw|=2.520e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22000; 45.8 %
+DEBUG:ITER: Iter 22000: phi min=1.873e-02, max=8.276e-02
+DEBUG:ITER: Iter 22000 ph_start: max|div_u_raw|=2.518e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22100; 46.0 %
+DEBUG:ITER: Iter 22100: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 22100 ph_start: max|div_u_raw|=2.516e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22200; 46.2 %
+DEBUG:ITER: Iter 22200: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 22200 ph_start: max|div_u_raw|=2.514e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22300; 46.5 %
+DEBUG:ITER: Iter 22300: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 22300 ph_start: max|div_u_raw|=2.512e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22400; 46.7 %
+DEBUG:ITER: Iter 22400: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 22400 ph_start: max|div_u_raw|=2.509e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22500; 46.9 %
+DEBUG:ITER: Iter 22500: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 22500 ph_start: max|div_u_raw|=2.507e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22600; 47.1 %
+DEBUG:ITER: Iter 22600: phi min=1.872e-02, max=8.276e-02
+DEBUG:ITER: Iter 22600 ph_start: max|div_u_raw|=2.505e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22700; 47.3 %
+DEBUG:ITER: Iter 22700: phi min=1.871e-02, max=8.276e-02
+DEBUG:ITER: Iter 22700 ph_start: max|div_u_raw|=2.503e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22800; 47.5 %
+DEBUG:ITER: Iter 22800: phi min=1.871e-02, max=8.276e-02
+DEBUG:ITER: Iter 22800 ph_start: max|div_u_raw|=2.501e-06
+DEBUG:ITER: phi at iter 22831: min=0.019, max=0.083, mean=0.049
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_22831.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_22831.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 22900; 47.7 %
+DEBUG:ITER: Iter 22900: phi min=1.871e-02, max=8.276e-02
+DEBUG:ITER: Iter 22900 ph_start: max|div_u_raw|=2.499e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23000; 47.9 %
+DEBUG:ITER: Iter 23000: phi min=1.871e-02, max=8.276e-02
+DEBUG:ITER: Iter 23000 ph_start: max|div_u_raw|=2.496e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23100; 48.1 %
+DEBUG:ITER: Iter 23100: phi min=1.871e-02, max=8.276e-02
+DEBUG:ITER: Iter 23100 ph_start: max|div_u_raw|=2.494e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23200; 48.3 %
+DEBUG:ITER: Iter 23200: phi min=1.870e-02, max=8.276e-02
+DEBUG:ITER: Iter 23200 ph_start: max|div_u_raw|=2.492e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23300; 48.5 %
+DEBUG:ITER: Iter 23300: phi min=1.870e-02, max=8.276e-02
+DEBUG:ITER: Iter 23300 ph_start: max|div_u_raw|=2.490e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23400; 48.7 %
+DEBUG:ITER: Iter 23400: phi min=1.870e-02, max=8.276e-02
+DEBUG:ITER: Iter 23400 ph_start: max|div_u_raw|=2.488e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23500; 49.0 %
+DEBUG:ITER: Iter 23500: phi min=1.870e-02, max=8.276e-02
+DEBUG:ITER: Iter 23500 ph_start: max|div_u_raw|=2.486e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23600; 49.2 %
+DEBUG:ITER: Iter 23600: phi min=1.870e-02, max=8.276e-02
+DEBUG:ITER: Iter 23600 ph_start: max|div_u_raw|=2.484e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23700; 49.4 %
+DEBUG:ITER: Iter 23700: phi min=1.869e-02, max=8.276e-02
+DEBUG:ITER: Iter 23700 ph_start: max|div_u_raw|=2.482e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23800; 49.6 %
+DEBUG:ITER: Iter 23800: phi min=1.869e-02, max=8.276e-02
+DEBUG:ITER: Iter 23800 ph_start: max|div_u_raw|=2.480e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 23900; 49.8 %
+DEBUG:ITER: Iter 23900: phi min=1.869e-02, max=8.276e-02
+DEBUG:ITER: Iter 23900 ph_start: max|div_u_raw|=2.477e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24000; 50.0 %
+DEBUG:ITER: Iter 24000: phi min=1.869e-02, max=8.276e-02
+DEBUG:ITER: Iter 24000 ph_start: max|div_u_raw|=2.475e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24100; 50.2 %
+DEBUG:ITER: Iter 24100: phi min=1.868e-02, max=8.276e-02
+DEBUG:ITER: Iter 24100 ph_start: max|div_u_raw|=2.473e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24200; 50.4 %
+DEBUG:ITER: Iter 24200: phi min=1.868e-02, max=8.276e-02
+DEBUG:ITER: Iter 24200 ph_start: max|div_u_raw|=2.471e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24300; 50.6 %
+DEBUG:ITER: Iter 24300: phi min=1.868e-02, max=8.276e-02
+DEBUG:ITER: Iter 24300 ph_start: max|div_u_raw|=2.469e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24400; 50.8 %
+DEBUG:ITER: Iter 24400: phi min=1.868e-02, max=8.276e-02
+DEBUG:ITER: Iter 24400 ph_start: max|div_u_raw|=2.467e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24500; 51.0 %
+DEBUG:ITER: Iter 24500: phi min=1.868e-02, max=8.276e-02
+DEBUG:ITER: Iter 24500 ph_start: max|div_u_raw|=2.465e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24600; 51.2 %
+DEBUG:ITER: Iter 24600: phi min=1.867e-02, max=8.276e-02
+DEBUG:ITER: Iter 24600 ph_start: max|div_u_raw|=2.463e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24700; 51.5 %
+DEBUG:ITER: Iter 24700: phi min=1.867e-02, max=8.276e-02
+DEBUG:ITER: Iter 24700 ph_start: max|div_u_raw|=2.461e-06
+DEBUG:ITER: phi at iter 24777: min=0.019, max=0.083, mean=0.049
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_24777.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_24777.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24800; 51.7 %
+DEBUG:ITER: Iter 24800: phi min=1.867e-02, max=8.276e-02
+DEBUG:ITER: Iter 24800 ph_start: max|div_u_raw|=2.459e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 24900; 51.9 %
+DEBUG:ITER: Iter 24900: phi min=1.867e-02, max=8.276e-02
+DEBUG:ITER: Iter 24900 ph_start: max|div_u_raw|=2.457e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25000; 52.1 %
+DEBUG:ITER: Iter 25000: phi min=1.867e-02, max=8.276e-02
+DEBUG:ITER: Iter 25000 ph_start: max|div_u_raw|=2.455e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25100; 52.3 %
+DEBUG:ITER: Iter 25100: phi min=1.866e-02, max=8.276e-02
+DEBUG:ITER: Iter 25100 ph_start: max|div_u_raw|=2.453e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25200; 52.5 %
+DEBUG:ITER: Iter 25200: phi min=1.866e-02, max=8.276e-02
+DEBUG:ITER: Iter 25200 ph_start: max|div_u_raw|=2.451e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25300; 52.7 %
+DEBUG:ITER: Iter 25300: phi min=1.866e-02, max=8.276e-02
+DEBUG:ITER: Iter 25300 ph_start: max|div_u_raw|=2.449e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25400; 52.9 %
+DEBUG:ITER: Iter 25400: phi min=1.866e-02, max=8.276e-02
+DEBUG:ITER: Iter 25400 ph_start: max|div_u_raw|=2.447e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25500; 53.1 %
+DEBUG:ITER: Iter 25500: phi min=1.865e-02, max=8.276e-02
+DEBUG:ITER: Iter 25500 ph_start: max|div_u_raw|=2.445e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25600; 53.3 %
+DEBUG:ITER: Iter 25600: phi min=1.865e-02, max=8.276e-02
+DEBUG:ITER: Iter 25600 ph_start: max|div_u_raw|=2.443e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25700; 53.5 %
+DEBUG:ITER: Iter 25700: phi min=1.865e-02, max=8.276e-02
+DEBUG:ITER: Iter 25700 ph_start: max|div_u_raw|=2.441e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25800; 53.7 %
+DEBUG:ITER: Iter 25800: phi min=1.865e-02, max=8.276e-02
+DEBUG:ITER: Iter 25800 ph_start: max|div_u_raw|=2.439e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 25900; 54.0 %
+DEBUG:ITER: Iter 25900: phi min=1.865e-02, max=8.276e-02
+DEBUG:ITER: Iter 25900 ph_start: max|div_u_raw|=2.437e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26000; 54.2 %
+DEBUG:ITER: Iter 26000: phi min=1.864e-02, max=8.276e-02
+DEBUG:ITER: Iter 26000 ph_start: max|div_u_raw|=2.436e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26100; 54.4 %
+DEBUG:ITER: Iter 26100: phi min=1.864e-02, max=8.276e-02
+DEBUG:ITER: Iter 26100 ph_start: max|div_u_raw|=2.434e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26200; 54.6 %
+DEBUG:ITER: Iter 26200: phi min=1.864e-02, max=8.276e-02
+DEBUG:ITER: Iter 26200 ph_start: max|div_u_raw|=2.432e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26300; 54.8 %
+DEBUG:ITER: Iter 26300: phi min=1.864e-02, max=8.276e-02
+DEBUG:ITER: Iter 26300 ph_start: max|div_u_raw|=2.430e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26400; 55.0 %
+DEBUG:ITER: Iter 26400: phi min=1.863e-02, max=8.276e-02
+DEBUG:ITER: Iter 26400 ph_start: max|div_u_raw|=2.428e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26500; 55.2 %
+DEBUG:ITER: Iter 26500: phi min=1.863e-02, max=8.276e-02
+DEBUG:ITER: Iter 26500 ph_start: max|div_u_raw|=2.426e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26600; 55.4 %
+DEBUG:ITER: Iter 26600: phi min=1.863e-02, max=8.276e-02
+DEBUG:ITER: Iter 26600 ph_start: max|div_u_raw|=2.424e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26700; 55.6 %
+DEBUG:ITER: Iter 26700: phi min=1.863e-02, max=8.276e-02
+DEBUG:ITER: Iter 26700 ph_start: max|div_u_raw|=2.422e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26800; 55.8 %
+DEBUG:ITER: Iter 26800: phi min=1.862e-02, max=8.276e-02
+DEBUG:ITER: Iter 26800 ph_start: max|div_u_raw|=2.420e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 26900; 56.0 %
+DEBUG:ITER: Iter 26900: phi min=1.862e-02, max=8.276e-02
+DEBUG:ITER: Iter 26900 ph_start: max|div_u_raw|=2.419e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27000; 56.2 %
+DEBUG:ITER: Iter 27000: phi min=1.862e-02, max=8.276e-02
+DEBUG:ITER: Iter 27000 ph_start: max|div_u_raw|=2.417e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27100; 56.5 %
+DEBUG:ITER: Iter 27100: phi min=1.862e-02, max=8.276e-02
+DEBUG:ITER: Iter 27100 ph_start: max|div_u_raw|=2.415e-06
+DEBUG:ITER: phi at iter 27153: min=0.019, max=0.083, mean=0.048
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_27153.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_27153.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27200; 56.7 %
+DEBUG:ITER: Iter 27200: phi min=1.862e-02, max=8.276e-02
+DEBUG:ITER: Iter 27200 ph_start: max|div_u_raw|=2.413e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27300; 56.9 %
+DEBUG:ITER: Iter 27300: phi min=1.861e-02, max=8.276e-02
+DEBUG:ITER: Iter 27300 ph_start: max|div_u_raw|=2.411e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27400; 57.1 %
+DEBUG:ITER: Iter 27400: phi min=1.861e-02, max=8.276e-02
+DEBUG:ITER: Iter 27400 ph_start: max|div_u_raw|=2.409e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27500; 57.3 %
+DEBUG:ITER: Iter 27500: phi min=1.861e-02, max=8.276e-02
+DEBUG:ITER: Iter 27500 ph_start: max|div_u_raw|=2.407e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27600; 57.5 %
+DEBUG:ITER: Iter 27600: phi min=1.861e-02, max=8.276e-02
+DEBUG:ITER: Iter 27600 ph_start: max|div_u_raw|=2.406e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27700; 57.7 %
+DEBUG:ITER: Iter 27700: phi min=1.860e-02, max=8.276e-02
+DEBUG:ITER: Iter 27700 ph_start: max|div_u_raw|=2.404e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27800; 57.9 %
+DEBUG:ITER: Iter 27800: phi min=1.860e-02, max=8.276e-02
+DEBUG:ITER: Iter 27800 ph_start: max|div_u_raw|=2.402e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 27900; 58.1 %
+DEBUG:ITER: Iter 27900: phi min=1.860e-02, max=8.276e-02
+DEBUG:ITER: Iter 27900 ph_start: max|div_u_raw|=2.400e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28000; 58.3 %
+DEBUG:ITER: Iter 28000: phi min=1.860e-02, max=8.276e-02
+DEBUG:ITER: Iter 28000 ph_start: max|div_u_raw|=2.398e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28100; 58.5 %
+DEBUG:ITER: Iter 28100: phi min=1.859e-02, max=8.276e-02
+DEBUG:ITER: Iter 28100 ph_start: max|div_u_raw|=2.397e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28200; 58.7 %
+DEBUG:ITER: Iter 28200: phi min=1.859e-02, max=8.276e-02
+DEBUG:ITER: Iter 28200 ph_start: max|div_u_raw|=2.395e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28300; 59.0 %
+DEBUG:ITER: Iter 28300: phi min=1.859e-02, max=8.276e-02
+DEBUG:ITER: Iter 28300 ph_start: max|div_u_raw|=2.393e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28400; 59.2 %
+DEBUG:ITER: Iter 28400: phi min=1.859e-02, max=8.276e-02
+DEBUG:ITER: Iter 28400 ph_start: max|div_u_raw|=2.391e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28500; 59.4 %
+DEBUG:ITER: Iter 28500: phi min=1.859e-02, max=8.276e-02
+DEBUG:ITER: Iter 28500 ph_start: max|div_u_raw|=2.390e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28600; 59.6 %
+DEBUG:ITER: Iter 28600: phi min=1.858e-02, max=8.276e-02
+DEBUG:ITER: Iter 28600 ph_start: max|div_u_raw|=2.388e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28700; 59.8 %
+DEBUG:ITER: Iter 28700: phi min=1.858e-02, max=8.276e-02
+DEBUG:ITER: Iter 28700 ph_start: max|div_u_raw|=2.386e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28800; 60.0 %
+DEBUG:ITER: Iter 28800: phi min=1.858e-02, max=8.276e-02
+DEBUG:ITER: Iter 28800 ph_start: max|div_u_raw|=2.384e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 28900; 60.2 %
+DEBUG:ITER: Iter 28900: phi min=1.858e-02, max=8.276e-02
+DEBUG:ITER: Iter 28900 ph_start: max|div_u_raw|=2.383e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29000; 60.4 %
+DEBUG:ITER: Iter 29000: phi min=1.857e-02, max=8.276e-02
+DEBUG:ITER: Iter 29000 ph_start: max|div_u_raw|=2.381e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29100; 60.6 %
+DEBUG:ITER: Iter 29100: phi min=1.857e-02, max=8.276e-02
+DEBUG:ITER: Iter 29100 ph_start: max|div_u_raw|=2.379e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29200; 60.8 %
+DEBUG:ITER: Iter 29200: phi min=1.857e-02, max=8.276e-02
+DEBUG:ITER: Iter 29200 ph_start: max|div_u_raw|=2.377e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29300; 61.0 %
+DEBUG:ITER: Iter 29300: phi min=1.857e-02, max=8.276e-02
+DEBUG:ITER: Iter 29300 ph_start: max|div_u_raw|=2.376e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29400; 61.2 %
+DEBUG:ITER: Iter 29400: phi min=1.856e-02, max=8.276e-02
+DEBUG:ITER: Iter 29400 ph_start: max|div_u_raw|=2.374e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29500; 61.5 %
+DEBUG:ITER: Iter 29500: phi min=1.856e-02, max=8.276e-02
+DEBUG:ITER: Iter 29500 ph_start: max|div_u_raw|=2.372e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29600; 61.7 %
+DEBUG:ITER: Iter 29600: phi min=1.856e-02, max=8.276e-02
+DEBUG:ITER: Iter 29600 ph_start: max|div_u_raw|=2.371e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29700; 61.9 %
+DEBUG:ITER: Iter 29700: phi min=1.856e-02, max=8.276e-02
+DEBUG:ITER: Iter 29700 ph_start: max|div_u_raw|=2.369e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29800; 62.1 %
+DEBUG:ITER: Iter 29800: phi min=1.855e-02, max=8.276e-02
+DEBUG:ITER: Iter 29800 ph_start: max|div_u_raw|=2.367e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 29900; 62.3 %
+DEBUG:ITER: Iter 29900: phi min=1.855e-02, max=8.275e-02
+DEBUG:ITER: Iter 29900 ph_start: max|div_u_raw|=2.365e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30000; 62.5 %
+DEBUG:ITER: Iter 30000: phi min=1.855e-02, max=8.275e-02
+DEBUG:ITER: Iter 30000 ph_start: max|div_u_raw|=2.364e-06
+DEBUG:ITER: phi at iter 30056: min=0.018, max=0.083, mean=0.048
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_30056.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_30056.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30100; 62.7 %
+DEBUG:ITER: Iter 30100: phi min=1.855e-02, max=8.275e-02
+DEBUG:ITER: Iter 30100 ph_start: max|div_u_raw|=2.362e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30200; 62.9 %
+DEBUG:ITER: Iter 30200: phi min=1.855e-02, max=8.275e-02
+DEBUG:ITER: Iter 30200 ph_start: max|div_u_raw|=2.360e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30300; 63.1 %
+DEBUG:ITER: Iter 30300: phi min=1.854e-02, max=8.275e-02
+DEBUG:ITER: Iter 30300 ph_start: max|div_u_raw|=2.359e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30400; 63.3 %
+DEBUG:ITER: Iter 30400: phi min=1.854e-02, max=8.275e-02
+DEBUG:ITER: Iter 30400 ph_start: max|div_u_raw|=2.357e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30500; 63.5 %
+DEBUG:ITER: Iter 30500: phi min=1.854e-02, max=8.275e-02
+DEBUG:ITER: Iter 30500 ph_start: max|div_u_raw|=2.356e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30600; 63.7 %
+DEBUG:ITER: Iter 30600: phi min=1.854e-02, max=8.275e-02
+DEBUG:ITER: Iter 30600 ph_start: max|div_u_raw|=2.354e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30700; 64.0 %
+DEBUG:ITER: Iter 30700: phi min=1.853e-02, max=8.275e-02
+DEBUG:ITER: Iter 30700 ph_start: max|div_u_raw|=2.352e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30800; 64.2 %
+DEBUG:ITER: Iter 30800: phi min=1.853e-02, max=8.275e-02
+DEBUG:ITER: Iter 30800 ph_start: max|div_u_raw|=2.351e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 30900; 64.4 %
+DEBUG:ITER: Iter 30900: phi min=1.853e-02, max=8.275e-02
+DEBUG:ITER: Iter 30900 ph_start: max|div_u_raw|=2.349e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31000; 64.6 %
+DEBUG:ITER: Iter 31000: phi min=1.853e-02, max=8.275e-02
+DEBUG:ITER: Iter 31000 ph_start: max|div_u_raw|=2.347e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31100; 64.8 %
+DEBUG:ITER: Iter 31100: phi min=1.852e-02, max=8.275e-02
+DEBUG:ITER: Iter 31100 ph_start: max|div_u_raw|=2.346e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31200; 65.0 %
+DEBUG:ITER: Iter 31200: phi min=1.852e-02, max=8.275e-02
+DEBUG:ITER: Iter 31200 ph_start: max|div_u_raw|=2.344e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31300; 65.2 %
+DEBUG:ITER: Iter 31300: phi min=1.852e-02, max=8.275e-02
+DEBUG:ITER: Iter 31300 ph_start: max|div_u_raw|=2.343e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31400; 65.4 %
+DEBUG:ITER: Iter 31400: phi min=1.852e-02, max=8.275e-02
+DEBUG:ITER: Iter 31400 ph_start: max|div_u_raw|=2.341e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31500; 65.6 %
+DEBUG:ITER: Iter 31500: phi min=1.852e-02, max=8.275e-02
+DEBUG:ITER: Iter 31500 ph_start: max|div_u_raw|=2.339e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31600; 65.8 %
+DEBUG:ITER: Iter 31600: phi min=1.851e-02, max=8.275e-02
+DEBUG:ITER: Iter 31600 ph_start: max|div_u_raw|=2.338e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31700; 66.0 %
+DEBUG:ITER: Iter 31700: phi min=1.851e-02, max=8.275e-02
+DEBUG:ITER: Iter 31700 ph_start: max|div_u_raw|=2.336e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31800; 66.2 %
+DEBUG:ITER: Iter 31800: phi min=1.851e-02, max=8.275e-02
+DEBUG:ITER: Iter 31800 ph_start: max|div_u_raw|=2.335e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 31900; 66.5 %
+DEBUG:ITER: Iter 31900: phi min=1.851e-02, max=8.275e-02
+DEBUG:ITER: Iter 31900 ph_start: max|div_u_raw|=2.333e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32000; 66.7 %
+DEBUG:ITER: Iter 32000: phi min=1.850e-02, max=8.275e-02
+DEBUG:ITER: Iter 32000 ph_start: max|div_u_raw|=2.332e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32100; 66.9 %
+DEBUG:ITER: Iter 32100: phi min=1.850e-02, max=8.275e-02
+DEBUG:ITER: Iter 32100 ph_start: max|div_u_raw|=2.330e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32200; 67.1 %
+DEBUG:ITER: Iter 32200: phi min=1.850e-02, max=8.275e-02
+DEBUG:ITER: Iter 32200 ph_start: max|div_u_raw|=2.328e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32300; 67.3 %
+DEBUG:ITER: Iter 32300: phi min=1.850e-02, max=8.275e-02
+DEBUG:ITER: Iter 32300 ph_start: max|div_u_raw|=2.327e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32400; 67.5 %
+DEBUG:ITER: Iter 32400: phi min=1.849e-02, max=8.275e-02
+DEBUG:ITER: Iter 32400 ph_start: max|div_u_raw|=2.325e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32500; 67.7 %
+DEBUG:ITER: Iter 32500: phi min=1.849e-02, max=8.275e-02
+DEBUG:ITER: Iter 32500 ph_start: max|div_u_raw|=2.324e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32600; 67.9 %
+DEBUG:ITER: Iter 32600: phi min=1.849e-02, max=8.275e-02
+DEBUG:ITER: Iter 32600 ph_start: max|div_u_raw|=2.322e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32700; 68.1 %
+DEBUG:ITER: Iter 32700: phi min=1.849e-02, max=8.275e-02
+DEBUG:ITER: Iter 32700 ph_start: max|div_u_raw|=2.321e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32800; 68.3 %
+DEBUG:ITER: Iter 32800: phi min=1.848e-02, max=8.275e-02
+DEBUG:ITER: Iter 32800 ph_start: max|div_u_raw|=2.319e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 32900; 68.5 %
+DEBUG:ITER: Iter 32900: phi min=1.848e-02, max=8.275e-02
+DEBUG:ITER: Iter 32900 ph_start: max|div_u_raw|=2.318e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33000; 68.7 %
+DEBUG:ITER: Iter 33000: phi min=1.848e-02, max=8.275e-02
+DEBUG:ITER: Iter 33000 ph_start: max|div_u_raw|=2.316e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33100; 69.0 %
+DEBUG:ITER: Iter 33100: phi min=1.848e-02, max=8.275e-02
+DEBUG:ITER: Iter 33100 ph_start: max|div_u_raw|=2.315e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33200; 69.2 %
+DEBUG:ITER: Iter 33200: phi min=1.848e-02, max=8.275e-02
+DEBUG:ITER: Iter 33200 ph_start: max|div_u_raw|=2.313e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33300; 69.4 %
+DEBUG:ITER: Iter 33300: phi min=1.847e-02, max=8.275e-02
+DEBUG:ITER: Iter 33300 ph_start: max|div_u_raw|=2.312e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33400; 69.6 %
+DEBUG:ITER: Iter 33400: phi min=1.847e-02, max=8.275e-02
+DEBUG:ITER: Iter 33400 ph_start: max|div_u_raw|=2.310e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33500; 69.8 %
+DEBUG:ITER: Iter 33500: phi min=1.847e-02, max=8.275e-02
+DEBUG:ITER: Iter 33500 ph_start: max|div_u_raw|=2.309e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33600; 70.0 %
+DEBUG:ITER: Iter 33600: phi min=1.847e-02, max=8.275e-02
+DEBUG:ITER: Iter 33600 ph_start: max|div_u_raw|=2.307e-06
+DEBUG:ITER: phi at iter 33602: min=0.018, max=0.083, mean=0.048
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_33602.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_33602.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33700; 70.2 %
+DEBUG:ITER: Iter 33700: phi min=1.846e-02, max=8.275e-02
+DEBUG:ITER: Iter 33700 ph_start: max|div_u_raw|=2.306e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33800; 70.4 %
+DEBUG:ITER: Iter 33800: phi min=1.846e-02, max=8.275e-02
+DEBUG:ITER: Iter 33800 ph_start: max|div_u_raw|=2.304e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 33900; 70.6 %
+DEBUG:ITER: Iter 33900: phi min=1.846e-02, max=8.275e-02
+DEBUG:ITER: Iter 33900 ph_start: max|div_u_raw|=2.303e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34000; 70.8 %
+DEBUG:ITER: Iter 34000: phi min=1.846e-02, max=8.275e-02
+DEBUG:ITER: Iter 34000 ph_start: max|div_u_raw|=2.301e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34100; 71.0 %
+DEBUG:ITER: Iter 34100: phi min=1.845e-02, max=8.275e-02
+DEBUG:ITER: Iter 34100 ph_start: max|div_u_raw|=2.300e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34200; 71.2 %
+DEBUG:ITER: Iter 34200: phi min=1.845e-02, max=8.275e-02
+DEBUG:ITER: Iter 34200 ph_start: max|div_u_raw|=2.298e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34300; 71.5 %
+DEBUG:ITER: Iter 34300: phi min=1.845e-02, max=8.275e-02
+DEBUG:ITER: Iter 34300 ph_start: max|div_u_raw|=2.297e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34400; 71.7 %
+DEBUG:ITER: Iter 34400: phi min=1.845e-02, max=8.275e-02
+DEBUG:ITER: Iter 34400 ph_start: max|div_u_raw|=2.296e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34500; 71.9 %
+DEBUG:ITER: Iter 34500: phi min=1.845e-02, max=8.275e-02
+DEBUG:ITER: Iter 34500 ph_start: max|div_u_raw|=2.294e-06
+DEBUG:ITER: phi at iter 34562: min=0.018, max=0.083, mean=0.048
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_34562.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_34562.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34600; 72.1 %
+DEBUG:ITER: Iter 34600: phi min=1.844e-02, max=8.275e-02
+DEBUG:ITER: Iter 34600 ph_start: max|div_u_raw|=2.293e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34700; 72.3 %
+DEBUG:ITER: Iter 34700: phi min=1.844e-02, max=8.275e-02
+DEBUG:ITER: Iter 34700 ph_start: max|div_u_raw|=2.291e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34800; 72.5 %
+DEBUG:ITER: Iter 34800: phi min=1.844e-02, max=8.275e-02
+DEBUG:ITER: Iter 34800 ph_start: max|div_u_raw|=2.290e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 34900; 72.7 %
+DEBUG:ITER: Iter 34900: phi min=1.844e-02, max=8.275e-02
+DEBUG:ITER: Iter 34900 ph_start: max|div_u_raw|=2.288e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35000; 72.9 %
+DEBUG:ITER: Iter 35000: phi min=1.843e-02, max=8.275e-02
+DEBUG:ITER: Iter 35000 ph_start: max|div_u_raw|=2.287e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35100; 73.1 %
+DEBUG:ITER: Iter 35100: phi min=1.843e-02, max=8.275e-02
+DEBUG:ITER: Iter 35100 ph_start: max|div_u_raw|=2.286e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35200; 73.3 %
+DEBUG:ITER: Iter 35200: phi min=1.843e-02, max=8.275e-02
+DEBUG:ITER: Iter 35200 ph_start: max|div_u_raw|=2.284e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35300; 73.5 %
+DEBUG:ITER: Iter 35300: phi min=1.843e-02, max=8.275e-02
+DEBUG:ITER: Iter 35300 ph_start: max|div_u_raw|=2.283e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35400; 73.7 %
+DEBUG:ITER: Iter 35400: phi min=1.843e-02, max=8.275e-02
+DEBUG:ITER: Iter 35400 ph_start: max|div_u_raw|=2.281e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35500; 74.0 %
+DEBUG:ITER: Iter 35500: phi min=1.842e-02, max=8.275e-02
+DEBUG:ITER: Iter 35500 ph_start: max|div_u_raw|=2.280e-06
+DEBUG:ITER: phi at iter 35522: min=0.018, max=0.083, mean=0.048
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_35522.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_35522.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35600; 74.2 %
+DEBUG:ITER: Iter 35600: phi min=1.842e-02, max=8.275e-02
+DEBUG:ITER: Iter 35600 ph_start: max|div_u_raw|=2.279e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35700; 74.4 %
+DEBUG:ITER: Iter 35700: phi min=1.842e-02, max=8.275e-02
+DEBUG:ITER: Iter 35700 ph_start: max|div_u_raw|=2.277e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35800; 74.6 %
+DEBUG:ITER: Iter 35800: phi min=1.842e-02, max=8.275e-02
+DEBUG:ITER: Iter 35800 ph_start: max|div_u_raw|=2.276e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 35900; 74.8 %
+DEBUG:ITER: Iter 35900: phi min=1.841e-02, max=8.275e-02
+DEBUG:ITER: Iter 35900 ph_start: max|div_u_raw|=2.275e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36000; 75.0 %
+DEBUG:ITER: Iter 36000: phi min=1.841e-02, max=8.275e-02
+DEBUG:ITER: Iter 36000 ph_start: max|div_u_raw|=2.273e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36100; 75.2 %
+DEBUG:ITER: Iter 36100: phi min=1.841e-02, max=8.275e-02
+DEBUG:ITER: Iter 36100 ph_start: max|div_u_raw|=2.272e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36200; 75.4 %
+DEBUG:ITER: Iter 36200: phi min=1.841e-02, max=8.275e-02
+DEBUG:ITER: Iter 36200 ph_start: max|div_u_raw|=2.270e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36300; 75.6 %
+DEBUG:ITER: Iter 36300: phi min=1.840e-02, max=8.275e-02
+DEBUG:ITER: Iter 36300 ph_start: max|div_u_raw|=2.269e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36400; 75.8 %
+DEBUG:ITER: Iter 36400: phi min=1.840e-02, max=8.275e-02
+DEBUG:ITER: Iter 36400 ph_start: max|div_u_raw|=2.268e-06
+DEBUG:ITER: phi at iter 36482: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_36482.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_36482.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36500; 76.0 %
+DEBUG:ITER: Iter 36500: phi min=1.840e-02, max=8.275e-02
+DEBUG:ITER: Iter 36500 ph_start: max|div_u_raw|=2.266e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36600; 76.2 %
+DEBUG:ITER: Iter 36600: phi min=1.840e-02, max=8.275e-02
+DEBUG:ITER: Iter 36600 ph_start: max|div_u_raw|=2.265e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36700; 76.5 %
+DEBUG:ITER: Iter 36700: phi min=1.840e-02, max=8.275e-02
+DEBUG:ITER: Iter 36700 ph_start: max|div_u_raw|=2.264e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36800; 76.7 %
+DEBUG:ITER: Iter 36800: phi min=1.839e-02, max=8.275e-02
+DEBUG:ITER: Iter 36800 ph_start: max|div_u_raw|=2.262e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 36900; 76.9 %
+DEBUG:ITER: Iter 36900: phi min=1.839e-02, max=8.275e-02
+DEBUG:ITER: Iter 36900 ph_start: max|div_u_raw|=2.261e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37000; 77.1 %
+DEBUG:ITER: Iter 37000: phi min=1.839e-02, max=8.275e-02
+DEBUG:ITER: Iter 37000 ph_start: max|div_u_raw|=2.260e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37100; 77.3 %
+DEBUG:ITER: Iter 37100: phi min=1.839e-02, max=8.275e-02
+DEBUG:ITER: Iter 37100 ph_start: max|div_u_raw|=2.258e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37200; 77.5 %
+DEBUG:ITER: Iter 37200: phi min=1.838e-02, max=8.275e-02
+DEBUG:ITER: Iter 37200 ph_start: max|div_u_raw|=2.257e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37300; 77.7 %
+DEBUG:ITER: Iter 37300: phi min=1.838e-02, max=8.275e-02
+DEBUG:ITER: Iter 37300 ph_start: max|div_u_raw|=2.256e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37400; 77.9 %
+DEBUG:ITER: Iter 37400: phi min=1.838e-02, max=8.275e-02
+DEBUG:ITER: Iter 37400 ph_start: max|div_u_raw|=2.254e-06
+DEBUG:ITER: phi at iter 37442: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_37442.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_37442.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37500; 78.1 %
+DEBUG:ITER: Iter 37500: phi min=1.838e-02, max=8.275e-02
+DEBUG:ITER: Iter 37500 ph_start: max|div_u_raw|=2.253e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37600; 78.3 %
+DEBUG:ITER: Iter 37600: phi min=1.838e-02, max=8.275e-02
+DEBUG:ITER: Iter 37600 ph_start: max|div_u_raw|=2.252e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37700; 78.5 %
+DEBUG:ITER: Iter 37700: phi min=1.837e-02, max=8.275e-02
+DEBUG:ITER: Iter 37700 ph_start: max|div_u_raw|=2.251e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37800; 78.7 %
+DEBUG:ITER: Iter 37800: phi min=1.837e-02, max=8.275e-02
+DEBUG:ITER: Iter 37800 ph_start: max|div_u_raw|=2.249e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 37900; 79.0 %
+DEBUG:ITER: Iter 37900: phi min=1.837e-02, max=8.275e-02
+DEBUG:ITER: Iter 37900 ph_start: max|div_u_raw|=2.248e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38000; 79.2 %
+DEBUG:ITER: Iter 38000: phi min=1.837e-02, max=8.275e-02
+DEBUG:ITER: Iter 38000 ph_start: max|div_u_raw|=2.247e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38100; 79.4 %
+DEBUG:ITER: Iter 38100: phi min=1.836e-02, max=8.275e-02
+DEBUG:ITER: Iter 38100 ph_start: max|div_u_raw|=2.245e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38200; 79.6 %
+DEBUG:ITER: Iter 38200: phi min=1.836e-02, max=8.275e-02
+DEBUG:ITER: Iter 38200 ph_start: max|div_u_raw|=2.244e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38300; 79.8 %
+DEBUG:ITER: Iter 38300: phi min=1.836e-02, max=8.275e-02
+DEBUG:ITER: Iter 38300 ph_start: max|div_u_raw|=2.243e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38400; 80.0 %
+DEBUG:ITER: Iter 38400: phi min=1.836e-02, max=8.275e-02
+DEBUG:ITER: Iter 38400 ph_start: max|div_u_raw|=2.242e-06
+DEBUG:ITER: phi at iter 38402: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_38402.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_38402.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38500; 80.2 %
+DEBUG:ITER: Iter 38500: phi min=1.836e-02, max=8.275e-02
+DEBUG:ITER: Iter 38500 ph_start: max|div_u_raw|=2.240e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38600; 80.4 %
+DEBUG:ITER: Iter 38600: phi min=1.835e-02, max=8.275e-02
+DEBUG:ITER: Iter 38600 ph_start: max|div_u_raw|=2.239e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38700; 80.6 %
+DEBUG:ITER: Iter 38700: phi min=1.835e-02, max=8.275e-02
+DEBUG:ITER: Iter 38700 ph_start: max|div_u_raw|=2.238e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38800; 80.8 %
+DEBUG:ITER: Iter 38800: phi min=1.835e-02, max=8.275e-02
+DEBUG:ITER: Iter 38800 ph_start: max|div_u_raw|=2.237e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 38900; 81.0 %
+DEBUG:ITER: Iter 38900: phi min=1.835e-02, max=8.275e-02
+DEBUG:ITER: Iter 38900 ph_start: max|div_u_raw|=2.235e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39000; 81.2 %
+DEBUG:ITER: Iter 39000: phi min=1.835e-02, max=8.275e-02
+DEBUG:ITER: Iter 39000 ph_start: max|div_u_raw|=2.234e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39100; 81.5 %
+DEBUG:ITER: Iter 39100: phi min=1.834e-02, max=8.275e-02
+DEBUG:ITER: Iter 39100 ph_start: max|div_u_raw|=2.233e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39200; 81.7 %
+DEBUG:ITER: Iter 39200: phi min=1.834e-02, max=8.275e-02
+DEBUG:ITER: Iter 39200 ph_start: max|div_u_raw|=2.232e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39300; 81.9 %
+DEBUG:ITER: Iter 39300: phi min=1.834e-02, max=8.275e-02
+DEBUG:ITER: Iter 39300 ph_start: max|div_u_raw|=2.231e-06
+DEBUG:ITER: phi at iter 39362: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_39362.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_39362.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39400; 82.1 %
+DEBUG:ITER: Iter 39400: phi min=1.834e-02, max=8.275e-02
+DEBUG:ITER: Iter 39400 ph_start: max|div_u_raw|=2.229e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39500; 82.3 %
+DEBUG:ITER: Iter 39500: phi min=1.833e-02, max=8.275e-02
+DEBUG:ITER: Iter 39500 ph_start: max|div_u_raw|=2.228e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39600; 82.5 %
+DEBUG:ITER: Iter 39600: phi min=1.833e-02, max=8.275e-02
+DEBUG:ITER: Iter 39600 ph_start: max|div_u_raw|=2.227e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39700; 82.7 %
+DEBUG:ITER: Iter 39700: phi min=1.833e-02, max=8.275e-02
+DEBUG:ITER: Iter 39700 ph_start: max|div_u_raw|=2.226e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39800; 82.9 %
+DEBUG:ITER: Iter 39800: phi min=1.833e-02, max=8.275e-02
+DEBUG:ITER: Iter 39800 ph_start: max|div_u_raw|=2.224e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 39900; 83.1 %
+DEBUG:ITER: Iter 39900: phi min=1.833e-02, max=8.275e-02
+DEBUG:ITER: Iter 39900 ph_start: max|div_u_raw|=2.223e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40000; 83.3 %
+DEBUG:ITER: Iter 40000: phi min=1.832e-02, max=8.275e-02
+DEBUG:ITER: Iter 40000 ph_start: max|div_u_raw|=2.222e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40100; 83.5 %
+DEBUG:ITER: Iter 40100: phi min=1.832e-02, max=8.275e-02
+DEBUG:ITER: Iter 40100 ph_start: max|div_u_raw|=2.221e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40200; 83.7 %
+DEBUG:ITER: Iter 40200: phi min=1.832e-02, max=8.275e-02
+DEBUG:ITER: Iter 40200 ph_start: max|div_u_raw|=2.220e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40300; 84.0 %
+DEBUG:ITER: Iter 40300: phi min=1.832e-02, max=8.275e-02
+DEBUG:ITER: Iter 40300 ph_start: max|div_u_raw|=2.219e-06
+DEBUG:ITER: phi at iter 40322: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_40322.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_40322.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40400; 84.2 %
+DEBUG:ITER: Iter 40400: phi min=1.832e-02, max=8.275e-02
+DEBUG:ITER: Iter 40400 ph_start: max|div_u_raw|=2.217e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40500; 84.4 %
+DEBUG:ITER: Iter 40500: phi min=1.831e-02, max=8.275e-02
+DEBUG:ITER: Iter 40500 ph_start: max|div_u_raw|=2.216e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40600; 84.6 %
+DEBUG:ITER: Iter 40600: phi min=1.831e-02, max=8.275e-02
+DEBUG:ITER: Iter 40600 ph_start: max|div_u_raw|=2.215e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40700; 84.8 %
+DEBUG:ITER: Iter 40700: phi min=1.831e-02, max=8.275e-02
+DEBUG:ITER: Iter 40700 ph_start: max|div_u_raw|=2.214e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40800; 85.0 %
+DEBUG:ITER: Iter 40800: phi min=1.831e-02, max=8.275e-02
+DEBUG:ITER: Iter 40800 ph_start: max|div_u_raw|=2.213e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 40900; 85.2 %
+DEBUG:ITER: Iter 40900: phi min=1.830e-02, max=8.275e-02
+DEBUG:ITER: Iter 40900 ph_start: max|div_u_raw|=2.212e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41000; 85.4 %
+DEBUG:ITER: Iter 41000: phi min=1.830e-02, max=8.275e-02
+DEBUG:ITER: Iter 41000 ph_start: max|div_u_raw|=2.210e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41100; 85.6 %
+DEBUG:ITER: Iter 41100: phi min=1.830e-02, max=8.275e-02
+DEBUG:ITER: Iter 41100 ph_start: max|div_u_raw|=2.209e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41200; 85.8 %
+DEBUG:ITER: Iter 41200: phi min=1.830e-02, max=8.275e-02
+DEBUG:ITER: Iter 41200 ph_start: max|div_u_raw|=2.208e-06
+DEBUG:ITER: phi at iter 41282: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_41282.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_41282.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41300; 86.0 %
+DEBUG:ITER: Iter 41300: phi min=1.830e-02, max=8.275e-02
+DEBUG:ITER: Iter 41300 ph_start: max|div_u_raw|=2.207e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41400; 86.2 %
+DEBUG:ITER: Iter 41400: phi min=1.829e-02, max=8.275e-02
+DEBUG:ITER: Iter 41400 ph_start: max|div_u_raw|=2.206e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41500; 86.5 %
+DEBUG:ITER: Iter 41500: phi min=1.829e-02, max=8.275e-02
+DEBUG:ITER: Iter 41500 ph_start: max|div_u_raw|=2.205e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41600; 86.7 %
+DEBUG:ITER: Iter 41600: phi min=1.829e-02, max=8.275e-02
+DEBUG:ITER: Iter 41600 ph_start: max|div_u_raw|=2.203e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41700; 86.9 %
+DEBUG:ITER: Iter 41700: phi min=1.829e-02, max=8.275e-02
+DEBUG:ITER: Iter 41700 ph_start: max|div_u_raw|=2.202e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41800; 87.1 %
+DEBUG:ITER: Iter 41800: phi min=1.829e-02, max=8.275e-02
+DEBUG:ITER: Iter 41800 ph_start: max|div_u_raw|=2.201e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 41900; 87.3 %
+DEBUG:ITER: Iter 41900: phi min=1.828e-02, max=8.275e-02
+DEBUG:ITER: Iter 41900 ph_start: max|div_u_raw|=2.200e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42000; 87.5 %
+DEBUG:ITER: Iter 42000: phi min=1.828e-02, max=8.275e-02
+DEBUG:ITER: Iter 42000 ph_start: max|div_u_raw|=2.199e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42100; 87.7 %
+DEBUG:ITER: Iter 42100: phi min=1.828e-02, max=8.275e-02
+DEBUG:ITER: Iter 42100 ph_start: max|div_u_raw|=2.198e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42200; 87.9 %
+DEBUG:ITER: Iter 42200: phi min=1.828e-02, max=8.275e-02
+DEBUG:ITER: Iter 42200 ph_start: max|div_u_raw|=2.197e-06
+DEBUG:ITER: phi at iter 42242: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_42242.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_42242.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42300; 88.1 %
+DEBUG:ITER: Iter 42300: phi min=1.828e-02, max=8.275e-02
+DEBUG:ITER: Iter 42300 ph_start: max|div_u_raw|=2.196e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42400; 88.3 %
+DEBUG:ITER: Iter 42400: phi min=1.827e-02, max=8.275e-02
+DEBUG:ITER: Iter 42400 ph_start: max|div_u_raw|=2.195e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42500; 88.5 %
+DEBUG:ITER: Iter 42500: phi min=1.827e-02, max=8.275e-02
+DEBUG:ITER: Iter 42500 ph_start: max|div_u_raw|=2.193e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42600; 88.7 %
+DEBUG:ITER: Iter 42600: phi min=1.827e-02, max=8.275e-02
+DEBUG:ITER: Iter 42600 ph_start: max|div_u_raw|=2.192e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42700; 89.0 %
+DEBUG:ITER: Iter 42700: phi min=1.827e-02, max=8.275e-02
+DEBUG:ITER: Iter 42700 ph_start: max|div_u_raw|=2.191e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42800; 89.2 %
+DEBUG:ITER: Iter 42800: phi min=1.827e-02, max=8.275e-02
+DEBUG:ITER: Iter 42800 ph_start: max|div_u_raw|=2.190e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 42900; 89.4 %
+DEBUG:ITER: Iter 42900: phi min=1.826e-02, max=8.275e-02
+DEBUG:ITER: Iter 42900 ph_start: max|div_u_raw|=2.189e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43000; 89.6 %
+DEBUG:ITER: Iter 43000: phi min=1.826e-02, max=8.275e-02
+DEBUG:ITER: Iter 43000 ph_start: max|div_u_raw|=2.188e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43100; 89.8 %
+DEBUG:ITER: Iter 43100: phi min=1.826e-02, max=8.275e-02
+DEBUG:ITER: Iter 43100 ph_start: max|div_u_raw|=2.187e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43200; 90.0 %
+DEBUG:ITER: Iter 43200: phi min=1.826e-02, max=8.275e-02
+DEBUG:ITER: Iter 43200 ph_start: max|div_u_raw|=2.186e-06
+DEBUG:ITER: phi at iter 43202: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_43202.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_43202.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43300; 90.2 %
+DEBUG:ITER: Iter 43300: phi min=1.825e-02, max=8.275e-02
+DEBUG:ITER: Iter 43300 ph_start: max|div_u_raw|=2.185e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43400; 90.4 %
+DEBUG:ITER: Iter 43400: phi min=1.825e-02, max=8.275e-02
+DEBUG:ITER: Iter 43400 ph_start: max|div_u_raw|=2.184e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43500; 90.6 %
+DEBUG:ITER: Iter 43500: phi min=1.825e-02, max=8.275e-02
+DEBUG:ITER: Iter 43500 ph_start: max|div_u_raw|=2.183e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43600; 90.8 %
+DEBUG:ITER: Iter 43600: phi min=1.825e-02, max=8.275e-02
+DEBUG:ITER: Iter 43600 ph_start: max|div_u_raw|=2.182e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43700; 91.0 %
+DEBUG:ITER: Iter 43700: phi min=1.825e-02, max=8.275e-02
+DEBUG:ITER: Iter 43700 ph_start: max|div_u_raw|=2.181e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43800; 91.2 %
+DEBUG:ITER: Iter 43800: phi min=1.824e-02, max=8.275e-02
+DEBUG:ITER: Iter 43800 ph_start: max|div_u_raw|=2.179e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 43900; 91.5 %
+DEBUG:ITER: Iter 43900: phi min=1.824e-02, max=8.275e-02
+DEBUG:ITER: Iter 43900 ph_start: max|div_u_raw|=2.178e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44000; 91.7 %
+DEBUG:ITER: Iter 44000: phi min=1.824e-02, max=8.275e-02
+DEBUG:ITER: Iter 44000 ph_start: max|div_u_raw|=2.177e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44100; 91.9 %
+DEBUG:ITER: Iter 44100: phi min=1.824e-02, max=8.275e-02
+DEBUG:ITER: Iter 44100 ph_start: max|div_u_raw|=2.176e-06
+DEBUG:ITER: phi at iter 44162: min=0.018, max=0.083, mean=0.047
+DEBUG:INIT: Saved phi snapshot: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_44162.png
+DEBUG:INIT: Saved density_map_standalone: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_44162.png
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44200; 92.1 %
+DEBUG:ITER: Iter 44200: phi min=1.824e-02, max=8.275e-02
+DEBUG:ITER: Iter 44200 ph_start: max|div_u_raw|=2.175e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44300; 92.3 %
+DEBUG:ITER: Iter 44300: phi min=1.823e-02, max=8.275e-02
+DEBUG:ITER: Iter 44300 ph_start: max|div_u_raw|=2.174e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44400; 92.5 %
+DEBUG:ITER: Iter 44400: phi min=1.823e-02, max=8.275e-02
+DEBUG:ITER: Iter 44400 ph_start: max|div_u_raw|=2.173e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44500; 92.7 %
+DEBUG:ITER: Iter 44500: phi min=1.823e-02, max=8.275e-02
+DEBUG:ITER: Iter 44500 ph_start: max|div_u_raw|=2.172e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44600; 92.9 %
+DEBUG:ITER: Iter 44600: phi min=1.823e-02, max=8.275e-02
+DEBUG:ITER: Iter 44600 ph_start: max|div_u_raw|=2.171e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44700; 93.1 %
+DEBUG:ITER: Iter 44700: phi min=1.823e-02, max=8.275e-02
+DEBUG:ITER: Iter 44700 ph_start: max|div_u_raw|=2.170e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44800; 93.3 %
+DEBUG:ITER: Iter 44800: phi min=1.822e-02, max=8.275e-02
+DEBUG:ITER: Iter 44800 ph_start: max|div_u_raw|=2.169e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 44900; 93.5 %
+DEBUG:ITER: Iter 44900: phi min=1.822e-02, max=8.275e-02
+DEBUG:ITER: Iter 44900 ph_start: max|div_u_raw|=2.168e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45000; 93.7 %
+DEBUG:ITER: Iter 45000: phi min=1.822e-02, max=8.275e-02
+DEBUG:ITER: Iter 45000 ph_start: max|div_u_raw|=2.167e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45100; 94.0 %
+DEBUG:ITER: Iter 45100: phi min=1.822e-02, max=8.275e-02
+DEBUG:ITER: Iter 45100 ph_start: max|div_u_raw|=2.166e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45200; 94.2 %
+DEBUG:ITER: Iter 45200: phi min=1.822e-02, max=8.275e-02
+DEBUG:ITER: Iter 45200 ph_start: max|div_u_raw|=2.165e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45300; 94.4 %
+DEBUG:ITER: Iter 45300: phi min=1.821e-02, max=8.275e-02
+DEBUG:ITER: Iter 45300 ph_start: max|div_u_raw|=2.164e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45400; 94.6 %
+DEBUG:ITER: Iter 45400: phi min=1.821e-02, max=8.275e-02
+DEBUG:ITER: Iter 45400 ph_start: max|div_u_raw|=2.163e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45500; 94.8 %
+DEBUG:ITER: Iter 45500: phi min=1.821e-02, max=8.275e-02
+DEBUG:ITER: Iter 45500 ph_start: max|div_u_raw|=2.162e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45600; 95.0 %
+DEBUG:ITER: Iter 45600: phi min=1.821e-02, max=8.275e-02
+DEBUG:ITER: Iter 45600 ph_start: max|div_u_raw|=2.161e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45700; 95.2 %
+DEBUG:ITER: Iter 45700: phi min=1.821e-02, max=8.275e-02
+DEBUG:ITER: Iter 45700 ph_start: max|div_u_raw|=2.160e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45800; 95.4 %
+DEBUG:ITER: Iter 45800: phi min=1.820e-02, max=8.275e-02
+DEBUG:ITER: Iter 45800 ph_start: max|div_u_raw|=2.159e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 45900; 95.6 %
+DEBUG:ITER: Iter 45900: phi min=1.820e-02, max=8.275e-02
+DEBUG:ITER: Iter 45900 ph_start: max|div_u_raw|=2.158e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46000; 95.8 %
+DEBUG:ITER: Iter 46000: phi min=1.820e-02, max=8.275e-02
+DEBUG:ITER: Iter 46000 ph_start: max|div_u_raw|=2.157e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46100; 96.0 %
+DEBUG:ITER: Iter 46100: phi min=1.820e-02, max=8.275e-02
+DEBUG:ITER: Iter 46100 ph_start: max|div_u_raw|=2.156e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46200; 96.2 %
+DEBUG:ITER: Iter 46200: phi min=1.820e-02, max=8.275e-02
+DEBUG:ITER: Iter 46200 ph_start: max|div_u_raw|=2.155e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46300; 96.5 %
+DEBUG:ITER: Iter 46300: phi min=1.820e-02, max=8.275e-02
+DEBUG:ITER: Iter 46300 ph_start: max|div_u_raw|=2.154e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46400; 96.7 %
+DEBUG:ITER: Iter 46400: phi min=1.819e-02, max=8.275e-02
+DEBUG:ITER: Iter 46400 ph_start: max|div_u_raw|=2.153e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46500; 96.9 %
+DEBUG:ITER: Iter 46500: phi min=1.819e-02, max=8.275e-02
+DEBUG:ITER: Iter 46500 ph_start: max|div_u_raw|=2.152e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46600; 97.1 %
+DEBUG:ITER: Iter 46600: phi min=1.819e-02, max=8.275e-02
+DEBUG:ITER: Iter 46600 ph_start: max|div_u_raw|=2.151e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46700; 97.3 %
+DEBUG:ITER: Iter 46700: phi min=1.819e-02, max=8.275e-02
+DEBUG:ITER: Iter 46700 ph_start: max|div_u_raw|=2.150e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46800; 97.5 %
+DEBUG:ITER: Iter 46800: phi min=1.819e-02, max=8.275e-02
+DEBUG:ITER: Iter 46800 ph_start: max|div_u_raw|=2.149e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 46900; 97.7 %
+DEBUG:ITER: Iter 46900: phi min=1.818e-02, max=8.275e-02
+DEBUG:ITER: Iter 46900 ph_start: max|div_u_raw|=2.148e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47000; 97.9 %
+DEBUG:ITER: Iter 47000: phi min=1.818e-02, max=8.275e-02
+DEBUG:ITER: Iter 47000 ph_start: max|div_u_raw|=2.148e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47100; 98.1 %
+DEBUG:ITER: Iter 47100: phi min=1.818e-02, max=8.275e-02
+DEBUG:ITER: Iter 47100 ph_start: max|div_u_raw|=2.147e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47200; 98.3 %
+DEBUG:ITER: Iter 47200: phi min=1.818e-02, max=8.275e-02
+DEBUG:ITER: Iter 47200 ph_start: max|div_u_raw|=2.146e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47300; 98.5 %
+DEBUG:ITER: Iter 47300: phi min=1.818e-02, max=8.275e-02
+DEBUG:ITER: Iter 47300 ph_start: max|div_u_raw|=2.145e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47400; 98.7 %
+DEBUG:ITER: Iter 47400: phi min=1.817e-02, max=8.275e-02
+DEBUG:ITER: Iter 47400 ph_start: max|div_u_raw|=2.144e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47500; 99.0 %
+DEBUG:ITER: Iter 47500: phi min=1.817e-02, max=8.275e-02
+DEBUG:ITER: Iter 47500 ph_start: max|div_u_raw|=2.143e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47600; 99.2 %
+DEBUG:ITER: Iter 47600: phi min=1.817e-02, max=8.275e-02
+DEBUG:ITER: Iter 47600 ph_start: max|div_u_raw|=2.142e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47700; 99.4 %
+DEBUG:ITER: Iter 47700: phi min=1.817e-02, max=8.275e-02
+DEBUG:ITER: Iter 47700 ph_start: max|div_u_raw|=2.141e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47800; 99.6 %
+DEBUG:ITER: Iter 47800: phi min=1.817e-02, max=8.275e-02
+DEBUG:ITER: Iter 47800 ph_start: max|div_u_raw|=2.140e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 47900; 99.8 %
+DEBUG:ITER: Iter 47900: phi min=1.816e-02, max=8.275e-02
+DEBUG:ITER: Iter 47900 ph_start: max|div_u_raw|=2.139e-06
+DEBUG:ITER: Simulation Execution -> TOTAL_ITERATIONS: 48004; iteration: 48000; 100.0 %
+DEBUG:ITER: Iter 48000: phi min=1.816e-02, max=8.275e-02
+DEBUG:ITER: Iter 48000 ph_start: max|div_u_raw|=2.138e-06
+DEBUG:INIT: Saved amplitude plot: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_Amplitude u$_x$ at x=200_48004.png
+DEBUG:INIT: Saved amplitude plot: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_Amplitude u$_y$ at x=200_48004.png
+DEBUG:INIT: Saved velocity map: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_velocity_ux_48004.png
+DEBUG:INIT: Saved velocity map: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_velocity_uy_48004.png
+DEBUG:INIT: Saved density profiles: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_profiles_48004.png
+DEBUG:INIT: Saved density_mapExt: FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_density_mapExt_48004.png
+DEBUG:INIT: Saved 3x2 grid: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_channel_parameters.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_x_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_y_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_star_y_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_rho_bounds_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_epsilon_u_ckl_growth_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_Invariants_48004.png
+DEBUG:INIT: Saved plot_momentum_bounds: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_MomentumBounds_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_PhIters_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_div_u_raw_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_AuxFields_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_DivU_max_48004.png
+DEBUG:INIT: Saved plot_bounds_ext: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_PhEps_max_48004.png
+DEBUG:INIT: Saved 3x4 grid: C:\Dirk\Neethling\iems\master\PythonLBCourse\FreesurfaceImages\free_surface_SchanChen_nondim06_nonlinear_a0_Metrics_48004.png
+DEBUG:INIT: Simulation complete. Preparing upload to GitHub...
+DEBUG:INIT: Uploading script to scripts/freesurface/free_surface_SchanChen_nondim06.py...
+DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
+DEBUG:INIT: Overwrote scripts/freesurface/free_surface_SchanChen_nondim06.py on GitHub
+DEBUG:INIT: Uploading images to results/freesurface/free_surface_SchanChen_nondim06/...
+DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_Amplitude u$_x$ at x=200_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_Amplitude u$_y$ at x=200_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_AuxFields_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_channel_parameters.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_mapExt_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_00000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_00174.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_00461.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_00935.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_01716.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_03004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_05127.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_08628.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_14400.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_24002.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_map_standalone_48003.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_density_profiles_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_DivU_max_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_epsilon_u_ckl_growth_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_GrowthMetric_div_u_raw_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_GrowthMetric_uckl_star_y_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_GrowthMetric_uckl_x_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_GrowthMetric_uckl_y_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_Invariants_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_Metrics_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_MomentumBounds_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_PhEps_max_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_PhIters_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_00000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_00174.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_00461.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_00935.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_01716.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_03004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_05127.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_08628.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_14400.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_24002.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_phi_snapshot_iter_48003.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_rho_bounds_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_velocity_ux_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_linear_a30_velocity_uy_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_Amplitude u$_x$ at x=200_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_Amplitude u$_y$ at x=200_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_AuxFields_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_channel_parameters.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_mapExt_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00050.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00100.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00174.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00200.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00461.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00500.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_00935.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_01716.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_03004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_03600.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_04371.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_05127.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_05143.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_05914.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_06686.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_07457.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_08229.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_08628.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_09000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_09772.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_10543.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_11315.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_12086.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_12858.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_13629.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14400.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14401.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14480.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14577.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14695.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_14840.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15016.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15232.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15495.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_15817.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_16209.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_16689.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_17275.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_17991.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_18866.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_19933.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_21238.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_22831.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_24002.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_24777.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_27153.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_30056.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_33602.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_34562.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_35522.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_36482.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_37442.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_38402.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_39362.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_40322.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_41282.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_42242.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_43202.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_44162.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_map_standalone_48003.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_density_profiles_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_DivU_max_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_epsilon_u_ckl_growth_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_div_u_raw_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_star_y_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_x_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_GrowthMetric_uckl_y_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_Invariants_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_Metrics_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_MomentumBounds_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_PhEps_max_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_PhIters_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00050.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00100.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00174.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00200.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00461.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00500.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_00935.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_01716.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_03004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_03600.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_04371.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_05127.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_05143.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_05914.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_06686.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_07457.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_08229.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_08628.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_09000.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_09772.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_10543.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_11315.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_12086.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_12858.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_13629.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14400.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14401.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14480.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14577.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14695.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_14840.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15016.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15232.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15495.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_15817.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_16209.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_16689.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_17275.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_17991.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_18866.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_19933.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_21238.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_22831.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_24002.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_24777.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_27153.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_30056.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_33602.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_34562.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_35522.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_36482.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_37442.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_38402.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_39362.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_40322.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_41282.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_42242.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_43202.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_44162.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_phi_snapshot_iter_48003.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_rho_bounds_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_velocity_ux_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/free_surface_SchanChen_nondim06_nonlinear_a0_velocity_uy_48004.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/3D_Slices/3d_slice_iter00000_z1mm.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/3D_Slices/3d_slice_iter00000_z2mm.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/3D_Slices/3d_slice_iter00000_z3mm.png on GitHub
+DEBUG:INIT: Overwrote results/freesurface/free_surface_SchanChen_nondim06/3D_Views/3D_view_iter00000.png on GitHub
+DEBUG:INIT: Uploaded 188 images to results/freesurface/free_surface_SchanChen_nondim06/
+DEBUG:INIT: Uploading log to results/freesurface/free_surface_SchanChen_nondim06/lbm_debug.log...
+DEBUG:INIT: GITHUB_TOKEN not in env; loading from C:\Dirk\Neethling\iems\master\PythonLBCourse\github-repo-token.txt
