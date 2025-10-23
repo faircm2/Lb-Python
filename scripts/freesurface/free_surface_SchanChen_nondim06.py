@@ -234,7 +234,7 @@ Cu=Cl/Ct
 U_nd = U/Cu #-> limit U_nd=0.1
 U_nd=0.1
 
-debug_log('INIT', 'Ct=%(Cu).2f, dt_nd=%(U_nd).2f', extra=dict(Cu=Cu, U_nd=U_nd))
+debug_log('INIT', 'Cu=%(Cu).2f, dt_nd=%(U_nd).2f', extra=dict(Cu=Cu, U_nd=U_nd))
 
 #5. Conversion factor CF for Force
 CF=Crho*Cl/(Ct**2)
@@ -1533,15 +1533,26 @@ epsilon_u_ckl = 0
 epsilon_u_ckl_list = []
 
 # 3D Data Storage
-phi_3d_data = {}  # {iteration: (X, Y, Z) phi array}
 rho_3d_data = {}
 ux_3d_data = {}
 uy_3d_data = {}
-iterationsOfInterest_3d = []
 
 # Poiseuille profile parameters
 channel_width = 4.0 * D  # Full channel width (4x diameter typical)
 z_center = channel_width / 2
+
+# Initialize 3D visualization
+# === 3D VISUALIZER SETUP ===
+visualizer = ThreeDVisualization(
+    Xn=Xn,
+    Yn=Yn,
+    Z_slices=Z_SLICES,
+    phi_star_G=phi_star_G,
+    phi_star_L=phi_star_L,
+    channel_width=channel_width,
+    D=D,
+    logger=debug_log
+)
 
 while iteration < TOTAL_ITERATIONS:
     if iteration % 100 == 0:
@@ -1611,17 +1622,10 @@ while iteration < TOTAL_ITERATIONS:
         
         # 3D DATA
         phi_3d, rho_3d, ux_3d, uy_3d, uz_3d = generate_3d_fields(
-            _phi[1:-1, 1:-1], rho[1:-1, 1:-1], 
+            _phi[1:-1, 1:-1], rho[1:-1, 1:-1],
             u_ckl[0, 1:-1, :], u_ckl[1, 1:-1, :]
         )
-        phi_3d_data[iteration] = (phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
-        
-        # NEW: Generate & store 3D data
-        phi_3d, rho_3d, ux_3d, uy_3d, uz_3d = generate_3d_fields(
-            _phi[1:-1, 1:-1], rho[1:-1, 1:-1], 
-            u_ckl[0, 1:-1, :], u_ckl[1, 1:-1, :]
-        )
-        phi_3d_data[iteration] = (phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
+        visualizer.store_snapshot(iteration, phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
 
         # density mapping
         rho_min = np.min(rho)
@@ -1888,6 +1892,19 @@ except Exception as e:
 # uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
 # uploader.upload_results()
 
-# =============================================
-# 3D VISUALIZATION
-# =============================================
+# --- 4. Render 3D visualizations ---
+print("\nCreating REAL 3D flow views...")
+view_dir = os.path.join(images_dir, "3D_TrueFlow")
+os.makedirs(view_dir, exist_ok=True)
+
+if visualizer.phi_3d_data:
+    key_iters = sorted(visualizer.phi_3d_data.keys())
+    if len(key_iters) >= 3:
+        key_iters = [key_iters[0], key_iters[len(key_iters)//2], key_iters[-1]]
+    else:
+        key_iters = list(key_iters)
+    
+    visualizer.batch_render(key_iters, view_dir)
+    print(f"3D VISUALIZATION COMPLETE: {view_dir}/")
+else:
+    print("No 3D data collected.")
