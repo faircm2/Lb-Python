@@ -1357,39 +1357,45 @@ def poiseuille_profile(z, z_center, channel_width, U_max):
     return U_max * (1.0 - ((z - z_center) / half_width) ** 2)
 
 
-def generate_3d_fields(phi_2d, rho_2d, ux_2d, uy_2d):
+def generate_3d_fields(phi_2d, rho_2d, ux_2d, uy_2d,
+                       channel_width=1.0, Z_SLICES=21):
     """
-    FIXED: Handle velocity (200,52) vs phi (200,50) shape mismatch
+    Extrude 2D (x,y) LBM data into 3D (y,z,x) with Poiseuille profile.
     """
-    # Get dimensions - velocities have 2 extra boundary points
-    Yn = phi_2d.shape[0]   # 200
-    Xn = phi_2d.shape[1]   # 50
-    
-    # TRIM velocities to match interior phi/rho
-    ux_2d_trim = ux_2d[:, :Xn]  # (200, 52) → (200, 50)
-    uy_2d_trim = uy_2d[:, :Xn]  # (200, 52) → (200, 50)
-    
-    z = np.linspace(0, channel_width, Z_SLICES)
-    z_center = channel_width / 2
-    U_max = np.max(ux_2d_trim)
-    
-    # 3D arrays
+
+    Xn, Yn = phi_2d.shape  # (flow, height)
+    x = np.linspace(0, channel_width, Z_SLICES)
+
+    # Define Poiseuille factor in the width (x-direction)
+    x_center = channel_width / 2.0
+    poiseuille = 1.0 - ((x - x_center) / (channel_width / 2.0)) ** 2
+    poiseuille = np.clip(poiseuille, 0, 1)
+
+    # --- Trim and transpose velocity fields ---
+    ux_t = ux_2d[:, :Yn].T  # → (Yn, Xn)
+    uy_t = uy_2d[:, :Yn].T
+
+    phi_t = phi_2d.T
+    rho_t = rho_2d.T
+
+    # --- Allocate 3D arrays ---
     phi_3d = np.zeros((Yn, Xn, Z_SLICES))
-    rho_3d = np.zeros((Yn, Xn, Z_SLICES))
-    ux_3d = np.zeros((Yn, Xn, Z_SLICES))
-    uy_3d = np.zeros((Yn, Xn, Z_SLICES))
-    uz_3d = np.zeros((Yn, Xn, Z_SLICES))
-    
-    for k, z_pos in enumerate(z):
-        uz_profile = U_max * (1.0 - ((z_pos - z_center) / (channel_width/2)) ** 2)
-        
-        phi_3d[:, :, k] = phi_2d      # (200,50)
-        rho_3d[:, :, k] = rho_2d      # (200,50)
-        ux_3d[:, :, k] = ux_2d_trim * uz_profile / U_max  # (200,50)
-        uy_3d[:, :, k] = uy_2d_trim * uz_profile / U_max  # (200,50)
-        uz_3d[:, :, k] = uz_profile
-    
+    rho_3d = np.zeros_like(phi_3d)
+    ux_3d = np.zeros_like(phi_3d)
+    uy_3d = np.zeros_like(phi_3d)
+    uz_3d = np.zeros_like(phi_3d)
+
+    # --- Extrude along x (width) with Poiseuille scaling ---
+    for k in range(Z_SLICES):
+        scale = poiseuille[k]
+        phi_3d[:, :, k] = phi_t
+        rho_3d[:, :, k] = rho_t
+        ux_3d[:, :, k] = ux_t * scale
+        uy_3d[:, :, k] = uy_t * scale
+        uz_3d[:, :, k] = 0.0  # no cross-width flow
+
     return phi_3d, rho_3d, ux_3d, uy_3d, uz_3d
+
 
 
 #preliminary
