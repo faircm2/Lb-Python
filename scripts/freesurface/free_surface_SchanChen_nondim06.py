@@ -23,7 +23,6 @@ from matplotlib.colors import Normalize
 from scipy.special import erf
 
 from github_uploader import GitHubUploader
-from ThreeDVisualization import ThreeDVisualization
 
 #flags
 RAISE_LESS_THAN_ZERO_ERROR = False
@@ -33,7 +32,6 @@ ADD_FORCING_TERM = 1
 TOTAL_ITERATIONS = 4000 #12001 * 4
 FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))
 NO_DATA_DUMP_SLICES = 51  # 51 slices for 3D model
-Z_SLICES = 21  # z-slices for 3D (channel width)
 
 # --- Simulation use-cases ---
 USE_CASES = {
@@ -541,26 +539,6 @@ def ph(hn, _rho, u_ckl_star, iteration, n_dx=1.0, n_dy=1.0):
     return _p_new, hn_plus1    
 
 
-def velocity_gradient(u_ckl, n_dx=1.0, n_dy=1.0):
-    """
-    Compute ∂u_beta/∂x_alpha for a 2D velocity field.
-    Returns array with shape (2, 2, nx, ny).
-    """
-    u_x, u_y = u_ckl  # unpack
-
-    # Compute derivatives (np.gradient returns [∂/∂x0, ∂/∂x1])
-    du_x_dx, du_x_dy = np.gradient(u_x, n_dx, n_dy, edge_order=2)
-    du_y_dx, du_y_dy = np.gradient(u_y, n_dx, n_dy, edge_order=2)
-
-    # Stack properly into 4D tensor (β, α, nx, ny)
-    du_b_dx_a = np.stack([
-        np.stack([du_x_dx, du_x_dy], axis=0),   # β = 0
-        np.stack([du_y_dx, du_y_dy], axis=0)    # β = 1
-    ], axis=0)
-
-    return du_b_dx_a
-
-
 #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
 def gi(_gi, _gi_c, u_ckl, rho, mu, iteration):
     """
@@ -841,6 +819,7 @@ def bounceBackTopBottom2(f, nx, ny):
     f[8, 1 : nx + 1, ny] = np.roll(f[6, 1 : nx + 1, ny + 1], 1)
 
     return f   
+
 
 #amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
 def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, title, nx=Xn, ny=Yn, angle=45, font_size=10):
@@ -1349,55 +1328,6 @@ def get_iterations_of_interest(total_iterations, no_slices=51, early_fraction=0.
     return all_iters[:no_slices]
 
 
-def poiseuille_profile(z, z_center, channel_width, U_max):
-    """
-    Parabolic Poiseuille velocity profile: u_z(z) = U_max * (1 - ((z-z_center)/half_width)^2)
-    """
-    half_width = channel_width / 2
-    return U_max * (1.0 - ((z - z_center) / half_width) ** 2)
-
-
-def generate_3d_fields(phi_2d, rho_2d, ux_2d, uy_2d,
-                       channel_width=1.0, Z_SLICES=21):
-    """
-    Extrude 2D (x,y) LBM data into 3D (y,z,x) with Poiseuille profile.
-    """
-
-    Xn, Yn = phi_2d.shape  # (flow, height)
-    x = np.linspace(0, channel_width, Z_SLICES)
-
-    # Define Poiseuille factor in the width (x-direction)
-    x_center = channel_width / 2.0
-    poiseuille = 1.0 - ((x - x_center) / (channel_width / 2.0)) ** 2
-    poiseuille = np.clip(poiseuille, 0, 1)
-
-    # --- Trim and transpose velocity fields ---
-    ux_t = ux_2d[:, :Yn].T  # → (Yn, Xn)
-    uy_t = uy_2d[:, :Yn].T
-
-    phi_t = phi_2d.T
-    rho_t = rho_2d.T
-
-    # --- Allocate 3D arrays ---
-    phi_3d = np.zeros((Yn, Xn, Z_SLICES))
-    rho_3d = np.zeros_like(phi_3d)
-    ux_3d = np.zeros_like(phi_3d)
-    uy_3d = np.zeros_like(phi_3d)
-    uz_3d = np.zeros_like(phi_3d)
-
-    # --- Extrude along x (width) with Poiseuille scaling ---
-    for k in range(Z_SLICES):
-        scale = poiseuille[k]
-        phi_3d[:, :, k] = phi_t
-        rho_3d[:, :, k] = rho_t
-        ux_3d[:, :, k] = ux_t * scale
-        uy_3d[:, :, k] = uy_t * scale
-        uz_3d[:, :, k] = 0.0  # no cross-width flow
-
-    return phi_3d, rho_3d, ux_3d, uy_3d, uz_3d
-
-
-
 #preliminary
 #lattice for phase space; Nx+3 is due to periodic boundary conditions
 #Nx is the number of divisions in the x-direction, thus there are Nx+3 points when including the extra nodes 0 and N+1 in x-direction
@@ -1538,27 +1468,6 @@ u_ckl_midpoint0 = u_ckl[0,int(Xn/2),int(Yn/2)]
 epsilon_u_ckl = 0
 epsilon_u_ckl_list = []
 
-# 3D Data Storage
-rho_3d_data = {}
-ux_3d_data = {}
-uy_3d_data = {}
-
-# Poiseuille profile parameters
-channel_width = 4.0 * D  # Full channel width (4x diameter typical)
-z_center = channel_width / 2
-
-# Initialize 3D visualization
-# === 3D VISUALIZER SETUP ===
-visualizer = ThreeDVisualization(
-    Xn=Xn,
-    Yn=Yn,
-    Z_slices=Z_SLICES,
-    phi_star_G=phi_star_G,
-    phi_star_L=phi_star_L,
-    channel_width=channel_width,
-    D=D,
-    logger=debug_log
-)
 
 while iteration < TOTAL_ITERATIONS:
     if iteration % 100 == 0:
@@ -1626,13 +1535,6 @@ while iteration < TOTAL_ITERATIONS:
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
         
-        # 3D DATA
-        phi_3d, rho_3d, ux_3d, uy_3d, uz_3d = generate_3d_fields(
-            _phi[1:-1, 1:-1], rho[1:-1, 1:-1],
-            u_ckl[0, 1:-1, :], u_ckl[1, 1:-1, :]
-        )
-        visualizer.store_snapshot(iteration, phi_3d, rho_3d, ux_3d, uy_3d, uz_3d)
-
         # density mapping
         rho_min = np.min(rho)
         rho_max = np.max(rho)
@@ -1897,20 +1799,3 @@ except Exception as e:
 # Assuming SCRIPT_FILENAME = 'your_script.py'
 # uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
 # uploader.upload_results()
-
-# --- 4. Render 3D visualizations ---
-print("\nCreating REAL 3D flow views...")
-view_dir = os.path.join(images_dir, "3D_TrueFlow")
-os.makedirs(view_dir, exist_ok=True)
-
-if visualizer.phi_3d_data:
-    key_iters = sorted(visualizer.phi_3d_data.keys())
-    if len(key_iters) >= 3:
-        key_iters = [key_iters[0], key_iters[len(key_iters)//2], key_iters[-1]]
-    else:
-        key_iters = list(key_iters)
-    
-    visualizer.batch_render(key_iters, view_dir)
-    print(f"3D VISUALIZATION COMPLETE: {view_dir}/")
-else:
-    print("No 3D data collected.")
