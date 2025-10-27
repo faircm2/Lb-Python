@@ -6,8 +6,11 @@ from __future__ import annotations
 
 import matplotlib
 
-matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
+matplotlib.use('TkAgg')  # or 'Qt5Agg' if you have PyQt installed
+#matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
@@ -23,6 +26,7 @@ from matplotlib.colors import Normalize
 from scipy.special import erf
 
 from github_uploader import GitHubUploader
+from plotter_2d import Plotter2D
 
 #flags
 RAISE_LESS_THAN_ZERO_ERROR = False
@@ -31,7 +35,11 @@ PRESSURE_IN_DENSITY_MAP = False
 ADD_FORCING_TERM = 1
 TOTAL_ITERATIONS = 4000 #12001 * 4
 FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))
-NO_DATA_DUMP_SLICES = 51  # 51 slices for 3D model
+NO_DATA_DUMP_SLICES = 51 
+PLOTREALTIME = False  
+ADD_METRICS = False 
+ADD_METRICS_PRINT = False
+
 
 # --- Simulation use-cases ---
 USE_CASES = {
@@ -55,6 +63,7 @@ images_dir = os.path.join(script_dir, IMAGES_SUBDIR)
 os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist  
 LOG_FILE = 'lbm_debug.log'
 
+
 ######### logging ####################################################################################################
 # Global debug level (set once at init, e.g., based on flags like VERBOSE1, ADD_METRICS_PRINT)
 # 0: none (suppress all)
@@ -62,7 +71,7 @@ LOG_FILE = 'lbm_debug.log'
 # 2: iter (iteration progress, e.g., %100 summaries)
 # 3: fields (detailed field stats like min/max per component)
 # Global DEBUG_LEVEL (unchanged)
-DEBUG_LEVEL = 2  # Or whatever; controls prefixed categories only
+DEBUG_LEVEL = 0  # Or whatever; controls prefixed categories only
 
 # Improved logging config: Root at WARNING to suppress most noise, logger at DEBUG
 logging.getLogger().setLevel(logging.WARNING)  # Root: Silence everything by default
@@ -71,71 +80,41 @@ logger = logging.getLogger(LOG_FILE)
 logger.setLevel(logging.DEBUG)  # logger: Always DEBUG internally
 
 # Custom filter to enforce DEBUG_LEVEL (attached to logger)
+# Custom filter to show only main loop progress
 class DebugLevelFilter(logging.Filter):
     def filter(self, record):
-        msg_type = record.msg.split(':')[0] if ':' in record.msg else ''  # Assume prefixed type, e.g., 'INIT:', 'ITER:', 'FIELD:'
-        if DEBUG_LEVEL == 0:
-            return False
-        elif DEBUG_LEVEL == 1 and msg_type != 'INIT':
-            return False
-        elif DEBUG_LEVEL == 2 and msg_type not in ('INIT', 'ITER'):
-            return False
-        elif DEBUG_LEVEL == 3:
-            return True  # All types
-        return True
+        msg = record.msg
+        # Allow only 'ITER' messages containing 'Simulation Execution'
+        if DEBUG_LEVEL == 0 and 'ITER: Simulation Execution' in msg:
+            return True
+        return False
 
-logger.addFilter(DebugLevelFilter())
-
-# Console handler with custom filter
+# Console handler
 console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
-console_handler.addFilter(DebugLevelFilter())  # category filter (INIT/ITER/etc.)
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(logging.Formatter('%(message)s'))  # Simplified format: show only message
+console_handler.addFilter(DebugLevelFilter())
 logger.addHandler(console_handler)
 
-# Explicitly silence known noisy loggers (add more if needed)
-logging.getLogger('matplotlib').setLevel(logging.INFO)  # Or WARNING to hide more
-logging.getLogger('PIL').setLevel(logging.INFO)  # Silences PNG chunk logs
-logging.getLogger('png').setLevel(logging.INFO)  # If direct png module used
-logging.getLogger('kiwisolver').setLevel(logging.WARNING)
-
-# Optional: File handler for logs only (no spam)
-file_handler = logging.FileHandler(LOG_FILE)
+# File handler (optional, for full debug logs if needed)
+file_handler = logging.FileHandler('lbm_debug.log')
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
-file_handler.addFilter(DebugLevelFilter())
-logger.addHandler(file_handler)
+logger.addHandler(file_handler)  # No filter, logs everything to file
 
+# Silence noisy external loggers
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger('PIL').setLevel(logging.WARNING)
+logging.getLogger('kiwisolver').setLevel(logging.WARNING)
 
-# Sample debug logger function: Prefix-based routing with f-strings
+# Debug log function (unchanged)
 def debug_log(category: str, message: str, *args: Any, **kwargs: Any) -> None:
-    """
-    Centralized debug printer.
-    
-    Args:
-        category: 'INIT' (params), 'ITER' (progress), 'FIELD' (min/max), 'WARN' (warnings), 'ERROR' (raises).
-        message: Format string, e.g., 'dx={dx}, Re={Re}'.
-        *args/**kwargs: For message.format() or logging extras.
-    
-    Usage examples:
-        debug_log('INIT', 'dx={dx:.3e}, Re={Re:.2f}, tau_nd={tau_nd:.3f}', dx=dx, Re=Re, tau_nd=tau_nd)
-        debug_log('ITER', 'Iter {iter}: phi[{phi_min:.3e},{phi_max:.3e}], rho[{rho_min:.3e},{rho_max:.3e}], progress={progress:.1f}%', iter=iteration, phi_min=phi_min, ...)
-        debug_log('FIELD', '{field} min={min_val:.3e}, max={max_val:.3e}', field='fi_c', min_val=min_val, max_val=max_val)
-        debug_log('WARN', 'ph stalled at global {iter}, eps={eps:.3e}', iter=iteration, eps=max_eps)
-    
-    Integrates with logging: Honors DEBUG_LEVEL, reduces stdout spam, easy to redirect to file (e.g., add FileHandler).
-    """
-    if DEBUG_LEVEL == 0:
-        return  # Early exit if suppressed
-    
     prefixed_msg = f"{category}: {message}"
-    
-    # Use logger levels for categorization (DEBUG for info, WARNING for warns, ERROR for critical)
     log_func = logger.debug
     if category == 'WARN':
         log_func = logger.warning
     elif category == 'ERROR':
         log_func = logger.error
-    
     log_func(prefixed_msg, *args, **kwargs)
 
 
@@ -331,7 +310,7 @@ def gradient_p(p):
 
 
 #Inamuro eq(12): first derivatives - partial dphi/dx_a, du_b/dx_a, drho/dx_a
-def c_first_derivative(lamda, n_dx=1.0, n_dy=1.0):
+def c_first_derivative_old(lamda, n_dx=1.0, n_dy=1.0):
     if len(lamda.shape) != 2:
         raise ValueError(f"Expected lamda shape (nx, ny) like (202,52), got {lamda.shape}")
 
@@ -350,6 +329,25 @@ def c_first_derivative(lamda, n_dx=1.0, n_dy=1.0):
 
     dlamda_dx = np.einsum('k,kij->ij', neigh_c_x, neighbors_stack) * scale_x
     dlamda_dy = np.einsum('k,kij->ij', neigh_c_y, neighbors_stack) * scale_y
+
+    return dlamda_dx, dlamda_dy
+
+
+def c_first_derivative(lamda, n_dx=1.0, n_dy=1.0):
+    """
+    Fast central differences for 3D scalar field.
+    Computes derivatives only for interior points (avoids np.roll).
+    """
+    #profiler.start("c_first_derivative")
+
+    dlamda_dx = np.zeros_like(lamda)
+    dlamda_dy = np.zeros_like(lamda)
+
+    # interior points only
+    dlamda_dx[1:-1,:] = (lamda[2:,:] - lamda[:-2,:]) / (2 * n_dx)
+    dlamda_dy[:,1:-1] = (lamda[:,2:] - lamda[:,:-2]) / (2 * n_dy)
+
+    #profiler.stop("c_first_derivative")
 
     return dlamda_dx, dlamda_dy
 
@@ -821,363 +819,6 @@ def bounceBackTopBottom2(f, nx, ny):
     return f   
 
 
-#amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
-def amplitude_plot(ax1, u_full_range, listIterations, axis, xlabel, ylabel, title, nx=Xn, ny=Yn, angle=45, font_size=10):
-    # Create standalone figure
-    fig_standalone = plt.figure(figsize=(10, 6))
-    ax_standalone = fig_standalone.add_subplot(111)
-    for iteration, combined_u_ckl in u_full_range.items():
-        u = combined_u_ckl[nx, 1:ny + 1]
-        ax_standalone.plot(u, axis, label=f"t={iteration}")
-    ax_standalone.grid()
-    ax_standalone.set_xlabel(xlabel)
-    ax_standalone.set_ylabel(ylabel)
-    ax_standalone.set_title(title)
-    ax_standalone.set_ylim(-1, 51)
-    ax_standalone.set_yticks(np.arange(0, 51, 10))
-    ax_standalone.legend(ncol=1, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=font_size)
-    plt.setp(ax_standalone.get_xticklabels(), rotation=angle, ha='right', fontsize=font_size)
-    ax_standalone.tick_params(axis='x', labelsize=font_size)
-    ax_standalone.margins(x=0, y=0)
-    x_min, x_max = ax_standalone.get_xlim()
-    ax_standalone.set_xlim(x_min, x_max + 0.1*(x_max-x_min))
-    
-    # Save standalone plot with unique filename
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)
-    # Differentiate u_x and u_y explicitly
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{title}_{max(listIterations[-1], TOTAL_ITERATIONS):0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(images_dir, filename)
-    fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved amplitude plot: %s', save_path)
-    plt.close(fig_standalone)
-
-    # Plot on provided ax for subplot grid
-    for iteration, combined_u_ckl in u_full_range.items():
-        u = combined_u_ckl[nx, 1:ny + 1]
-        ax1.plot(u, axis, label=f"t={iteration}")
-    ax1.grid()
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
-    ax1.set_title(title)
-    ax1.set_ylim(-1, 51)
-    ax1.set_yticks(np.arange(0, 51, 10))
-    ax1.legend(ncol=1, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=font_size)
-    plt.setp(ax1.get_xticklabels(), rotation=angle, ha='right', fontsize=font_size)
-    ax1.tick_params(axis='x', labelsize=font_size)
-    ax1.margins(x=0, y=0)
-    x_min, x_max = ax1.get_xlim()
-    ax1.set_xlim(x_min, x_max + 0.1*(x_max-x_min))
-
-
-# Density profile
-def density_profile(ax1, den_eq, nx, ny, iteration=0):
-    # Calculate y-positions for 1/3, 1/2, and 2/3 of the channel height
-    y_third = ny // 3  # 1/3 * ymax
-    y_half = ny // 2   # 1/2 * ymax
-    y_two_thirds = 2 * ny // 3  # 2/3 * ymax
-
-    # Plot density along x for each y-position
-    ax1.plot(den_eq[1:nx, y_third], label=f"y = {y_third} (~1/3 ymax)")
-    ax1.plot(den_eq[1:nx, y_half], label=f"y = {y_half} (~1/2 ymax)")
-    ax1.plot(den_eq[1:nx, y_two_thirds], label=f"y = {y_two_thirds} (~2/3 ymax)")
-
-    ax1.set_xlabel("x-axis")
-    ax1.set_ylabel("Density [rho]")
-    ax1.margins(x=0, y=0)
-    ax1.set_title("Longitudinal density profile")
-    ax1.yaxis.tick_left()
-    ax1.yaxis.set_label_position("left")
-    ax1.set_xlim(0, nx)
-    ax1.set_xticks(np.linspace(0, nx, 5))
-    ax1.grid()
-
-    ax1.legend(loc='best')  # Add legend to distinguish the three lines
-
-    # Save in same directory as the script
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-
-    ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved density profile: %s', save_path)
-
-
-def density_profile_transition(ax1, den_eq, x__position, y_position, nx, ny, granularity, iteration=0):
-    # Fixed x-position at Xn/2
-    #x_fixed = nx // 2  # Xn/2 = 100 for nx = 200
-
-    # Define y-coordinates for the plot
-    y_coords = np.arange(1, ny)  # y = 1 to ny-1 (1 to 50 for ny = 51)
-
-    # Plot density (rho) on x-axis, y-coordinate on y-axis
-    ax1.plot(den_eq[x__position, 1:ny], y_coords, label=f"x = {x__position}")
-
-    ax1.set_xlabel("Density [rho]")
-    ax1.set_ylabel("y-axis")
-    ax1.margins(x=0, y=0)
-    ax1.set_title("Vertical density profile at x = Xn/2")
-    ax1.yaxis.tick_left()
-    ax1.yaxis.set_label_position("left")
-    ax1.set_xlim(-1, 52)  # Density range: rho_G - 2 = -1, rho_L + 2 = 52
-    ax1.set_xticks(np.linspace(-1, 52, 5))
-    ax1.set_ylim(y_position - granularity, y_position + granularity) 
-    ax1.set_yticks(np.linspace(y_position - granularity, y_position + granularity, 5))
-    ax1.grid()
-
-    ax1.legend(loc='best')  # Add legend
-
-    # Save in same directory as the script
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profile_transition_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-
-    ax1.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved density profile transition: %s', save_path)
-
-
-# Plot density profiles saved at given iterations
-def density_profiles(ax, density_slices, x__position, nx, ny):
-    """Compact overlay of density slices with right legend."""
-    if not density_slices: return
-    y_coords = np.arange(0, ny + 2)
-    iterations, slices = zip(*density_slices)
-    colors = plt.cm.tab10(np.linspace(0, 1, 10))
-    for idx, (it, rho_slice) in enumerate(zip(iterations, slices)):
-        ax.plot(rho_slice, y_coords, color=colors[idx % 10], label=f"Iter {it}")
-    ax.set(xlabel="Density [rho]", ylabel="y-axis", title=f"Evolution at x={x__position}",
-           xlim=(-1, 52), xticks=np.linspace(-1, 52, 5), ylim=(0, ny + 1), yticks=np.linspace(0, ny + 1, 6))
-    ax.grid()
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), ncol=1, fontsize='small')
-    ax.figure.tight_layout()
-
-    # Save in same directory as the script
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_profiles_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-
-    ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved density profiles: %s', save_path)
-
-
-#2D Density map
-def density_mapExt(ax, full_range, min, max, title, _iteration):
-    debug_log('FIELD', 'Debug density_map: min=%.6f, max=%.6f, rho_out=%.6f, rho_in=%.6f', 
-          np.min(full_range), np.max(full_range), min, max)
-    im = ax.imshow(full_range.T, interpolation='nearest', origin='lower', cmap='viridis', vmin=min, vmax=max)
-    ax.set_xlabel("x-axis")
-    ax.set_ylabel("y-axis")
-    ax.set_title(title)
-    ax.margins(x=0, y=0)
-    ax.set_aspect('auto')
-    cbar = ax.figure.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    #cbar.set_ticks([min, (min + max) / 2, max])  
-    cbar.set_ticks(np.linspace(min, max, 3)) 
-
-    # Save in same directory as the script
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_mapExt_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-
-    ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved density_mapExt: %s', save_path)
-
-
-def density_map_standalone(full_range, min, max, title, _iteration):
-    """
-    Save a density map plot to a PNG file with zero-padded iteration number.
-
-    Args:
-        full_range: 2D numpy array of density values (Ny, Nx).
-        min: Lower bound for colorbar (float).
-        max: Upper bound for colorbar (float).
-        title: Plot title (str).
-        _iteration: Current iteration number (int).
-
-    Returns:
-        None (saves PNG).
-    """
-    debug_log('FIELD', 'Debug density_map: min=%.6f, max=%.6f, rho_out=%.6f, rho_in=%.6f', 
-              np.min(full_range), np.max(full_range), min, max)
-
-    # Create a new figure and axes
-    fig, ax = plt.subplots(figsize=(6, 6))  # you can adjust the size
-
-    # Plot the image
-    im = ax.imshow(full_range.T, interpolation='nearest', origin='lower',
-                   cmap='viridis', vmin=min, vmax=max)
-    ax.set_xlabel("x-axis")
-    ax.set_ylabel("y-axis")
-    ax.set_title(title)
-    ax.margins(x=0, y=0)
-    ax.set_aspect('auto')
-
-    # Add colorbar
-    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_ticks(np.linspace(min, max, 3))  # min, mid, max
-    cbar.set_label("Density")
-
-    # Save PNG with dynamic zero-padding
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_density_map_standalone_{iteration:0{FILENAME_PADDING_WIDTH}d}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-
-    ax.figure.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved density_map_standalone: %s', save_path)
- 
-
-# 2D Velocity map
-def velocity_map(ax, u_magnitude, _iteration, title):
-    # Create standalone figure
-    fig_standalone = plt.figure(figsize=(8, 5))
-    ax_standalone = fig_standalone.add_subplot(111)
-    im = ax_standalone.imshow(u_magnitude.T, cmap='viridis', origin='lower')
-    ax_standalone.set_xlabel('x')
-    ax_standalone.set_ylabel('y')
-    ax_standalone.set_title(title)
-    plt.colorbar(im, ax=ax_standalone, label='Velocity')
-    
-    # Save standalone plot
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    images_dir = os.path.join(script_dir, "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)
-    # Use TOTAL_ITERATIONS for consistency if _iteration is negative
-    iteration_str = f"{max(_iteration, TOTAL_ITERATIONS):0{FILENAME_PADDING_WIDTH}d}"
-    # Simplify title for filename (e.g., 'Velocity_ux' or 'Velocity_uy')
-    simplified_title = title.replace('Velocity [u$_x$] map', 'velocity_ux').replace('Velocity [u$_y$] map', 'velocity_uy')
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{simplified_title}_{iteration_str}.png"
-    save_path = os.path.join(images_dir, filename)
-    fig_standalone.savefig(save_path, dpi=300, bbox_inches='tight')
-    debug_log('INIT', 'Saved velocity map: %s', save_path)
-    plt.close(fig_standalone)
-
-    # Plot on provided ax for subplot grid
-    im = ax.imshow(u_magnitude.T, cmap='viridis', origin='lower')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_title(title)
-    plt.colorbar(im, ax=ax, label='Velocity')
-
-
-def filter_u_ckl_fullrange(velocities_dict, iterationsOfInterest):
-    filtered_velocities = {iteration: velocities_dict[iteration] for iteration in iterationsOfInterest if iteration in velocities_dict}
-
-    return filtered_velocities   
-
-
-def plot_bounds_ext(results, context, ax=None, series_labels=None, k=None, script_filename=None):
-    if results is None or not isinstance(results, (list, tuple)) or not results or len(results[0]) < 2:
-        raise ValueError("results must be non-empty list of (iteration, values)")
-    if isinstance(results, np.ndarray): results = results.tolist()
-    
-    iterations = [r[0] for r in results]
-    data_series = list(zip(*[r[1:] for r in results]))
-    n_series = len(data_series)
-    series_labels = series_labels or [f"{context}_{i+1}" for i in range(n_series)]
-    
-    ylabel, title = context, f"{context} vs Iteration"
-    
-    # Create standalone figure
-    fig_standalone = plt.figure(figsize=(8, 5))
-    for series, label in zip(data_series, series_labels):
-        plt.plot(iterations, series, label=label)
-    plt.xlabel("Iteration")
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
-    
-    # Save standalone plot with unique context
-    if script_filename is None: script_filename = SCRIPT_FILENAME
-    filename = f"{script_filename}_{USE_CASE_TAG}_{context.replace(' ', '_')}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
-    images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)
-    save_path = os.path.join(images_dir, filename)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close(fig_standalone)
-    debug_log('INIT', 'Saved plot_bounds_ext: %s', save_path)
-    
-    # Plot on provided ax
-    if ax is not None:
-        plt.sca(ax)
-        for series, label in zip(data_series, series_labels):
-            plt.plot(iterations, series, label=label)
-        plt.xlabel("Iteration")
-        plt.ylabel(ylabel)
-        plt.title(title)
-        plt.legend()
-        plt.grid(True)
-
-
-def plot_momentum_bounds(results, _filename, ax=None):
-    iterations = [r[0] for r in results]
-    invariant = [r[3] for r in results]
-    
-    # Create standalone figure
-    fig_standalone = plt.figure(figsize=(8, 5))
-    plt.plot(iterations, invariant, label="total_mom_x", color="green")
-    plt.axhline(0, color="black", linestyle="--", alpha=0.5)
-    plt.xlabel("Iteration")
-    plt.ylabel("Total invariant")
-    plt.title("Total invariant conservation")
-    plt.legend()
-    plt.grid(True)
-    
-    # Save standalone plot
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png"
-    images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
-    os.makedirs(images_dir, exist_ok=True)
-    save_path = os.path.join(images_dir, filename)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close(fig_standalone)
-    debug_log('INIT', 'Saved plot_momentum_bounds: %s', save_path)
-    
-    # Plot on provided ax
-    if ax is not None:
-        plt.sca(ax)
-        plt.plot(iterations, invariant, label="total_mom_x", color="green")
-        plt.axhline(0, color="black", linestyle="--", alpha=0.5)
-        plt.xlabel("Iteration")
-        plt.ylabel("Total invariant")
-        plt.title("Total invariant conservation")
-        plt.legend()
-        plt.grid(True)
-
-
-def save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L):
-    """
-    Save a snapshot plot of the order parameter phi and print min/max/mean stats.
-
-    Args:
-        _phi: 2D numpy array of phi values (Ny, Nx).
-        iteration: Current iteration number (int).
-        phi_star_G: Lower bound for colorbar (float).
-        phi_star_L: Upper bound for colorbar (float).
-        script_dir: Directory to save PNG (str; default: script's directory).
-
-    Returns:
-        None (saves PNG and prints stats).
-    """
-    # Create plot
-    plt.figure(figsize=(8, 6))
-    im = plt.imshow(_phi.T, origin='lower', cmap='RdBu', vmin=phi_star_G, vmax=phi_star_L)
-    plt.colorbar(im, label='phi')
-    plt.title(f'Order parameter phi at iteration {iteration}')
-    plt.xlabel('x-index')
-    plt.ylabel('y-index')
-
-    # Save PNG with USE_CASE_TAG
-    _filename = f'phi_snapshot_iter_{iteration:0{FILENAME_PADDING_WIDTH}d}'
-    filename = f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_{_filename}.png"
-    save_path = os.path.join(IMAGES_SUBDIR, filename)
-    plt.savefig(save_path, dpi=150, bbox_inches='tight')
-    plt.close()
-
-    # Print stats
-    phi_min = np.min(_phi)
-    phi_max = np.max(_phi)
-    phi_mean = np.mean(_phi)
-    debug_log('ITER', 'phi at iter %d: min=%.3f, max=%.3f, mean=%.3f', 
-              iteration, phi_min, phi_max, phi_mean)
-    debug_log('INIT', 'Saved phi snapshot: %s', save_path)
-
-
 def initialize_nonlinear_phi(xn, yn, phi_star_g, phi_star_l, xi=2.0):
     """
     Compact init of _phi with step phases and smooth erf transitions.
@@ -1425,10 +1066,6 @@ rho, mu = density_and_viscosity(_phi, rho_G, rho_L, phi_star_G, phi_star_L, mu_G
 _p0 = rho / 3.0 # Lattice p_eq = rho * Cs^2 = rho / 3;  Initial _p0 = p_eq for ph loop
 debug_log('INIT', 'Initial h_eq check: sum h[1:] mean=%.3f, should = p_eq mean=%.3f', np.mean(np.sum(h[1:], axis=0)), np.mean(_p0))
 
-
-ADD_METRICS = False
-ADD_METRICS_PRINT = False
-
 rho_bounds = []
 Invariants = []
 MomentumBounds = []
@@ -1458,16 +1095,37 @@ iterationsOfInterest = sorted(set(fixed + post.tolist()))[:no_slices]'''
 iterationsOfInterest = get_iterations_of_interest(TOTAL_ITERATIONS, no_slices=NO_DATA_DUMP_SLICES, early_fraction=0.3, exp_factor=4.0)
 density_slices = []
 
+plotter = Plotter2D(
+    script_dir=script_dir,
+    script_filename=SCRIPT_FILENAME,
+    use_case_tag=USE_CASE_TAG,
+    images_subdir=IMAGES_SUBDIR,
+    total_iterations=TOTAL_ITERATIONS,
+    filename_padding_width=FILENAME_PADDING_WIDTH,
+    debug_log=debug_log,
+    PLOTREALTIME=True, TOTAL_ITERATIONS=1000
+)
+
 rho_min = np.min(rho)
 rho_max = np.max(rho)
 title = "Density map"
-density_map_standalone(rho, rho_min, rho_max, title, iteration)
-save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L)
+plotter.density_map_standalone(rho, rho_min, rho_max, title, iteration)
+plotter.save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L)
 
 u_ckl_midpoint0 = u_ckl[0,int(Xn/2),int(Yn/2)]
 epsilon_u_ckl = 0
 epsilon_u_ckl_list = []
 
+
+# Realtime plotting
+if PLOTREALTIME:
+    #fig_rt, ax = plt.subplots(figsize=(6,6), dpi=80)  # create one figure
+    #fig_rt, axes = plt.subplots(3, 1, figsize=(8, 12))  # 3 stacked plots
+    #ax_phi, ax_rho, ax_vort = axes
+    im_phi = None
+    im_rho = None
+    im_vort = None
+    plt.ion()  # turn on interactive mode
 
 while iteration < TOTAL_ITERATIONS:
     if iteration % 100 == 0:
@@ -1508,7 +1166,7 @@ while iteration < TOTAL_ITERATIONS:
         
     if iteration in iterationsOfInterest:
         #phi mapping
-        save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L)
+        plotter.save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L)
 
     #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid        
     if iteration > 0:
@@ -1539,7 +1197,7 @@ while iteration < TOTAL_ITERATIONS:
         rho_min = np.min(rho)
         rho_max = np.max(rho)
         title = "Density map"
-        density_map_standalone(rho, rho_min, rho_max, title, iteration)
+        plotter.density_map_standalone(rho, rho_min, rho_max, title, iteration)
         rho_slice = rho[density_profile_x_position, :].copy()
         density_slices.append((iteration, rho_slice))
 
@@ -1605,42 +1263,41 @@ while iteration < TOTAL_ITERATIONS:
     
     # In main loop, after u_ckl update:total_mom_x = np.sum(rho * u_ckl[0])  # Add this
     if iteration == 0 or iteration==(TOTAL_ITERATIONS - 1) or iteration % 100 == 0:
-
-        u_ckl_x_min = np.min(u_ckl[0])
-        u_ckl_x_max = np.max(np.abs(u_ckl[0]))
-        u_ckl_y_min = np.min(u_ckl[1])
-        u_ckl_y_max = np.max(np.abs(u_ckl[1]))
-
-        invariant = np.sum(rho*u_ckl[0])
-        MomentumBounds.append((iteration, u_ckl_x_min, u_ckl_x_max, invariant))
-        rho_min = np.min(rho)
-        rho_max = np.max(rho)    
-        rho_bounds.append((iteration, rho_min, rho_max))
-        Invariants.append((iteration, invariant))
         if ADD_METRICS: 
+            u_ckl_x_min = np.min(u_ckl[0])
+            u_ckl_x_max = np.max(np.abs(u_ckl[0]))
+            u_ckl_y_min = np.min(u_ckl[1])
+            u_ckl_y_max = np.max(np.abs(u_ckl[1]))
+
+            invariant = np.sum(rho*u_ckl[0])
+            MomentumBounds.append((iteration, u_ckl_x_min, u_ckl_x_max, invariant))
+            rho_min = np.min(rho)
+            rho_max = np.max(rho)    
+            rho_bounds.append((iteration, rho_min, rho_max))
+            Invariants.append((iteration, invariant))
             debug_log('FIELD','Iteration={iteration}', 'max|u_x|={u_ckl_x_max:.2e}, invariant={invariant:.2e}')
-        GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
-        GrowthMetric_uckl_y.append((iteration, u_ckl_y_max))
+            GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
+            GrowthMetric_uckl_y.append((iteration, u_ckl_y_max))
 
-        uckl_star_y = np.max(np.abs(u_ckl_star[1]))
-        GrowthMetric_uckl_star_y.append((iteration, uckl_star_y))
-        du_dx, du_dy = c_first_derivative(u_ckl_star[0])
-        dv_dx, dv_dy = c_first_derivative(u_ckl_star[1])
-        div_u_raw = du_dx + dv_dy
+            uckl_star_y = np.max(np.abs(u_ckl_star[1]))
+            GrowthMetric_uckl_star_y.append((iteration, uckl_star_y))
+            du_dx, du_dy = c_first_derivative(u_ckl_star[0])
+            dv_dx, dv_dy = c_first_derivative(u_ckl_star[1])
+            div_u_raw = du_dx + dv_dy
 
-        GrowthMetric_div_u_raw.append((iteration, np.max(np.abs(du_dx)), np.max(np.abs(du_dy)), np.max(np.abs(div_u_raw))))
-        GrowthMetric_u_ckl_star_du_dy.append((iteration, du_dy))            
+            GrowthMetric_div_u_raw.append((iteration, np.max(np.abs(du_dx)), np.max(np.abs(du_dy)), np.max(np.abs(div_u_raw))))
+            GrowthMetric_u_ckl_star_du_dy.append((iteration, du_dy))            
 
-        PhIters.append((iteration, ph_iter))
-        spuriousField1 = np.max(np.abs(np.gradient(p)))
-        laplacian_phi = c_second_derivative(_phi)
-        spuriousField2 = np.max(np.abs(laplacian_phi))
-        AuxFields.append((iteration, spuriousField1, spuriousField2))
+            PhIters.append((iteration, ph_iter))
+            spuriousField1 = np.max(np.abs(np.gradient(p)))
+            laplacian_phi = c_second_derivative(_phi)
+            spuriousField2 = np.max(np.abs(laplacian_phi))
+            AuxFields.append((iteration, spuriousField1, spuriousField2))
 
-        ################################# 6. Additional Diagnostics and Rollbacks #######################################################
-        DivU_max.append((iteration, np.max(np.abs(div_u_raw))))
-        PhEps_max.append((iteration, np.max(epsilon)))
-        ##################################################################################################################################
+            ################################# 6. Additional Diagnostics and Rollbacks #######################################################
+            DivU_max.append((iteration, np.max(np.abs(div_u_raw))))
+            PhEps_max.append((iteration, np.max(epsilon)))
+            ##################################################################################################################################
 
     #streaming has commenced
 
@@ -1659,6 +1316,10 @@ while iteration < TOTAL_ITERATIONS:
         epsilon_u_ckl_list.append((iteration, epsilon_u_ckl))    
         u_ckl_midpoint0 = u_ckl[0,int(Xn/2),int(Yn/2)]
 
+    # plot in real time - color 1/2 particles blue, other half red
+    if (PLOTREALTIME and (iteration % 10) == 0) or (iteration == TOTAL_ITERATIONS - 1):
+        plotter.update(iteration, _phi, rho, u_ckl)
+
     #Step 4: re-iterate
     iteration += 1
     if iteration % 100 == 0:
@@ -1670,15 +1331,19 @@ while iteration < TOTAL_ITERATIONS:
 end = time.perf_counter()
 #iterationsOfInterest = [0, 10, 50, 100, 200, 500, 1000, 5000, 10000, 12000]
 diff = end - start
+
+plt.savefig("realtime_sim.png", dpi=240)
+plt.show()
+
 rho_in, rho_out = _rho_full_range[1, Yn // 2], _rho_full_range[Xn, Yn // 2]
 rho_min = np.min(_rho_full_range)
 rho_max = np.max(_rho_full_range)
 debug_log('FIELD', '_rho_full_range min = %(min).6f, max = %(max).6f', extra=dict(min=rho_min, max=rho_max))
 
-filtered_u_ckl_dict_x = filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
+filtered_u_ckl_dict_x = plotter.filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
 filtered_u_ckl_list_x = list(filtered_u_ckl_dict_x.values())
 
-filtered_u_ckl_dict_y = filter_u_ckl_fullrange(list_avg_velocities_y, iterationsOfInterest)
+filtered_u_ckl_dict_y = plotter.filter_u_ckl_fullrange(list_avg_velocities_y, iterationsOfInterest)
 filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
 
 # height ratios based on lattice dimensions
@@ -1706,14 +1371,14 @@ fig1, ax1 = plt.subplots(
 # In the fig1, ax1 section
 sectionPosition = int(Xn/2)
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
-amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
-amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
+plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
 
 _iteration = TOTAL_ITERATIONS
-velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
-velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
+plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
+plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
-density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn)
+plotter.density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn, iteration)
 
 if PRESSURE_IN_DENSITY_MAP:
     min_value = 0 
@@ -1721,10 +1386,10 @@ if PRESSURE_IN_DENSITY_MAP:
     _pressure_out = (rho_min - min_value) * Cs**2
     _pressure_in = (rho_max - min_value) * Cs**2
     title = "Pressure map"
-    density_mapExt(ax1[2, 1], _pressure_full_range, _pressure_out, _pressure_in, title, iteration)
+    plotter.density_mapExt(ax1[2, 1], _pressure_full_range, _pressure_out, _pressure_in, title, iteration)
 else:
     title = "Density map"
-    density_mapExt(ax1[2, 1], _rho_full_range, rho_min, rho_max, title, iteration)
+    plotter.density_mapExt(ax1[2, 1], _rho_full_range, rho_min, rho_max, title, iteration)
 
 text = f"Run-time: {diff:.1f} s"
 fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
@@ -1752,22 +1417,23 @@ fig2, ax2 = plt.subplots(
     num=paneLabel
 )
 
-plot_bounds_ext(GrowthMetric_uckl_x, "GrowthMetric_uckl_x", ax2[0, 0])
-plot_bounds_ext(GrowthMetric_uckl_y, "GrowthMetric_uckl_y", ax2[0, 1])
-plot_bounds_ext(GrowthMetric_uckl_star_y, "GrowthMetric_uckl_star_y", ax2[0, 2])
-plot_bounds_ext(rho_bounds, "rho_bounds", ax2[0, 3])
+if ADD_METRICS: 
+    plotter.plot_bounds_ext(GrowthMetric_uckl_x, "GrowthMetric_uckl_x", ax2[0, 0])
+    plotter.plot_bounds_ext(GrowthMetric_uckl_y, "GrowthMetric_uckl_y", ax2[0, 1])
+    plotter.plot_bounds_ext(GrowthMetric_uckl_star_y, "GrowthMetric_uckl_star_y", ax2[0, 2])
+    plotter.plot_bounds_ext(rho_bounds, "rho_bounds", ax2[0, 3])
 
-plot_bounds_ext(epsilon_u_ckl_list, "epsilon_u_ckl growth", ax2[1, 0])
-plot_bounds_ext(Invariants, "Invariants", ax2[1, 1])
-plot_momentum_bounds(MomentumBounds, "MomentumBounds", ax2[1, 2])
-plot_bounds_ext(PhIters, "PhIters", ax2[1, 3])    
+    plotter.plot_bounds_ext(epsilon_u_ckl_list, "epsilon_u_ckl growth", ax2[1, 0])
+    plotter.plot_bounds_ext(Invariants, "Invariants", ax2[1, 1])
+    plotter.plot_momentum_bounds(MomentumBounds, "MomentumBounds", ax2[1, 2])
+    plotter.plot_bounds_ext(PhIters, "PhIters", ax2[1, 3])    
 
-series_labels = ["du_dx","du_dy","dv_dx","dv_dy","div_u"]
-plot_bounds_ext(GrowthMetric_div_u_raw, "GrowthMetric_div_u_raw", ax2[2, 0], series_labels)
-series_labels = ["np.gradient(p)","laplacian_phi"]
-plot_bounds_ext(AuxFields, "AuxFields", ax2[2, 1], series_labels)
-plot_bounds_ext(DivU_max, "DivU_max", ax2[2, 2])
-plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
+    series_labels = ["du_dx","du_dy","dv_dx","dv_dy","div_u"]
+    plotter.plot_bounds_ext(GrowthMetric_div_u_raw, "GrowthMetric_div_u_raw", ax2[2, 0], series_labels)
+    series_labels = ["np.gradient(p)","laplacian_phi"]
+    plotter.plot_bounds_ext(AuxFields, "AuxFields", ax2[2, 1], series_labels)
+    plotter.plot_bounds_ext(DivU_max, "DivU_max", ax2[2, 2])
+    plotter.plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
 
 fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
 images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
