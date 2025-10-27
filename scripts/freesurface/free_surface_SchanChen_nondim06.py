@@ -1332,8 +1332,9 @@ end = time.perf_counter()
 #iterationsOfInterest = [0, 10, 50, 100, 200, 500, 1000, 5000, 10000, 12000]
 diff = end - start
 
-plt.savefig("realtime_sim.png", dpi=240)
-plt.show()
+if PLOTREALTIME:
+    plt.savefig("realtime_sim.png", dpi=240)
+    plt.show()
 
 rho_in, rho_out = _rho_full_range[1, Yn // 2], _rho_full_range[Xn, Yn // 2]
 rho_min = np.min(_rho_full_range)
