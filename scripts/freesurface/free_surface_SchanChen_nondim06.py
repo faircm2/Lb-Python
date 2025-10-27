@@ -1317,8 +1317,11 @@ while iteration < TOTAL_ITERATIONS:
         u_ckl_midpoint0 = u_ckl[0,int(Xn/2),int(Yn/2)]
 
     # plot in real time - color 1/2 particles blue, other half red
-    if (PLOTREALTIME and (iteration % 10) == 0) or (iteration == TOTAL_ITERATIONS - 1):
+    if (PLOTREALTIME and (iteration % 10) == 0):
         plotter.update(iteration, _phi, rho, u_ckl)
+
+    if (PLOTREALTIME and (iteration == TOTAL_ITERATIONS - 1)):
+        plotter.update(iteration, _phi, rho, u_ckl)        
 
     #Step 4: re-iterate
     iteration += 1
@@ -1331,10 +1334,6 @@ while iteration < TOTAL_ITERATIONS:
 end = time.perf_counter()
 #iterationsOfInterest = [0, 10, 50, 100, 200, 500, 1000, 5000, 10000, 12000]
 diff = end - start
-
-if PLOTREALTIME:
-    plt.savefig("realtime_sim.png", dpi=240)
-    plt.show()
 
 rho_in, rho_out = _rho_full_range[1, Yn // 2], _rho_full_range[Xn, Yn // 2]
 rho_min = np.min(_rho_full_range)
