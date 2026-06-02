@@ -1,0 +1,54 @@
+ ipcluster start --engines=mpi -n 4 --debug
+  jupyter notebook --ip=127.0.0.1 --port=8888
+
+
+%%px
+import numpy as np
+import matplotlib.pyplot as plt
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+size
+
+
+print('Rank {}/{} is alive.'format(rank, size))
+
+DESKTOP-3JLOVHJ
+
+
+import numpy as np 
+n = 100000
+x = np.random.random(n)
+y = np.random.random(n)
+4*np.mean(x**2+y**2<1)
+
+%matplotlib inline
+import matplotlib.pyplot as plt
+#from mpi4py import MPI
+#comm = MPI.COMM_WORLD
+#rank = comm.Get_rank()
+#size = comm.Get_size()
+#print("Rank {}/{} is alive.".format(rank, size))
+
+nx=1000
+dx=0.1
+nt=100000
+dt=0.001
+D=1
+
+x=np.arange(nx)*dx
+mu=nx*dx/2
+sigma0=20*dx
+c=np.exp(-(x-mu)**2/(2*sigma0**2))/(np.sqrt(2*np.pi)*sigma0)
+normal = np.trapz(c,x)
+plt.plot(x,c)
+d2c_dx2 = (np.roll(c,-1)-2*c+np.roll(c,1))/(dx**2)
+plt.plot(x,d2c_dx2,'b-')
+plt.plot(x,c,'k-')
+
+for t in range(nt):
+    d2c_dx2 = (np.roll(c,-1)-2*c+np.roll(c,1))/(dx**2)
+    c+=dt*D*d2c_dx2
+    if t%(nt//5) == 0:
+        plt.plot(x,c,'-',label='$t={}$'.format(t*dt))
+plt.legend(loc='best')
+np.trapz(c,x)

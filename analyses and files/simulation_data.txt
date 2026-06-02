@@ -1,0 +1,9 @@
+nodes,grid_x,grid_y,runtime,filename,directory,L
+1,50,14400,502.3,runtime-grid-50x14400-nodes1-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1
+1,50,19200,409.8,runtime-grid-50x19200-nodes1-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1
+6,50,28800,636.7,runtime-grid-50x28800-nodes6-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1
+8,50,38400,897.7,runtime-grid-50x38400-nodes8-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1
+1,50,4800,21.9,runtime-grid-50x4800-nodes1-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1
+10,50,48000,578.3,runtime-grid-50x48000-nodes10-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1
+1,50,9600,784.9,runtime-grid-50x9600-nodes1-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1
+2,50,9600,126.7,runtime-grid-50x9600-nodes2-L1.txt,C:\Dirk\temp\bwcluster\20250531.1,1

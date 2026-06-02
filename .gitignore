@@ -1,0 +1,11 @@
+FreesurfaceImages/
+__pycache__/
+*.pyc
+lbm_debug.log
+phi_results.txt
+github-repo-token.txt
+literature/
+.ipynb_checkpoints/
+*.ipynb
+frames2D/
+explosion/
