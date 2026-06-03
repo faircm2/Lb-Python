@@ -73,6 +73,14 @@ def build_cmd(params):
     return cmd
 
 
+def get_completed_labels():
+    if not os.path.exists(RESULTS_CSV):
+        return set()
+    with open(RESULTS_CSV, 'r') as f:
+        reader = csv.DictReader(f)
+        return {row['label'] for row in reader}    
+
+
 def check_log(log_path):
     """Returns: 'running', 'unstable', 'done'"""
     if not os.path.exists(log_path):
@@ -185,10 +193,14 @@ def push_csv():
 def main():
     param_sets = make_param_sets()
     total = len(param_sets)
-    print(f"[ORCHESTRATOR] Parameter study starting: {total} runs", flush=True)
+    completed = get_completed_labels()
+    print(f"[ORCHESTRATOR] Parameter study starting: {total} runs ({len(completed)} already done)", flush=True)
 
     for i, params in enumerate(param_sets, 1):
-        label  = params.get('_label', f'run_{i}')
+        label = params.get('_label', f'run_{i}')
+        if label in completed:
+            print(f"[ORCHESTRATOR] Skipping {label} — already in CSV", flush=True)
+            continue
         result = run_one(params, i, total)
         write_csv_row(label, params, result)
         push_csv()
