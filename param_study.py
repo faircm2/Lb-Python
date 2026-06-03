@@ -151,17 +151,16 @@ def run_one(params, run_index, total):
         progress = get_progress(run_log)
         print(f"[ORCHESTRATOR] Run {run_index}/{total} {label}: iter={progress} ({100*progress/12001:.1f}%)  overall={run_index-1}/{total} runs done", flush=True)
 
-        if progress >= 3000:
-            if progress == last_progress:
-                stall_count += 1
-                if stall_count >= 3:
-                    print(f"[ORCHESTRATOR] Stalled — killing", flush=True)
-                    proc.kill()
-                    result = 'STALLED'
-                    break
-            else:
-                stall_count = 0
-            last_progress = progress
+        if progress == last_progress:
+            stall_count += 1
+            if stall_count >= 5:  # 5 x 30s = 2.5 minutes stuck
+                print(f"[ORCHESTRATOR] Stalled at iter={progress} for {stall_count*30}s — killing", flush=True)
+                proc.kill()
+                result = 'STALLED'
+                break
+        else:
+            stall_count = 0
+        last_progress = progress
 
     print(f"[ORCHESTRATOR] Run {run_index}/{total} {label}: FINISHED — {result}", flush=True)
     return result

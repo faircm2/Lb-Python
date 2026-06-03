@@ -185,6 +185,7 @@ parser.add_argument('--vf_theta',  type=float, default=60.0)
 parser.add_argument('--vf_capMult',type=float, default=100.0)
 parser.add_argument('--add_st',    type=int,   default=1)      # ADD_SURFACE_TENSION_FORCE
 parser.add_argument('--add_bf',    type=int,   default=1)      # ADD_BODY_FORCE
+parser.add_argument('--max_ph_iters', type=int, default=1000)
 args = parser.parse_args()
 
 DEFAULT_D_ND = args.nodes
@@ -604,7 +605,8 @@ CAPILLARY_PROOF = FlowConfig(
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION=True,
     ADD_SURFACE_TENSION_FORCE=args.add_st,
-    ADD_BODY_FORCE=args.add_bf
+    ADD_BODY_FORCE=args.add_bf,
+    max_ph_iters=args.max_ph_iters    
 )
 
 # §3.1 Capillary wave
