@@ -168,15 +168,29 @@ def run_one(params, run_index, total):
 
 def write_csv_row(label, params, result):
     os.makedirs(os.path.dirname(RESULTS_CSV), exist_ok=True)
-    write_header = not os.path.exists(RESULTS_CSV)
-    with open(RESULTS_CSV, 'a', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['label','result'] + 
-                                [k for k in BASELINE.keys()])
-        if write_header:
-            writer.writeheader()
-        row = {'label': label, 'result': result}
-        row.update({k: params.get(k, BASELINE[k]) for k in BASELINE.keys()})
-        writer.writerow(row)
+    fieldnames = ['label', 'result'] + [k for k in BASELINE.keys()]
+    new_row = {'label': label, 'result': result}
+    new_row.update({k: params.get(k, BASELINE[k]) for k in BASELINE.keys()})
+
+    # Read existing rows, replace if label exists, otherwise append
+    existing = []
+    if os.path.exists(RESULTS_CSV):
+        with open(RESULTS_CSV, 'r', newline='') as f:
+            existing = list(csv.DictReader(f))
+
+    updated = False
+    for i, row in enumerate(existing):
+        if row['label'] == label:
+            existing[i] = new_row
+            updated = True
+            break
+    if not updated:
+        existing.append(new_row)
+
+    with open(RESULTS_CSV, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(existing)
 
 
 def push_csv():

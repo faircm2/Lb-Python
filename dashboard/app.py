@@ -116,7 +116,7 @@ def index():
     completed    = len(results)
     done_count   = sum(1 for r in results if r['result'] == 'DONE')
     failed_count = sum(1 for r in results if r['result'] in ('FAILED', 'UNSTABLE', 'STALLED'))
-    overall_pct  = round(completed / TOTAL_RUNS * 100, 1)
+    overall_pct  = min(round(completed / TOTAL_RUNS * 100, 1), 100.0)
     return render_template_string(HTML,
         results=results, current=current, total=TOTAL_RUNS,
         completed=completed, done_count=done_count, failed_count=failed_count,
