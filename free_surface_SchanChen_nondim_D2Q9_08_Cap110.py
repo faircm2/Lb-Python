@@ -877,49 +877,37 @@ def c_laplacian(lamda, n_dx=1.0, n_dy=1.0):
 
 def zhang_gradient(__phi):
     cs2 = Cs**2
-    Ny, Nx = __phi.shape
-    grad_x = np.zeros((Ny, Nx))
-    grad_y = np.zeros((Ny, Nx))
-    
-    for i in range(9):
-        cx, cy = c[i]
-        phi_shifted = np.roll(np.roll(__phi, cx, axis=0), cy, axis=1)
-        
-        grad_x += E[i] * cx * phi_shifted
-        grad_y += E[i] * cy * phi_shifted
-    
-    prefactor = 1.0 / cs2  # 3.0
-    grad_x *= prefactor
-    grad_y *= prefactor
-    
+
+    # Stack all 9 shifted versions: shape (9, Ny, Nx)
+    shifted = np.stack([
+        np.roll(__phi, shift=(c[i, 0], c[i, 1]), axis=(0, 1))
+        for i in range(9)
+    ], axis=0)
+
+    # E*cx and E*cy as column vectors: shape (9, 1, 1)
+    E_cx = (E * c[:, 0])[:, None, None]
+    E_cy = (E * c[:, 1])[:, None, None]
+
+    grad_x = np.sum(E_cx * shifted, axis=0) / cs2
+    grad_y = np.sum(E_cy * shifted, axis=0) / cs2
+
     return grad_x, grad_y
 
 
 def zhang_laplacian(__phi):
-    """
-    Computes the Laplacian ∇²φ using the Zhang-style D2Q9 isotropic stencil.
-    
-    Formula (lattice units): 
-    ∇²φ = (2 / cs²) ⋅ Σᵢ Eᵢ ⋅ (φ(x + cᵢ) − φ(x))
-    
-    Parameters:
-        __phi : 2D numpy.ndarray (Ny, Nx)
-    
-    Returns:
-        lap : 2D numpy.ndarray (Ny, Nx)
-    """
     cs2 = Cs**2
-    Ny, Nx = __phi.shape
-    lap = np.zeros((Ny, Nx))
-    
-    for i in range(1, 9):  # i=0 term cancels
-        cx, cy = c[i]
-        phi_shifted = np.roll(np.roll(__phi, cx, axis=0), cy, axis=1)
-        
-        lap += E[i] * (phi_shifted - __phi)
-    
-    lap *= (2.0 / cs2)     # usually 6.0
-    
+
+    # Stack 8 shifted versions (i=1..8, i=0 cancels): shape (8, Ny, Nx)
+    shifted = np.stack([
+        np.roll(__phi, shift=(c[i, 0], c[i, 1]), axis=(0, 1))
+        for i in range(1, 9)
+    ], axis=0)
+
+    # E[1:9] as column vector: shape (8, 1, 1)
+    E_exp = E[1:9, None, None]
+
+    lap = np.sum(E_exp * (shifted - __phi), axis=0) * (2.0 / cs2)
+
     return lap
 
 
@@ -969,41 +957,6 @@ def density_and_viscosity(fc, _phi):
     return _rho, _mu
 
 
-def density_and_viscosity_ext(fc, _phi):
-    """
-    Inamuro eq.(14) density and eq.(15) viscosity.
-    Uses smooth sine interpolation in the interface region.
-    """
-    phi_G = fc.phi_star_G
-    phi_L = fc.phi_star_L
-    rho_G = fc.rho_G
-    rho_L = fc.rho_L
-    mu_G  = fc.mu_G
-    mu_L  = fc.mu_L
-
-    delta_rho = rho_L - rho_G
-    phi_mid   = (phi_G + phi_L) / 2.0
-    phi_width = (phi_L - phi_G) / 2.0
-
-    _rho = np.zeros_like(_phi)
-
-    mask_gas   = _phi < phi_G
-    mask_liquid = _phi > phi_L
-    mask_intf  = ~(mask_gas | mask_liquid)
-
-    _rho[mask_gas]   = rho_G
-    _rho[mask_liquid] = rho_L
-
-    if np.any(mask_intf):
-        arg = np.pi * (_phi[mask_intf] - phi_mid) / phi_width
-        _rho[mask_intf] = rho_G + (delta_rho / 2.0) * (np.sin(arg) + 1.0)
-
-    # Viscosity (linear with density)
-    _mu = mu_G + (( _rho - rho_G ) / delta_rho) * (mu_L - mu_G)
-
-    return _rho, _mu    
-
-
 #Inamuro eq(23): relaxation time tau_h
 def tau_h(_rho):
     _tau_h = 1/_rho + 1/2
@@ -1045,8 +998,8 @@ def ph(hn, _rho, u_ckl_star, iteration, n_dx=1.0, n_dy=1.0):
     div_u_exp = div_u[np.newaxis, :, :]  # (1, nx, ny)
 
     ############ 1. Damp the Source Term (div_u) directly ###############################
-    du_dx, _ = c_first_derivative0(u_ckl_star[0], n_dx, n_dy)
-    _, dv_dy = c_first_derivative0(u_ckl_star[1], n_dx, n_dy)
+    #du_dx, _ = c_first_derivative0(u_ckl_star[0], n_dx, n_dy)
+    #_, dv_dy = c_first_derivative0(u_ckl_star[1], n_dx, n_dy)
     div_u_raw = du_dx + dv_dy
     max_div_u = np.max(np.abs(div_u_raw))
     if iteration % 100 == 0:
@@ -1823,18 +1776,7 @@ def zhang_fc(fc, _phi):
     return np.transpose(_fc, (2, 0, 1))  # <-- change here
 
 
-def set_solid_nodes(iteration, fc, _phi):
-    #2. viscous force - adaptation of Zhang et al. eq(5), with μ_phi exchanged for μ_c
-    #fc.vf_kappa = 3 * fc.vf_sigma * fc.vf_W / 2
-    #fc.vf_beta = 12 * fc.vf_sigma / fc.vf_W
-
-    # ------- Capillary effect (wetting on bottom, left, and right walls only) -------
-    # n = ∇ϕ|∇ϕ∣
-
-    __phi = _phi.copy()
-
-
-
+def validate_normalization(fc, __phi, _phi_n, _phi_min, _phi_max):
     #normalization test
     #_phi_n, _phi_min, _phi_max = normalizePhi0(fc, __phi)
     _phi_n, _phi_min, _phi_max = normalizePhiExt(fc, __phi)
@@ -1863,7 +1805,26 @@ def set_solid_nodes(iteration, fc, _phi):
     
     # Step 1: Normalize phi once (shared for all walls)
     #_phi_n, _phi_min, _phi_max = normalizePhi0(fc, __phi)
+    _phi_n, _phi_min, _phi_max = normalizePhiExt(fc, __phi)    
+
+
+def set_solid_nodes(iteration, fc, _phi):
+    #2. viscous force - adaptation of Zhang et al. eq(5), with μ_phi exchanged for μ_c
+    #fc.vf_kappa = 3 * fc.vf_sigma * fc.vf_W / 2
+    #fc.vf_beta = 12 * fc.vf_sigma / fc.vf_W
+
+    # ------- Capillary effect (wetting on bottom, left, and right walls only) -------
+    # n = ∇ϕ|∇ϕ∣
+
+    __phi = _phi.copy()
+
+
+    # Step 1: Normalize phi once (shared for all walls)
     _phi_n, _phi_min, _phi_max = normalizePhiExt(fc, __phi)
+
+    # Normalization validation — call only at iteration 0
+    if iteration == 0:
+        validate_normalization(fc, __phi, _phi_n, _phi_min, _phi_max)
 
     # Contact angle (same for all solid walls — modify later if needed)
     thetaCap = compContactAngle(fc)
@@ -2303,7 +2264,6 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     #Calculation of rho, mu
     rho, mu = density_and_viscosity(fc, _phi)
-    rho_ext, mu_ext = density_and_viscosity_ext(fc, _phi)
 
     # post collision fi, gi
     #_fi_star = _fi
@@ -2325,8 +2285,9 @@ while iteration < fc.TOTAL_ITERATIONS:
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
         list_phi[iteration] = _phi[:,yc].copy()
-        list_dphi_0[iteration] = c_first_derivative0(_phi)[0][:,yc].copy()
-        list_dphi_1[iteration] = c_first_derivative0(_phi)[1][:,yc].copy()
+        _dphi_dx, _dphi_dy = c_first_derivative0(_phi)
+        list_dphi_0[iteration] = _dphi_dx[:,yc].copy()
+        list_dphi_1[iteration] = _dphi_dy[:,yc].copy()
         
         # density mapping
         rho_min = np.min(rho)
@@ -2360,7 +2321,8 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     # 2. Surface tensions forces
     phi_n_, phi_star_G_, phi_star_L_ = normalizePhiExt(fc, _phi)
-    save_phi_results(phi_n_, phi_star_G_, phi_star_L_)
+    if 2000 <= iteration <= 2003:
+        save_phi_results(phi_n_, phi_star_G_, phi_star_L_)
 
 
     # phi values at boundaries should be set
