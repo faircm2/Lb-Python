@@ -25,10 +25,5 @@ jobs:
             /opt/lbm/venv/bin/pip install -r /opt/lbm/Lb-Python/dashboard/requirements.txt -q
 
             # Restart dashboard (kill old, start new)
-            pkill -f "dashboard/app.py" 2>/dev/null || true
-            sleep 1
-            nohup /opt/lbm/venv/bin/python /opt/lbm/Lb-Python/dashboard/app.py \
-              > /opt/lbm/dashboard.log 2>&1 &
-            disown
-            echo "Dashboard restarted on port 6000"
-            exit 0
+            systemctl restart lbm-dashboard
+            echo "Dashboard restarted"
