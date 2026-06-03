@@ -2075,6 +2075,20 @@ PARAMETER_STUB = (
 images_dir = os.path.join(images_subdir, SCRIPT_FILENAME + PARAMETER_STUB)
 os.makedirs(images_dir, exist_ok=True)
 
+# overall orchestration output
+print("=" * 70)
+print("SIMULATION START")
+print(f"  nodes     : {DEFAULT_D_ND}")
+print(f"  tau_f     : {fc.tau_f}")
+print(f"  Kf        : {fc.Kf}")
+print(f"  vf_theta  : {fc.vf_theta}")
+print(f"  vf_W      : {fc.vf_W}")
+print(f"  vf_sigma  : {fc.vf_sigma}")
+print(f"  vf_capMult: {fc.vf_capillaryForceMultiplier}")
+print(f"  add_st    : {fc.ADD_SURFACE_TENSION_FORCE}")
+print(f"  label     : {SCRIPT_FILENAME + PARAMETER_STUB}")
+print("=" * 70)
+
 #phi initialisation
 # Corrected order parameter: phi decreases from phi_star_L to phi_star_G as y > y0
 _phi = (fc.phi_star_L + fc.phi_star_G) / 2 + (fc.phi_star_L - fc.phi_star_G) / 2 * erf((y0 - y) / (np.sqrt(2) * fc.xi))

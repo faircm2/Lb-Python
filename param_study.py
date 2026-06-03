@@ -8,6 +8,7 @@ SCRIPT     = '/opt/lbm/Lb-Python/free_surface_SchanChen_nondim_D2Q9_08_Cap110.py
 WORK_DIR   = '/opt/lbm/Lb-Python'
 LOG        = '/opt/lbm/run.log'
 RESULTS_CSV= '/opt/lbm/Lb-Python/results/param_study_results.csv'
+RUNS_DIR = '/opt/lbm/runs'
 
 BASELINE = dict(
     nodes=200, tau_f=1.5, Kf=0.002,
@@ -78,7 +79,7 @@ def check_log(log_path):
         return 'running'
     with open(log_path, 'r', errors='replace') as f:
         content = f.read()
-    if 'NaN' in content or 'ValueError' in content or 'Error' in content:
+    if 'NaN' in content or 'Traceback' in content:
         return 'unstable'
     if '100.0 %' in content:
         return 'done'
@@ -102,17 +103,22 @@ def get_progress(log_path):
 
 
 def run_one(params, run_index, total):
-    label = params.get('_label', f'run_{run_index}')
-    print(f"\n{'='*60}")
-    print(f"Run {run_index}/{total}: {label}")
-    print(f"Params: { {k:v for k,v in params.items() if not k.startswith('_')} }")
-    print(f"{'='*60}")
+    label    = params.get('_label', f'run_{run_index}')
+    run_log  = os.path.join(RUNS_DIR, f'{label}.log')
+    os.makedirs(RUNS_DIR, exist_ok=True)
 
-    # Clear log
+    print(f"\n{'='*60}", flush=True)
+    print(f"[ORCHESTRATOR] Run {run_index}/{total} — {label}", flush=True)
+    print(f"[ORCHESTRATOR] Params: { {k:v for k,v in params.items() if not k.startswith('_')} }", flush=True)
+    print(f"[ORCHESTRATOR] Log: {run_log}", flush=True)
+    print(f"{'='*60}", flush=True)
+
+    open(run_log, 'w').close()
     open(LOG, 'w').close()
 
     cmd = build_cmd(params)
-    proc = subprocess.Popen(cmd, cwd=WORK_DIR)
+    with open(run_log, 'w') as log_f:
+        proc = subprocess.Popen(cmd, cwd=WORK_DIR, stdout=log_f, stderr=log_f)
 
     last_progress = 0
     stall_count   = 0
@@ -122,28 +128,26 @@ def run_one(params, run_index, total):
         time.sleep(30)
 
         if proc.poll() is not None:
-            # Process ended
-            status = check_log(LOG)
+            status = check_log(run_log)
             result = 'DONE' if status == 'done' else 'FAILED'
             break
 
-        status = check_log(LOG)
+        status = check_log(run_log)
 
         if status == 'unstable':
-            print(f"  [AGENT] Instability detected — killing run")
+            print(f"[ORCHESTRATOR] Instability detected — killing", flush=True)
             proc.kill()
             result = 'UNSTABLE'
             break
 
-        progress = get_progress(LOG)
-        print(f"  [AGENT] iter={progress}  status={status}")
+        progress = get_progress(run_log)
+        print(f"[ORCHESTRATOR] Run {run_index}/{total} {label}: iter={progress} ({100*progress/12001:.1f}%)  overall={run_index-1}/{total} runs done", flush=True)
 
-        # Early stop: no progress after 3000 iters and interface is flat
         if progress >= 3000:
             if progress == last_progress:
                 stall_count += 1
                 if stall_count >= 3:
-                    print(f"  [AGENT] Stalled at iter={progress} — killing")
+                    print(f"[ORCHESTRATOR] Stalled — killing", flush=True)
                     proc.kill()
                     result = 'STALLED'
                     break
@@ -151,7 +155,7 @@ def run_one(params, run_index, total):
                 stall_count = 0
             last_progress = progress
 
-    print(f"  [AGENT] Run finished: {result}")
+    print(f"[ORCHESTRATOR] Run {run_index}/{total} {label}: FINISHED — {result}", flush=True)
     return result
 
 
@@ -181,16 +185,17 @@ def push_csv():
 def main():
     param_sets = make_param_sets()
     total = len(param_sets)
-    print(f"Parameter study: {total} runs")
+    print(f"[ORCHESTRATOR] Parameter study starting: {total} runs", flush=True)
 
     for i, params in enumerate(param_sets, 1):
         label  = params.get('_label', f'run_{i}')
         result = run_one(params, i, total)
         write_csv_row(label, params, result)
         push_csv()
+        print(f"[ORCHESTRATOR] Overall progress: {i}/{total} runs complete ({100*i/total:.0f}%)", flush=True)
         time.sleep(5)
 
-    print(f"\nAll {total} runs complete. Results in {RESULTS_CSV}")
+    print(f"[ORCHESTRATOR] ALL DONE — {total} runs complete", flush=True)
 
 
 if __name__ == '__main__':
