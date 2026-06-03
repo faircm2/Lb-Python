@@ -18,7 +18,8 @@ jobs:
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
             cd /opt/lbm/Lb-Python
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
 
             # Install/update dashboard dependencies
             /opt/lbm/venv/bin/pip install -r /opt/lbm/Lb-Python/dashboard/requirements.txt -q
