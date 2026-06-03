@@ -1,0 +1,30 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            cd /opt/lbm/Lb-Python
+            git pull origin main
+
+            # Install/update dashboard dependencies
+            /opt/lbm/venv/bin/pip install -r /opt/lbm/Lb-Python/dashboard/requirements.txt -q
+
+            # Restart dashboard (kill old, start new)
+            pkill -f "python /opt/lbm/Lb-Python/dashboard/app.py" || true
+            nohup /opt/lbm/venv/bin/python /opt/lbm/Lb-Python/dashboard/app.py \
+              > /opt/lbm/dashboard.log 2>&1 &
+            echo "Dashboard restarted on port 6000"
