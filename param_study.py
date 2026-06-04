@@ -163,6 +163,13 @@ def run_one(params, run_index, total):
             stall_count = 0
         last_progress = progress
 
+    # Rename result folder to include label
+    old_path = os.path.join(WORK_DIR, 'results', 'free_surface_SchanChen_nondim_D2Q9_08_Cap110')
+    new_path = os.path.join(WORK_DIR, 'results', label)
+    if os.path.exists(old_path):
+        os.rename(old_path, new_path)
+        print(f"[ORCHESTRATOR] Renamed results folder to {label}", flush=True)        
+
     print(f"[ORCHESTRATOR] Run {run_index}/{total} {label}: FINISHED — {result}", flush=True)
     return result
 
