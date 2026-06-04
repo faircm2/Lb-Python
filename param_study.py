@@ -12,7 +12,8 @@ RUNS_DIR = '/opt/lbm/runs'
 
 BASELINE = dict(
     nodes=200, tau_f=1.5, Kf=0.002,
-    xi=6.0, vf_W=4, vf_sigma=0.01,
+    xi=6.0, vf_W=6, 
+    vf_sigma=0.01,
     vf_theta=60.0, vf_capMult=100.0,
     add_st=1, add_bf=1
 )
