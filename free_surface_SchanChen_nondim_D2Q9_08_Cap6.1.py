@@ -2847,17 +2847,18 @@ _vel_grad = (2.0*_dua_dx*c_x_sq + (_dua_dy+_dub_dx)*c_xy
              + (_dub_dx+_dua_dy)*c_xy + 2.0*_dub_dy*c_y_sq)
 
 def _gi_y_terms_at(xi):
-    rxi = rho[xi, :]
     cy_weights = c[:, 1]
-    def wsum(arr9):   # sum_i arr9[i,:] * cy[i]
+    def wsum(arr9):   # sum_i arr9[i,:] * cy[i], arr9 must be (9, Xn+2, Yn+2)
         return np.einsum('i,iy->y', cy_weights, arr9[:, xi, :])
+    _rho_full  = rho[np.newaxis, :, :]                          # (1, Xn+2, Yn+2)
+    _grad2_rho = (_grad_rho_x**2 + _grad_rho_y**2)[np.newaxis, :, :]  # (1, Xn+2, Yn+2)
     g1 = wsum(E_exp * np.ones((9, Xn+2, Yn+2)))
     g2 = wsum(E_exp * 3.0 * _c_dot_u_all)
-    g3 = wsum(-E_exp * (1.5) * _u_dot_u)
+    g3 = wsum(-E_exp * (1.5) * _u_dot_u[np.newaxis, :, :])
     g4 = wsum(E_exp * (4.5) * _c_dot_u_all**2)
     g5 = wsum(E_exp * (1.5) * (fc.tau_g - 0.5) * n_dx * _vel_grad)
-    g6 = wsum(E_exp * (fc.Kg / rxi) * _Gab_rho_all)
-    g7 = wsum(-(2.0/3.0) * F_exp * (fc.Kg / rxi) * (_grad_rho_x[xi,:]**2 + _grad_rho_y[xi,:]**2))
+    g6 = wsum(E_exp * (fc.Kg / _rho_full) * _Gab_rho_all)
+    g7 = wsum(-(2.0/3.0) * F_exp * (fc.Kg / _rho_full) * _grad2_rho)
     return g1, g2, g3, g4, g5, g6, g7
 
 gi_wall   = _gi_y_terms_at(x_w)
