@@ -2102,7 +2102,7 @@ PARAMETER_STUB = (
     "__Theta_" + str(fc.vf_theta) +
     "__SURFACE_TENSION_FORCE_" + str(fc.ADD_SURFACE_TENSION_FORCE)
 )
-images_dir = images_subdir + "\\" + SCRIPT_FILENAME + PARAMETER_STUB
+images_dir = os.path.join(images_subdir, SCRIPT_FILENAME + PARAMETER_STUB)
 os.makedirs(images_dir, exist_ok=True)
 
 #phi initialisation
