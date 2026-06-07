@@ -182,9 +182,9 @@ parser.add_argument('--xi',        type=float, default=6.0)
 parser.add_argument('--vf_W',      type=int,   default=4)
 parser.add_argument('--vf_sigma',  type=float, default=0.01)
 parser.add_argument('--vf_theta',  type=float, default=60.0)
-parser.add_argument('--vf_capMult',type=float, default=100.0)
-parser.add_argument('--add_st',    type=int,   default=1)      # ADD_SURFACE_TENSION_FORCE
-parser.add_argument('--add_bf',    type=int,   default=1)      # ADD_BODY_FORCE
+parser.add_argument('--vf_capillaryForceMultiplier', type=float, default=1.0)
+parser.add_argument('--add_surfaceTensionForce',     type=int,   default=1)
+parser.add_argument('--add_bodyForce',               type=int,   default=1)
 parser.add_argument('--max_ph_iters', type=int, default=1000)
 args = parser.parse_args()
 
@@ -601,11 +601,11 @@ CAPILLARY_PROOF = FlowConfig(
     vf_W=args.vf_W,
     vf_sigma=args.vf_sigma,
     vf_theta=args.vf_theta,
-    vf_capillaryForceMultiplier=args.vf_capMult,
+    vf_capillaryForceMultiplier=args.vf_capillaryForceMultiplier,
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION=True,
-    ADD_SURFACE_TENSION_FORCE=args.add_st,
-    ADD_BODY_FORCE=args.add_bf,
+    ADD_SURFACE_TENSION_FORCE=args.add_surfaceTensionForce,
+    ADD_BODY_FORCE=args.add_bodyForce,
     max_ph_iters=args.max_ph_iters    
 )
 
@@ -2086,8 +2086,8 @@ print(f"  Kf        : {fc.Kf}")
 print(f"  vf_theta  : {fc.vf_theta}")
 print(f"  vf_W      : {fc.vf_W}")
 print(f"  vf_sigma  : {fc.vf_sigma}")
-print(f"  vf_capMult: {fc.vf_capillaryForceMultiplier}")
-print(f"  add_st    : {fc.ADD_SURFACE_TENSION_FORCE}")
+print(f"  vf_capillaryForceMultiplier: {fc.vf_capillaryForceMultiplier}")
+print(f"  add_surfaceTensionForce    : {fc.ADD_SURFACE_TENSION_FORCE}")
 print(f"  label     : {SCRIPT_FILENAME + PARAMETER_STUB}")
 print("=" * 70)
 

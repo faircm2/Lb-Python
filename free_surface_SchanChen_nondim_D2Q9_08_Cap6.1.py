@@ -173,7 +173,7 @@ ADD_METRICS = True
 
 # Constants
 WRITE_TO_GITHUB = True
-DEFAULT_D_ND = 200
+DEFAULT_D_ND = 400
 SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
 SCRIPT_FULL_PATH = os.path.abspath(__file__) 
 SCRIPTS_PATH = "scripts/freesurface/"
@@ -2068,6 +2068,12 @@ def compute_inamuro_sigma(_phi, _rho, Kg, dx, drho_dy=None, target=0.01):
     return sigma, Kg * scale
 
 
+def F(fc, __phi):
+    dphi_dx, dphi_dy = c_first_derivative0(__phi)
+    _F = np.sum(__phi + fc.vf_kappa/2 * (dphi_dx**2 + dphi_dy**2)) * n_dx * n_dy
+    return _F
+
+
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # Initial conditions
 # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -2149,7 +2155,8 @@ list_BodyForce_0 = {}
 list_BodyForce_1 = {}
 list_NetForce = {}
 
-yc = (Yn+2)//2 -4
+phi_mid = (fc.phi_star_L + fc.phi_star_G) / 2.0
+yc = int(np.argmin(np.abs(_phi[Xn//2, :] - phi_mid)))
 
 h0 = np.zeros((9,Xn+2, Yn+2),dtype=np.float64)
 h = np.zeros((9, Xn+2, Yn+2), dtype=np.float64)
@@ -2303,15 +2310,16 @@ while iteration < fc.TOTAL_ITERATIONS:
         debug_log('ITER', 'Iter %d: rho min=%.3e, max=%.3e', iteration, np.min(rho), np.max(rho))        
         
     if iteration in iterationsOfInterest:
+        yc = int(np.argmin(np.abs(_phi[Xn//2, :] - phi_mid)))
         #phi mapping
         plotter.save_phi_snapshot(_phi, iteration, fc.phi_star_G, fc.phi_star_L)    
 
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :].copy()
-        list_phi[iteration] = _phi[:,yc].copy()
-        list_dphi_0[iteration] = c_first_derivative0(_phi)[0][:,yc].copy()
-        list_dphi_1[iteration] = c_first_derivative0(_phi)[1][:,yc].copy()
+        list_phi[iteration] = _phi[1, :].copy()                           # phi along y at left wall
+        list_dphi_0[iteration] = c_first_derivative0(_phi)[0][1, :].copy() # dphi/dx at left wall (normal to wall)
+        list_dphi_1[iteration] = c_first_derivative0(_phi)[1][1, :].copy() # dphi/dy at left wall (along wall)
         
         # density mapping
         rho_min = np.min(rho)
@@ -2402,13 +2410,6 @@ while iteration < fc.TOTAL_ITERATIONS:
             #chemical_potential_map(self, ax, mu_phi, iteration, title, label="Chemical Potential μϕ"):
             plotter.chemical_potential_map(None, _chemical_potential_Zhang, iteration, title_Zhang, label_Zhang)
             plotter.chemical_potential_map(None, _chemical_potential_Inamuro, iteration, title_Inamuro, label_Inamuro)
-
-            plotter.plot_capillary_forces(
-                zhang_surface_tension_force,   # shape (Ny, Nx, 2)
-                yc=None,
-                iteration=iteration,
-                title="zhang_surface_tension_force"
-            )
 
     #Step2a. calculate h, p
     epsilon0 = fc.epsilon_cutoff * 10.0

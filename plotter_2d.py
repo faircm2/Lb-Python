@@ -568,8 +568,11 @@ class Plotter2D:
         fig_standalone = plt.figure(figsize=(8, 5))
         ax_standalone = fig_standalone.add_subplot(111)
         
-        # Plot chemical potential
-        im = ax_standalone.imshow(mu_phi.T, cmap='coolwarm', origin='lower')  # coolwarm gives diverging colors for μ
+        # Clip colormap to 1st–99th percentile so interface detail isn't crushed by bulk extremes
+        vmin, vmax = np.nanpercentile(mu_phi, [1, 99])
+        if vmin == vmax:
+            vmin, vmax = None, None
+        im = ax_standalone.imshow(mu_phi.T, cmap='coolwarm', origin='lower', vmin=vmin, vmax=vmax)
         ax_standalone.set_xlabel('x')
         ax_standalone.set_ylabel('y')
         ax_standalone.set_title(label)
@@ -768,7 +771,7 @@ class Plotter2D:
             series1, series2, series3,
             label1, label2, label3,
             axis1='left', axis2='right', axis3='right',
-            yc=None, iteration=None, title=""
+            yc=None, iteration=None, title="", xlabel='x'
         ):
         """
         Plot three arrays along centerline y = yc versus x.
@@ -812,7 +815,7 @@ class Plotter2D:
 
         # --- Axes styling ---
         ax_left.axhline(0.0, color='k', linewidth=0.8)
-        ax_left.set_xlabel('x')
+        ax_left.set_xlabel(xlabel)
 
         # Only join labels that are actually on the axis
         ax_left.set_ylabel(
@@ -869,7 +872,7 @@ class Plotter2D:
                 lines += ax_left.plot(x, series3, label=label3, linewidth=1.5, color='g', linestyle=':')
 
             ax_left.axhline(0.0, color='k', linewidth=0.8)
-            ax_left.set_xlabel('x')
+            ax_left.set_xlabel(xlabel)
             ax_left.set_title(f"{title} (centerline y={yc})" if yc is not None else title)
             ax_left.grid(True, linestyle='--', alpha=0.4)
 

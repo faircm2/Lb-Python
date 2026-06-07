@@ -11,56 +11,40 @@ RESULTS_CSV= '/opt/lbm/Lb-Python/results/param_study_results.csv'
 RUNS_DIR = '/opt/lbm/runs'
 
 BASELINE = dict(
-    nodes=200, tau_f=1.5, Kf=0.002,
-    xi=6.0, vf_W=6, 
+    nodes=400, tau_f=1.5, Kf=0.002,
+    xi=6.0, vf_W=6,
     vf_sigma=0.01,
-    vf_theta=60.0, vf_capMult=100.0,
-    add_st=1, add_bf=1
+    vf_theta=60.0,
+    vf_capillaryForceMultiplier=1.0,
+    add_surfaceTensionForce=1, add_bodyForce=1
 )
 
 def make_param_sets():
     sets = []
 
-    # 1. vf_theta — KEY variable
-    for v in [30, 60, 90, 120, 150]:
-        p = BASELINE.copy(); p['vf_theta'] = v
-        p['_label'] = f'theta_{v}'
-        sets.append(p)
-
-    # 2. Kf
-    for v in [0.001, 0.005, 0.01]:
+    # 1. Kf — capillary number; higher Kf → more capillary driving
+    for v in [0.001, 0.002, 0.005, 0.01]:
         p = BASELINE.copy(); p['Kf'] = v
         p['_label'] = f'Kf_{v}'
         sets.append(p)
 
-    # 3. tau_f
-    for v in [0.7, 1.0, 2.0]:
+    # 2. tau_f — relaxation time (viscosity); affects meniscus dynamics
+    for v in [0.7, 1.0, 1.5, 2.0]:
         p = BASELINE.copy(); p['tau_f'] = v
         p['_label'] = f'tau_f_{v}'
         sets.append(p)
 
-    # 4. vf_W
-    for v in [3, 6]:
+    # 3. vf_W — interface thickness; affects wall wetting force spread
+    for v in [3, 6, 9, 12]:
         p = BASELINE.copy(); p['vf_W'] = v
         p['_label'] = f'vf_W_{v}'
         sets.append(p)
 
-    # 5. vf_sigma
-    for v in [0.005, 0.05]:
+    # 4. vf_sigma — surface tension coefficient; directly sets meniscus curvature
+    for v in [0.005, 0.01, 0.02, 0.05]:
         p = BASELINE.copy(); p['vf_sigma'] = v
         p['_label'] = f'vf_sigma_{v}'
         sets.append(p)
-
-    # 6. vf_capMult
-    for v in [1, 10]:
-        p = BASELINE.copy(); p['vf_capMult'] = v
-        p['_label'] = f'capMult_{v}'
-        sets.append(p)
-
-    # 7. Zhang force off
-    p = BASELINE.copy(); p['add_st'] = 0
-    p['_label'] = 'zhang_off'
-    sets.append(p)
 
     return sets
 
