@@ -2904,7 +2904,7 @@ gi_labels = [
     r'$g_2 = 3E_i(c\!\cdot\!u)c_y$',
     r'$g_3 = -\frac{3}{2}E_i u^2 c_y$',
     r'$g_4 = \frac{9}{2}E_i(c\!\cdot\!u)^2 c_y$',
-    r'$g_5 = \frac{3}{2}E_i(\tau_g\!-\!\tfrac{1}{2})\,\nabla u\,c_y$  (viscous)',
+    r'$g_5 = \frac{3}{2}E_i(\tau_g - \frac{1}{2})\,\nabla u\,c_y$  (viscous)',
     r'$g_6 = E_i\frac{K_g}{\rho}G^{(\rho)}_{ab}c_y$',
     r'$g_7 = -\frac{2}{3}F_i\frac{K_g}{\rho}|\nabla\rho|^2 c_y$',
 ]
