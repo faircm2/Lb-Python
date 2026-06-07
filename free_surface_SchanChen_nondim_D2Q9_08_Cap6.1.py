@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import matplotlib
 
-matplotlib.use('TkAgg')  # or 'Qt5Agg' if you have PyQt installed
+matplotlib.use('Agg')  # or 'Qt5Agg' if you have PyQt installed
 #matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -172,7 +172,7 @@ PLOTREALTIME = False
 ADD_METRICS = True
 
 # Constants
-WRITE_TO_GITHUB = True
+WRITE_TO_GITHUB = False
 DEFAULT_D_ND = 200
 SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
 SCRIPT_FULL_PATH = os.path.abspath(__file__) 
