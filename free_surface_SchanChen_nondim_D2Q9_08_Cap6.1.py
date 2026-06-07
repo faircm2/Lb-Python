@@ -2068,7 +2068,7 @@ def compute_inamuro_sigma(_phi, _rho, Kg, dx, drho_dy=None, target=0.01):
     return sigma, Kg * scale
 
 
-def F(fc, __phi):
+def F_CahnHilliard(fc, __phi):
     dphi_dx, dphi_dy = c_first_derivative0(__phi)
     _F = np.sum(__phi + fc.vf_kappa/2 * (dphi_dx**2 + dphi_dy**2)) * n_dx * n_dy
     return _F
