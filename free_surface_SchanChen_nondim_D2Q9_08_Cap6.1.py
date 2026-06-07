@@ -173,7 +173,7 @@ ADD_METRICS = True
 
 # Constants
 WRITE_TO_GITHUB = True
-DEFAULT_D_ND = 400
+DEFAULT_D_ND = 200
 SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
 SCRIPT_FULL_PATH = os.path.abspath(__file__) 
 SCRIPTS_PATH = "scripts/freesurface/"
@@ -2643,11 +2643,17 @@ _iteration = fc.TOTAL_ITERATIONS
 plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
 plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
-plotter.density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn, iteration)
+# phi 2D map (replaces density_profiles — both showed density; phi is more informative here)
+im_phi_fig1 = ax1[2, 0].imshow(_phi.T, origin='lower', cmap='RdBu',
+                                vmin=fc.phi_star_G, vmax=fc.phi_star_L)
+ax1[2, 0].set_xlabel('x-index')
+ax1[2, 0].set_ylabel('y-index')
+ax1[2, 0].set_title(r'Order parameter $\phi$ (final)')
+fig1.colorbar(im_phi_fig1, ax=ax1[2, 0], fraction=0.046, pad=0.04)
 
 if PRESSURE_IN_DENSITY_MAP:
-    min_value = 0 
-    _pressure_full_range = (_rho_full_range - min_value) * Cs**2 
+    min_value = 0
+    _pressure_full_range = (_rho_full_range - min_value) * Cs**2
     _pressure_out = (rho_min - min_value) * Cs**2
     _pressure_in = (rho_max - min_value) * Cs**2
     title = "Pressure map"
@@ -2655,6 +2661,8 @@ if PRESSURE_IN_DENSITY_MAP:
 else:
     title = "Density map"
     plotter.density_mapExt(ax1[2, 1], _rho_full_range, rho_min, rho_max, title, iteration)
+    # overlay phi interface contour on density map
+    ax1[2, 1].contour(_phi.T, levels=[phi_mid], colors='white', linewidths=0.8, linestyles='--')
 
 BodyForce_center_0 = list_BodyForce_0.popitem()[1]
 BodyForce_center_1 = list_BodyForce_1.popitem()[1]
@@ -2714,7 +2722,10 @@ fig2, ax2 = plt.subplots(
     num=paneLabel
 )
 
-if ADD_METRICS: 
+ax2[0, 3].axis('off')   # unused cell
+ax2[2, 2].axis('off')   # unused cell
+
+if ADD_METRICS:
     plotter.plot_bounds_ext(GrowthMetric_uckl_x, "GrowthMetric_uckl_x", ax2[0, 0])
     plotter.plot_bounds_ext(GrowthMetric_uckl_y, "GrowthMetric_uckl_y", ax2[0, 1])
     plotter.plot_bounds_ext(GrowthMetric_uckl_star_y, "GrowthMetric_uckl_star_y", ax2[0, 2])
@@ -2796,6 +2807,140 @@ save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# fig3 — fi_c / gi_c term breakdown diagnostic
+# ──────────────────────────────────────────────────────────────────────────────
+# Recompute fi_c building blocks from final _phi, rho, u_ckl
+_dphi_dx, _dphi_dy = c_first_derivative0(_phi, n_dx, n_dy)
+_lap_phi            = c_laplacian(_phi, n_dx, n_dy)
+_G                  = Gab(_phi)
+_p0_val             = p0(fc, _phi)
+_c_dot_u_all        = np.einsum('ia,axy->ixy', c, u_ckl)          # (9,Xn+2,Yn+2)
+_Gab_phi_all        = np.einsum('ia,ib,xyab->ixy', c, c, _G)      # (9,Xn+2,Yn+2)
+
+i2   = 2          # upward direction c=[0,1]
+x_w  = 1          # left wall first fluid column
+x_c  = Xn // 2   # channel centre
+y_ax = np.arange(0, Yn + 2)
+
+def _fi_terms_at(xi):
+    t1 = H[i2] * _phi[xi, :]
+    t2 = F[i2] * _p0_val[xi, :]
+    t3 = -F[i2] * fc.Kf * _phi[xi, :] * _lap_phi[xi, :]
+    t4 = -F[i2] * (fc.Kf / 6.0) * (_dphi_dx[xi, :]**2 + _dphi_dy[xi, :]**2)
+    t5 = 3.0 * E[i2] * _phi[xi, :] * _c_dot_u_all[i2, xi, :]
+    t6 = E[i2] * fc.Kf * _Gab_phi_all[i2, xi, :]
+    return t1, t2, t3, t4, t5, t6
+
+fi_wall   = _fi_terms_at(x_w)
+fi_centre = _fi_terms_at(x_c)
+
+# gi_c y-momentum building blocks
+_grad_rho_x, _grad_rho_y = c_first_derivative0(rho, n_dx, n_dy)
+_u_dot_u  = np.sum(u_ckl**2, axis=0)
+_dua_dx, _dua_dy = c_first_derivative0(u_ckl[0], n_dx, n_dy)
+_dub_dx, _dub_dy = c_first_derivative0(u_ckl[1], n_dx, n_dy)
+_Gab_rho_all = np.einsum('ia,ib,xyab->ixy', c, c, Gab(rho))
+_vel_grad = (2.0*_dua_dx*c_x_sq + (_dua_dy+_dub_dx)*c_xy
+             + (_dub_dx+_dua_dy)*c_xy + 2.0*_dub_dy*c_y_sq)
+
+def _gi_y_terms_at(xi):
+    rxi = rho[xi, :]
+    cy_weights = c[:, 1]
+    def wsum(arr9):   # sum_i arr9[i,:] * cy[i]
+        return np.einsum('i,iy->y', cy_weights, arr9[:, xi, :])
+    g1 = wsum(E_exp * np.ones((9, Xn+2, Yn+2)))
+    g2 = wsum(E_exp * 3.0 * _c_dot_u_all)
+    g3 = wsum(-E_exp * (1.5) * _u_dot_u)
+    g4 = wsum(E_exp * (4.5) * _c_dot_u_all**2)
+    g5 = wsum(E_exp * (1.5) * (fc.tau_g - 0.5) * n_dx * _vel_grad)
+    g6 = wsum(E_exp * (fc.Kg / rxi) * _Gab_rho_all)
+    g7 = wsum(-(2.0/3.0) * F_exp * (fc.Kg / rxi) * (_grad_rho_x[xi,:]**2 + _grad_rho_y[xi,:]**2))
+    return g1, g2, g3, g4, g5, g6, g7
+
+gi_wall   = _gi_y_terms_at(x_w)
+gi_centre = _gi_y_terms_at(x_c)
+
+fig3, ax3 = plt.subplots(2, 2, figsize=(14, 12),
+                          gridspec_kw={'hspace': 0.45, 'wspace': 0.35},
+                          num="fig3 - fi_c/gi_c term breakdown diagnostic")
+
+# ── Plot 1: phi near-wall profile (ghost + first 3 fluid columns) ────────────
+for xi, lbl in [(0, 'x=0 ghost'), (1, 'x=1 wall'), (2, 'x=2'), (3, 'x=3')]:
+    ax3[0, 0].plot(_phi[xi, :], y_ax, label=lbl)
+ax3[0, 0].plot(_phi[x_c, :], y_ax, label=f'x={x_c} centre', ls='--', lw=0.9, color='k')
+ax3[0, 0].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
+ax3[0, 0].set_xlabel(r'$\phi$')
+ax3[0, 0].set_ylabel('y node')
+ax3[0, 0].set_title(r'Plot 1 — $\phi$ near left wall (ghost node perturbation?)')
+ax3[0, 0].legend(fontsize=7)
+ax3[0, 0].grid(True, lw=0.4)
+
+# ── Plot 2: fi_c terms at left wall, direction i=2 (upward) ─────────────────
+fi_labels = [
+    r'$t_1 = H_i\,\phi$  (≡0 for i=2)',
+    r'$t_2 = F_i\,p_0$  (bulk drive)',
+    r'$t_3 = -F_i K_f \phi \nabla^2\phi$',
+    r'$t_4 = -F_i \frac{K_f}{6}|\nabla\phi|^2$',
+    r'$t_5 = 3E_i\,\phi\,(c_i\!\cdot\!u)$',
+    r'$t_6 = E_i K_f G_{ab}$',
+]
+for k, (term, lbl) in enumerate(zip(fi_wall, fi_labels)):
+    ax3[0, 1].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[0, 1].axvline(0, color='k', lw=0.5)
+ax3[0, 1].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
+ax3[0, 1].set_xlabel('term value')
+ax3[0, 1].set_ylabel('y node')
+ax3[0, 1].set_title(r'Plot 2 — $f^{eq}_{i=2}$ terms at left wall x=1')
+ax3[0, 1].legend(fontsize=6)
+ax3[0, 1].grid(True, lw=0.4)
+
+# ── Plot 3: gi_c y-momentum terms at left wall ───────────────────────────────
+gi_labels = [
+    r'$g_1 = \sum E_i c_y$  (const.)',
+    r'$g_2 = 3E_i(c\!\cdot\!u)c_y$',
+    r'$g_3 = -\frac{3}{2}E_i u^2 c_y$',
+    r'$g_4 = \frac{9}{2}E_i(c\!\cdot\!u)^2 c_y$',
+    r'$g_5 = \frac{3}{2}E_i(\tau_g\!-\!\tfrac{1}{2})\,\nabla u\,c_y$  (viscous)',
+    r'$g_6 = E_i\frac{K_g}{\rho}G^{(\rho)}_{ab}c_y$',
+    r'$g_7 = -\frac{2}{3}F_i\frac{K_g}{\rho}|\nabla\rho|^2 c_y$',
+]
+for k, (term, lbl) in enumerate(zip(gi_wall, gi_labels)):
+    ax3[1, 0].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[1, 0].axvline(0, color='k', lw=0.5)
+ax3[1, 0].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
+ax3[1, 0].set_xlabel('term value')
+ax3[1, 0].set_ylabel('y node')
+ax3[1, 0].set_title(r'Plot 3 — $g^{eq}_{y}$-momentum terms at left wall x=1')
+ax3[1, 0].legend(fontsize=6)
+ax3[1, 0].grid(True, lw=0.4)
+
+# ── Plot 4: ghost perturbation magnitude vs bulk drive ───────────────────────
+delta_phi_ghost = np.abs(_phi[0, :] - _phi[1, :])          # ghost vs first fluid
+bulk_drive_t2   = np.abs(fi_wall[1])                        # |t2| = |F[i2]*p0| at x=1
+ax3[1, 1].plot(delta_phi_ghost, y_ax, label=r'$|\phi_{ghost} - \phi_{wall}|$', lw=1.5)
+ax3[1, 1].plot(bulk_drive_t2,   y_ax, label=r'$|t_2|=|F_{i2}\,p_0|$ (bulk drive)', lw=1.5, ls='--')
+ax3[1, 1].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
+ax3[1, 1].set_xlabel('magnitude')
+ax3[1, 1].set_ylabel('y node')
+ax3[1, 1].set_title('Plot 4 — Ghost perturbation vs bulk drive\n'
+                     r'(if $|\phi_{ghost}| \ll |t_2|$ the wetting BC is overwhelmed)')
+ax3[1, 1].legend(fontsize=7)
+ax3[1, 1].grid(True, lw=0.4)
+
+fig3.suptitle(
+    fr'fi_c / gi_c diagnostic — iter {iteration-1}, $\Theta$={fc.vf_theta}°, '
+    fr'$K_f$={fc.Kf:.3g}, ADD\_ST={fc.ADD_SURFACE_TENSION_FORCE}',
+    fontsize=11
+)
+fig3.subplots_adjust(left=0.08, right=0.96, top=0.92, bottom=0.08)
+save_path_fig3 = os.path.join(images_dir,
+    f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_fi_gi_diagnostic_{fc.TOTAL_ITERATIONS:0{fc.FILENAME_PADDING_WIDTH}d}.png")
+fig3.savefig(save_path_fig3, dpi=200, bbox_inches='tight')
+debug_log('INIT', 'Saved fig3 diagnostic: %s', save_path_fig3)
+plt.close(fig3)
 
 
 if WRITE_TO_GITHUB:
