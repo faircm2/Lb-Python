@@ -1217,6 +1217,27 @@ def gi_c(fc, u, rho, iteration):
 
     # Assemble: exact match to loop addition
     _gi_c = term1 + term2 - term3 + term4 + term5 + term6 - term7  # (9,nx_pad,ny_pad)
+
+    if iteration in iterationsOfInterest:
+        # Total at point (x=1, yc)
+        total = _gi_c[1, 1, yc]
+
+        # term1 has shape (9,1,1) — spatially uniform, index as [channel, 0, 0]
+        fractions = {
+            'term1': term1[1, 0, 0] / total,
+            'term2': term2[1, 1, yc] / total,
+            'term3': term3[1, 1, yc] / total,
+            'term4': term4[1, 1, yc] / total,
+            'term5': term5[1, 1, yc] / total,
+            'term6': term6[1, 1, yc] / total,
+            'term7': term7[1, 1, yc] / total,
+        }
+
+        for name, val in fractions.items():
+            print(f"{name}: {val:.6f}")
+
+        # Sanity check — should sum to ~1.0
+        print(f"Sum: {sum(fractions.values()):.6f}")        
     
     return _gi_c
 
@@ -2875,7 +2896,7 @@ ax3[0, 0].plot(_phi[x_c, :], y_ax, label=f'x={x_c} centre', ls='--', lw=0.9, col
 ax3[0, 0].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
 ax3[0, 0].set_xlabel(r'$\phi$')
 ax3[0, 0].set_ylabel('y node')
-ax3[0, 0].set_title(r'Plot 1 — $\phi$ near left wall (ghost node perturbation?)')
+ax3[0, 0].set_title(r'Plot 1 — $\phi$ at left wall')
 ax3[0, 0].legend(fontsize=7)
 ax3[0, 0].grid(True, lw=0.4)
 
@@ -2918,16 +2939,17 @@ ax3[1, 0].set_title(r'Plot 3 — $g^{eq}_{y}$-momentum terms at left wall x=1')
 ax3[1, 0].legend(fontsize=6)
 ax3[1, 0].grid(True, lw=0.4)
 
-# ── Plot 4: ghost perturbation magnitude vs bulk drive ───────────────────────
-delta_phi_ghost = np.abs(_phi[0, :] - _phi[1, :])          # ghost vs first fluid
-bulk_drive_t2   = np.abs(fi_wall[1])                        # |t2| = |F[i2]*p0| at x=1
+# ── Plot 4: ghost perturbation vs bulk drive (both in phi units) ─────────────
+delta_phi_ghost = np.abs(_phi[0, :] - _phi[1, :])          # ghost vs first fluid node
+phi_bulk        = _phi[x_c, :]                              # undisturbed bulk at same height
+delta_phi_bulk  = np.abs(_phi[1, :] - phi_bulk)            # wall deviation from bulk
 ax3[1, 1].plot(delta_phi_ghost, y_ax, label=r'$|\phi_{ghost} - \phi_{wall}|$', lw=1.5)
-ax3[1, 1].plot(bulk_drive_t2,   y_ax, label=r'$|t_2|=|F_{i2}\,p_0|$ (bulk drive)', lw=1.5, ls='--')
+ax3[1, 1].plot(delta_phi_bulk,  y_ax, label=r'$|\phi_{wall} - \phi_{bulk}|$ (bulk drive)', lw=1.5, ls='--')
 ax3[1, 1].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
-ax3[1, 1].set_xlabel('magnitude')
+ax3[1, 1].set_xlabel(r'$\Delta\phi$')
 ax3[1, 1].set_ylabel('y node')
-ax3[1, 1].set_title('Plot 4 — Ghost perturbation vs bulk drive\n'
-                     r'(if $|\phi_{ghost}| \ll |t_2|$ the wetting BC is overwhelmed)')
+ax3[1, 1].set_title('Plot 4 — Ghost propagation vs bulk drive\n'
+                     r'(if $|\phi_{ghost}| \ll |\phi_{wall}-\phi_{bulk}|$ the wetting BC is overwhelmed)')
 ax3[1, 1].legend(fontsize=7)
 ax3[1, 1].grid(True, lw=0.4)
 
