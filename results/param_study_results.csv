@@ -1,0 +1,2 @@
+label,result,nodes,tau_f,Kf,xi,vf_W,vf_sigma,vf_theta,vf_capillaryForceMultiplier,add_surfaceTensionForce,add_bodyForce
+Kf_0.001,DONE,400,1.5,0.001,6.0,6,0.01,60.0,1.0,1,1
