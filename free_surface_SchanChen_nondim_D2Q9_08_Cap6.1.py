@@ -1377,6 +1377,16 @@ def bounceBackTopBottom_conservation(fc, iteration, __fi, __gi, nx, ny):
         print(f"------ iteration: {iteration} -------------------------------------------------------------------")
         print_top_layers(__phi, num_nodes=4, num_layers=3)
 
+    __fi[:, :, 0]    = 0.0;  __gi[:, :, 0]    = 0.0
+    __fi[:, :, ny+1] = 0.0;  __gi[:, :, ny+1] = 0.0    
+
+    # Prevent periodic-roll contamination: ghost nodes carry no distributions.
+    # Streaming from interior will repopulate them correctly next step.
+    __fi[:, :, 0]    = 0.0
+    __gi[:, :, 0]    = 0.0
+    __fi[:, :, ny+1] = 0.0
+    __gi[:, :, ny+1] = 0.0         
+
     return __fi, __gi    
 
 
@@ -1404,6 +1414,16 @@ def bounceBackLeftRight_conservation(fc, iteration, __fi, __gi, nx, ny):
 
     __fi[6, nx, 1:ny+1] = np.roll(__fi[8, nx+1, 1:ny+1], 1)   # NW ← SE, shift up
     __gi[6, nx, 1:ny+1] = np.roll(__gi[8, nx+1, 1:ny+1], 1)
+
+
+    __fi[:, 0,    :] = 0.0;  __gi[:, 0,    :] = 0.0
+    __fi[:, nx+1, :] = 0.0;  __gi[:, nx+1, :] = 0.0 
+
+    # Same fix for left/right ghosts.
+    __fi[:, 0,    :] = 0.0
+    __gi[:, 0,    :] = 0.0
+    __fi[:, nx+1, :] = 0.0
+    __gi[:, nx+1, :] = 0.0        
 
     return __fi, __gi
 

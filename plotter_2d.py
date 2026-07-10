@@ -449,6 +449,9 @@ class Plotter2D:
         canvas = FigureCanvas(fig)
         ax = fig.add_subplot(111)
 
+        if not np.isfinite(min_val) or not np.isfinite(max_val) or min_val == max_val:
+            min_val = 0.0
+            max_val = 1.0
         im = ax.imshow(full_range.T, interpolation='nearest', origin='lower',
                     cmap='viridis', vmin=min_val, vmax=max_val)
         ax.set_xlabel("x-axis")
@@ -1449,27 +1452,35 @@ class Plotter2D:
 
     def phi_boundary_forces_vertical(
             self,
-            series1, series2, series3, series4,
-            label_left_x="Fx (norm)", label_left_y="Fy (norm)",
-            label_right_x="Fx", label_right_y="Fy",
-            yc=None, iteration=None, title="Boundary forces", figsize=(7, 9)
+            series1, series2, series3=None, series4=None,
+            label_left_x="Fx", label_left_y="Fy",
+            label_right_x=None, label_right_y=None,
+            yc=None, iteration=None, title="Boundary forces", figsize=(7, 5)
         ):
         """
-        Plot four vertical (y-profile) force components at a wall boundary.
-        series1..4 are 1-D arrays of length Yn+2 (or similar).
+        Plot 2 or 4 vertical (y-profile) force components at a wall boundary.
+        With 4 series: 2x2 grid (series1/2 top row, series3/4 bottom row).
         """
         import matplotlib.pyplot as plt
         import os
 
-        fig, axes = plt.subplots(2, 2, figsize=figsize)
-        fig.suptitle(f"{title}  iter={iteration}", fontsize=10)
+        has_four = series3 is not None and series4 is not None
+        if has_four:
+            fig, axes = plt.subplots(2, 2, figsize=figsize)
+            pairs = [
+                (axes[0, 0], series1, label_left_x),
+                (axes[0, 1], series2, label_left_y),
+                (axes[1, 0], series3, label_right_x or "series3"),
+                (axes[1, 1], series4, label_right_y or "series4"),
+            ]
+        else:
+            fig, axes = plt.subplots(1, 2, figsize=figsize)
+            pairs = [
+                (axes[0], series1, label_left_x),
+                (axes[1], series2, label_left_y),
+            ]
 
-        pairs = [
-            (axes[0, 0], series1, label_left_x),
-            (axes[0, 1], series2, label_left_y),
-            (axes[1, 0], series3, label_right_x),
-            (axes[1, 1], series4, label_right_y),
-        ]
+        fig.suptitle(f"{title}  iter={iteration}", fontsize=10)
 
         for ax, data, label in pairs:
             y = range(len(data))
