@@ -247,32 +247,45 @@ def validate_field(field: np.ndarray, name: str, iter: Optional[int] = None,
         allow_neg: If False, flags negatives.
         allow_range: (min_excl, max_excl) open interval; e.g., (0, 1/b) for _phi.
     """
+    iter_label = iter if iter is not None else 'N/A'
+
+    if np.any(np.isinf(field)):
+        # Checked before isnan deliberately: overflow produces inf first,
+        # and it only becomes nan a step later (e.g. inf-inf, 0*inf) in some
+        # downstream op. Catching inf here traps the true origin instead of
+        # wherever it first got combined into a nan.
+        finite = field[np.isfinite(field)]
+        min_val = np.min(finite) if finite.size else float('nan')
+        max_val = np.max(finite) if finite.size else float('nan')
+        n_pos_inf = np.sum(np.isposinf(field))
+        n_neg_inf = np.sum(np.isneginf(field))
+        debug_log('ERROR', f'Inf in {name} at iter {iter_label}: +inf count={n_pos_inf}, '
+                  f'-inf count={n_neg_inf}, finite min={min_val:.3e}, finite max={max_val:.3e}')
+        raise ValueError(f'Inf in {name} (+inf: {n_pos_inf}, -inf: {n_neg_inf})')
+
     if np.any(np.isnan(field)):
         min_val, max_val = np.min(field), np.max(field)  # Still compute for context
-        debug_log('ERROR', 'NaN in {name} at iter {iter}: min={min:.3e}, max={max:.3e}', 
-                  name=name, iter=iter if iter is not None else 'N/A', min=min_val, max=max_val)
+        debug_log('ERROR', f'NaN in {name} at iter {iter_label}: min={min_val:.3e}, max={max_val:.3e}')
         raise ValueError(f'NaN in {name}')
-    
+
     if not allow_neg and np.any(field < 0):
         min_val = np.min(field)
-        debug_log('ERROR', 'Negative in {name} at iter {iter}: min={min:.3e}', 
-                  name=name, iter=iter if iter is not None else 'N/A', min=min_val)
+        debug_log('ERROR', f'Negative in {name} at iter {iter_label}: min={min_val:.3e}')
         raise ValueError(f'Negative in {name}')
-    
+
     if allow_range:
         min_req, max_req = allow_range
         invalid = (field <= min_req) | (field >= max_req)
         if np.any(invalid):
             min_val, max_val = np.min(field), np.max(field)
             invalid_idx = np.where(invalid)
-            debug_log('ERROR', 'Out-of-range {name} at iter {iter}: min={min:.3e}, max={max:.3e}, '
-                      'must be in ({min_req:.3e}, {max_req:.3e}). Invalid indices: {idx}', 
-                      name=name, iter=iter if iter is not None else 'N/A', min=min_val, max=max_val, 
-                      min_req=min_req, max_req=max_req, idx=invalid_idx)
+            debug_log('ERROR', f'Out-of-range {name} at iter {iter_label}: min={min_val:.3e}, '
+                      f'max={max_val:.3e}, must be in ({min_req:.3e}, {max_req:.3e}). '
+                      f'Invalid indices: {invalid_idx}')
             raise ValueError(
                 f"Invalid {name}: min={min_val:.3e}, max={max_val:.3e}, "
                 f"must be in ({min_req:.3e}, {max_req:.3e}). Invalid indices: {invalid_idx}"
-            ) 
+            )
        
 ######################################################################################################################
 
@@ -553,12 +566,12 @@ CAPILLARY_PROOF = FlowConfig(
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the diffuse interface, reducing sharp edges.
     vf_W = 4, #was 6
     vf_sigma = 0.01, #0.072
-    vf_theta = 90.0, #60
+    vf_theta = 60.0, #60
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
-    ADD_SURFACE_TENSION_FORCE = 0,
-    ADD_BODY_FORCE = 0
+    ADD_SURFACE_TENSION_FORCE = 1,
+    ADD_BODY_FORCE = 1
 )
 
 # §3.1 Capillary wave
@@ -959,7 +972,7 @@ def print_top_layers(_phi_array, num_nodes=4, num_layers=2):
         print()  # new line
 
 
-def bounceBackTopBottom_conservation_dirk(fc, iteration, __gi, __fi, nx, ny):
+def bounceBackTopBottom_conservation(fc, iteration, __gi, __fi, nx, ny):
     # channel i  = 0,1,2,3,4,5,6,7,8
     # anti-channel i_ = 0,3,4,1,2,7,8,5,6
 
@@ -1043,7 +1056,7 @@ def bounceBackTopBottom_conservation_dirk(fc, iteration, __gi, __fi, nx, ny):
     return __gi, __fi 
 
 
-def bounceBackLeftRight_conservation_dirk(fc, iteration, __gi, __fi, nx, ny):
+def bounceBackLeftRight_conservation(fc, iteration, __gi, __fi, nx, ny):
 
     if ZERO_BCs:
         __fi[:, 0,    :] = 0.0
@@ -1081,77 +1094,6 @@ def bounceBackLeftRight_conservation_dirk(fc, iteration, __gi, __fi, nx, ny):
     if ZERO_BCs:
         __gi[:, 0,    :] = 0.0
         __gi[:, nx+1, :] = 0.0
-
-    return __gi, __fi
-
-
-# ──────────────────────────────────────────────────────────────────────────────────────────
-# BC rewrite (Claude) - built from the shifted half-way bounce-back template:
-#   bottom/left blocks are the template as given (channels renamed to gi/fi);
-#   top/right are the mirror image about the channel centerline, using the
-#   real ghost row/column (nx+1 / ny+1) instead of wrapping within a sub-slice.
-#
-# Channel layout: 0 rest, 1 E, 2 N, 3 W, 4 S, 5 NE, 6 NW, 7 SW, 8 SE.
-# Anti-channel pairs: 1<->3, 2<->4, 5<->7, 6<->8.
-#
-# gi: Zhang eq(29), half-way bounce-back, u_w=0 -> gi(xf) = gi*_(anti(i))(xf)
-#
-# fi: Zhang eq(30), unified interpolation at q=0.5, u_w=0, using the
-# streaming relation fi*(xf,t)=fi(xff,t):
-#     fi(xf) = (2/3)*fi(xff) + (1/3)*fi_(anti(i))(xs)
-# with xff = xf + e_i (next fluid node, same channel i) and xs = xf - e_i
-# (ghost/solid node, read via the anti-channel, since streaming deposits
-# fi_(anti(i)) there). For a diagonal channel with lateral component c_lat,
-# both xff and xs use source_lat = target_lat - c_lat (verified against the
-# existing top-wall gi formula and against the non-buggy fi channels).
-# ──────────────────────────────────────────────────────────────────────────────────────────
-
-def bounceBackTopBottom_conservation_claude(fc, iteration, __gi, __fi, nx, ny):
-
-    # ---- gi: bottom wall (y=1) - template as given ----
-    __gi[2, :, 1] = __gi[4, :, 0]
-    __gi[5, 1:nx+1, 1] = __gi[7, 0:nx, 0]
-    __gi[6, 1:nx+1, 1] = __gi[8, 2:nx+2, 0]
-
-    # ---- gi: top wall (y=ny) - mirror image, real ghost row ny+1 ----
-    __gi[4, :, ny] = __gi[2, :, ny+1]
-    __gi[7, 1:nx+1, ny] = __gi[5, 2:nx+2, ny+1]
-    __gi[8, 1:nx+1, ny] = __gi[6, 0:nx, ny+1]
-
-    # ---- fi: bottom wall (y=1), incoming directions 2 (N), 5 (NE), 6 (NW) ----
-    __fi[2, 1:nx+1, 1] = (2/3)*__fi[2, 1:nx+1, 2] + (1/3)*__fi[4, 1:nx+1, 0]
-    __fi[5, 1:nx+1, 1] = (2/3)*__fi[5, 0:nx,   2] + (1/3)*__fi[7, 0:nx,   0]
-    __fi[6, 1:nx+1, 1] = (2/3)*__fi[6, 2:nx+2, 2] + (1/3)*__fi[8, 2:nx+2, 0]
-
-    # ---- fi: top wall (y=ny), incoming directions 4 (S), 7 (SW), 8 (SE) ----
-    __fi[4, 1:nx+1, ny] = (2/3)*__fi[4, 1:nx+1, ny-1] + (1/3)*__fi[2, 1:nx+1, ny+1]
-    __fi[7, 1:nx+1, ny] = (2/3)*__fi[7, 2:nx+2, ny-1] + (1/3)*__fi[5, 2:nx+2, ny+1]
-    __fi[8, 1:nx+1, ny] = (2/3)*__fi[8, 0:nx,   ny-1] + (1/3)*__fi[6, 0:nx,   ny+1]
-
-    return __gi, __fi
-
-
-def bounceBackLeftRight_conservation_claude(fc, iteration, __gi, __fi, nx, ny):
-
-    # ---- gi: left wall (x=1) - template as given ----
-    __gi[1, 1, :] = __gi[3, 0, :]
-    __gi[5, 1, 1:ny+1] = __gi[7, 0, 0:ny]
-    __gi[8, 1, 1:ny+1] = __gi[6, 0, 2:ny+2]
-
-    # ---- gi: right wall (x=nx) - mirror image, real ghost column nx+1 ----
-    __gi[3, nx, :] = __gi[1, nx+1, :]
-    __gi[6, nx, 1:ny+1] = __gi[8, nx+1, 0:ny]
-    __gi[7, nx, 1:ny+1] = __gi[5, nx+1, 2:ny+2]
-
-    # ---- fi: left wall (x=1), incoming directions 1 (E), 5 (NE), 8 (SE) ----
-    __fi[1, 1, 1:ny+1] = (2/3)*__fi[1, 2, 1:ny+1] + (1/3)*__fi[3, 0, 1:ny+1]
-    __fi[5, 1, 1:ny+1] = (2/3)*__fi[5, 2, 0:ny]   + (1/3)*__fi[7, 0, 0:ny]
-    __fi[8, 1, 1:ny+1] = (2/3)*__fi[8, 2, 2:ny+2] + (1/3)*__fi[6, 0, 2:ny+2]
-
-    # ---- fi: right wall (x=nx), incoming directions 3 (W), 6 (NW), 7 (SW) ----
-    __fi[3, nx, 1:ny+1] = (2/3)*__fi[3, nx-1, 1:ny+1] + (1/3)*__fi[1, nx+1, 1:ny+1]
-    __fi[6, nx, 1:ny+1] = (2/3)*__fi[6, nx-1, 0:ny]   + (1/3)*__fi[8, nx+1, 0:ny]
-    __fi[7, nx, 1:ny+1] = (2/3)*__fi[7, nx-1, 2:ny+2] + (1/3)*__fi[5, nx+1, 2:ny+2]
 
     return __gi, __fi
 
@@ -1437,6 +1379,17 @@ def set_solid_nodes(iteration, fc, _phi):
     # n = ∇ϕ|∇ϕ∣
 
     __phi = _phi.copy()
+
+    # The outer ghost ring can hold stale values (periodic np.roll streaming
+    # + phi(fc,__gi) reconstruction in bounceBackTopBottom/LeftRight_conservation
+    # leaves old data in corners that were never a real phi_p). Mirror each
+    # ghost cell from its nearest interior neighbour (zero-gradient/Neumann)
+    # so the corner entries phi_s() reads below are physically consistent
+    # instead of leftover noise.
+    __phi[:, 0]    = __phi[:, 1]
+    __phi[:, Yn+1] = __phi[:, Yn]
+    __phi[0, :]    = __phi[1, :]
+    __phi[Xn+1, :] = __phi[Xn, :]
 
     # Contact angle (same for all solid walls — modify later if needed)
     thetaCap = compContactAngle(fc)
@@ -1732,7 +1685,14 @@ while iteration < fc.TOTAL_ITERATIONS:
     # Zhang eq(17):  equilibrium distribution function for order parameter
     z_gi_c = zgi_c(fc, u_ckl, _phi, iteration)
     # Zhang eq(18):  equilibrium distribution function for pressure distribution function
-    z_fi_c = zfi_c(fc, u_ckl, rho, p)        
+    z_fi_c = zfi_c(fc, u_ckl, rho, p)      
+
+    validate_field(z_gi_c, 'z_gi_c', iter=iteration, allow_neg=True)
+    validate_field(z_fi_c, 'z_fi_c', iter=iteration, allow_neg=True)  
+
+    # isolate Gi() specifically, since dphi_u_dt just went live for the first time
+    _Gi_check = Gi(fc, __phi_old, _u_ckl_old, _phi, u_ckl)
+    validate_field(_Gi_check, 'Gi output', iter=iteration, allow_neg=True)
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # Zhang functions: 3.Collision/Relaxation, 4.Streaming (advection)
@@ -1740,11 +1700,15 @@ while iteration < fc.TOTAL_ITERATIONS:
     # === 3. COLLISION + STREAMING (inside fi and gi) ===    
     # Zhang eq(2): calculation of the order parameter which distiguishes the two phases
     z_gi  = zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, _phi, u_ckl)
+    validate_field(z_gi, 'z_gi (post collision+stream)', iter=iteration, allow_neg=True)
+
     _Fs = Fs(fc, _phi, n_dx, n_dy)
+    validate_field(_Fs, 'Fs', iter=iteration, allow_neg=True)
     assert _Fs.shape == (2, Xn+2, Yn+2), f"_Fs shape: {_Fs.shape}"
     assert _Fs.shape == body_force.shape, f"_Fs {_Fs.shape} != body_force {body_force.shape}"
     # Zhang eq(2): calculation of the pressure distribution function   
     z_fi = zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, _Fs, body_force , iteration)
+    validate_field(z_fi, 'z_fi (post collision+stream)', iter=iteration, allow_neg=True)
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # 5. Boundary conditions
@@ -1753,12 +1717,12 @@ while iteration < fc.TOTAL_ITERATIONS:
     # Use _fi_c and _gi_c (post-collision, pre-streaming)
 
     # 4. top/bottom conservative bounceback
-    z_gi, z_fi = bounceBackTopBottom_conservation_dirk(fc, iteration, z_gi, z_fi, Xn+2, Yn+2)
+    z_gi, z_fi = bounceBackTopBottom_conservation(fc, iteration, z_gi, z_fi, Xn+2, Yn+2)
     
 
     #4.1b. top/bottom conservative bounceback
     #apply_periodic_boundary_conditions(_fi, _gi)    
-    z_gi, z_fi = bounceBackLeftRight_conservation_dirk(fc, iteration, z_gi, z_fi, Xn+2, Yn+2)
+    z_gi, z_fi = bounceBackLeftRight_conservation(fc, iteration, z_gi, z_fi, Xn+2, Yn+2)
 
 
     # ──────────────────────────────
@@ -1782,9 +1746,6 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────   
     _phi = apply_mass_conservation(phi_old_total, _phi)
     # ──────────────────────────────  
-
-    #Calculation of rho, mu
-    rho, mu = density_and_viscosity(fc, _phi)
 
     if ADD_METRICS: 
         debug_log('ITER', 'Iter %d: fi_c min=%.3e, max=%.3e | fi min=%.3e, max=%.3e', 
@@ -1838,6 +1799,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     _phi  = set_solid_nodes(iteration, fc, _phi)
     if iteration in iterationsOfInterest and fc.vf_theta > 90:
         print("phi at left wall (ghost + first fluid nodes):", _phi[0:3, yc])
+
+    #Calculation of rho, mu
+    rho, mu = density_and_viscosity(fc, _phi)
 
     #if fc.ADD_SURFACE_TENSION_FORCE == 1:
     # Zhang eq(5): Fs is the surface tension force, expressed in a potential form 
@@ -1908,6 +1872,10 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"    fi_term={_fi_term[1,_xi,_yi]:.4e}  bf={_bf_term[1,_xi,_yi]:.4e}  cap={_cap_term[1,_xi,_yi]:.4e}  rho={rho[_xi,_yi]:.4e}")
 
     u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force)
+    print(f"iter {iteration}: u_ckl max |value| = {np.max(np.abs(u_ckl)):.6e}")
+    _loc = np.unravel_index(np.argmax(np.abs(u_ckl)), u_ckl.shape)
+    print(f"iter {iteration}: u_ckl max loc={_loc}  phi there={_phi[_loc[1],_loc[2]]:.4f}")    
+
     if iteration in iterationsOfInterest:
         print(f"Iter {iteration:5d} | u_max = {np.max(np.abs(u_ckl)):.6e} | u_loc = {np.unravel_index(np.argmax(np.abs(u_ckl[1])), u_ckl[1].shape)}")
     assert u_ckl.shape == (2, Xn+2, Yn+2), f"u_ckl shape: {u_ckl.shape}"
