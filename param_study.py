@@ -1,13 +1,18 @@
 """
 Parameter study orchestrator for free_surface_SchanChen_nondim_D2Q9_08_Zhang_Cap02.py
 
-Sweeps the cartesian product of tau_g x tau_f x vf_theta, launching the sim
-once per combination via CLI overrides (--tau_g/--tau_f/--vf_theta). Each run
-is aborted early if a NaN/Inf/crash is detected in its log (no point burning
-iterations on a blown-up sim), and the sweep continues with the next
-combination regardless. After every run, a CSV row and an HTML summary
-(embedding the run's final phi snapshot) are written/refreshed, so partial
-progress is inspectable even if the sweep is interrupted.
+Phase 1 (this file, as configured): sweeps the cartesian product of
+tau_g x tau_f (60 combos), holding vf_theta fixed at FIXED_VF_THETA. Once
+those results are in, phase 2 (a separate vf_theta-only sweep, locking in
+whichever tau_g/tau_f phase 1 picks) can reuse this same structure.
+
+Launches the sim once per combination via CLI overrides
+(--tau_g/--tau_f/--vf_theta). Each run is aborted early if a NaN/Inf/crash is
+detected in its log (no point burning iterations on a blown-up sim), and the
+sweep continues with the next combination regardless. After every run, a CSV
+row and an HTML summary (embedding the run's final phi snapshot) are
+written/refreshed, so partial progress is inspectable even if the sweep is
+interrupted.
 
 Usage: python param_study.py    (run this file directly, no CLI args needed)
 """
@@ -27,8 +32,8 @@ SIM_SCRIPT = os.path.join(SCRIPT_DIR, 'free_surface_SchanChen_nondim_D2Q9_08_Zha
 IMAGES_ROOT = os.path.join(SCRIPT_DIR, 'FreesurfaceImages')
 PHI_RESULTS_FILE = os.path.join(SCRIPT_DIR, 'phi_results.txt')
 RUNS_DIR = os.path.join(SCRIPT_DIR, 'param_study_runs')
-RESULTS_CSV = os.path.join(SCRIPT_DIR, 'param_study_theta_sweep_results.csv')
-REPORT_HTML = os.path.join(SCRIPT_DIR, 'param_study_theta_sweep_report.html')
+RESULTS_CSV = os.path.join(SCRIPT_DIR, 'param_study_phase1_tau_results.csv')
+REPORT_HTML = os.path.join(SCRIPT_DIR, 'param_study_phase1_tau_report.html')
 
 # Must match ACTIVE_CASE / DEFAULT_D_ND / CAPILLARY_PROOF.Kf in the sim script,
 # since the images_dir folder name is derived from these.
@@ -38,7 +43,7 @@ KF_BASELINE = 0.002
 
 TAU_G_RANGE = [0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
 TAU_F_RANGE = [1.00, 1.10, 1.20, 1.30, 1.50, 2.00]
-VF_THETA_RANGE = [50, 60, 70, 80, 89, 90, 91, 100, 120, 130]
+FIXED_VF_THETA = 60.0  # held constant for phase 1; phase 2 sweeps this instead
 
 POLL_SECONDS = 30
 STALL_LIMIT = 5  # 5 x 30s = 2.5 min with no progress -> kill as stalled
@@ -49,15 +54,14 @@ def make_param_sets():
     n = 0
     for tau_g in TAU_G_RANGE:
         for tau_f in TAU_F_RANGE:
-            for vf_theta in VF_THETA_RANGE:
-                n += 1
-                sets.append(dict(
-                    run_index=n,
-                    tau_g=float(tau_g),
-                    tau_f=float(tau_f),
-                    vf_theta=float(vf_theta),
-                    label=f"run{n:03d}_taug{tau_g}_tauf{tau_f}_theta{int(vf_theta)}",
-                ))
+            n += 1
+            sets.append(dict(
+                run_index=n,
+                tau_g=float(tau_g),
+                tau_f=float(tau_f),
+                vf_theta=float(FIXED_VF_THETA),
+                label=f"run{n:03d}_taug{tau_g}_tauf{tau_f}",
+            ))
     return sets
 
 
