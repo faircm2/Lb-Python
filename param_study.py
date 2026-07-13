@@ -125,12 +125,18 @@ def compute_meniscus_rise(phi_results_path):
     y_idx = np.arange(y_ext)
 
     def interface_y(col):
-        above = col >= 0.5
-        if not above.any() or above.all():
+        # Find the actual phi=0.5 crossing via a sign change, not "first index
+        # >= 0.5" -- that only works if the profile rises with y. Here phi
+        # falls with y (liquid near y=0, gas near y=Yn+1), so argmax-of-bool
+        # would just return index 0 every time (already True) and never find
+        # the real transition.
+        sign = np.sign(col - 0.5)
+        changes = np.where(np.diff(sign) != 0)[0]
+        if len(changes) == 0:
             return None
-        idx = int(np.argmax(above))
-        y0, y1 = y_idx[idx - 1], y_idx[idx]
-        p0, p1 = col[idx - 1], col[idx]
+        idx = int(changes[0])
+        y0, y1 = y_idx[idx], y_idx[idx + 1]
+        p0, p1 = col[idx], col[idx + 1]
         if p1 == p0:
             return float(y0)
         return float(y0 + (0.5 - p0) * (y1 - y0) / (p1 - p0))
