@@ -1807,7 +1807,12 @@ while iteration < fc.TOTAL_ITERATIONS:
         
 
     # 2. Surface tensions forces
-    save_phi_results(_phi, fc.phi_star_G, fc.phi_star_L)
+    # Only write on the final iteration -- np.savetxt formats every cell as
+    # text, ~77ms/call, and the file is fully overwritten each time anyway
+    # (nothing reads it until the process exits), so writing it every
+    # iteration was ~15 min of pure waste per 12001-iteration run.
+    if iteration == fc.TOTAL_ITERATIONS - 1:
+        save_phi_results(_phi, fc.phi_star_G, fc.phi_star_L)
 
 
     _phi  = set_solid_nodes(iteration, fc, _phi)
@@ -1886,9 +1891,10 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"    fi_term={_fi_term[1,_xi,_yi]:.4e}  bf={_bf_term[1,_xi,_yi]:.4e}  cap={_cap_term[1,_xi,_yi]:.4e}  rho={rho[_xi,_yi]:.4e}")
 
     u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force)
-    print(f"iter {iteration}: u_ckl max |value| = {np.max(np.abs(u_ckl)):.6e}")
-    _loc = np.unravel_index(np.argmax(np.abs(u_ckl)), u_ckl.shape)
-    print(f"iter {iteration}: u_ckl max loc={_loc}  phi there={_phi[_loc[1],_loc[2]]:.4f}")    
+    _u_ckl_abs = np.abs(u_ckl)
+    print(f"iter {iteration}: u_ckl max |value| = {np.max(_u_ckl_abs):.6e}")
+    _loc = np.unravel_index(np.argmax(_u_ckl_abs), u_ckl.shape)
+    print(f"iter {iteration}: u_ckl max loc={_loc}  phi there={_phi[_loc[1],_loc[2]]:.4f}")
 
     if iteration in iterationsOfInterest:
         print(f"Iter {iteration:5d} | u_max = {np.max(np.abs(u_ckl)):.6e} | u_loc = {np.unravel_index(np.argmax(np.abs(u_ckl[1])), u_ckl[1].shape)}")
