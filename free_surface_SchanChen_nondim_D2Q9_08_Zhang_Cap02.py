@@ -566,7 +566,7 @@ CAPILLARY_PROOF = FlowConfig(
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the diffuse interface, reducing sharp edges.
     vf_W = 4, #was 6
     vf_sigma = 0.01, #0.072
-    vf_theta = 60.0, #60
+    vf_theta = 120.0, #60
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
@@ -1546,7 +1546,7 @@ y0 = (Yn-1)/2
 x,y = np.meshgrid(np.arange(Xn+2),np.arange(Yn+2),indexing='ij')
 
 PARAMETER_STUB = "__" + ACTIVE_CASE + "__nodes_" + str(DEFAULT_D_ND) + "__tau_f_" + str(fc.tau_f) + "__tau_g_" + str(fc.tau_g) + "__Kf_" + str(fc.Kf) + "__Theta_" + str(fc.vf_theta)
-images_dir = images_subdir + "\\" + SCRIPT_FILENAME + PARAMETER_STUB
+images_dir = os.path.join(images_subdir, SCRIPT_FILENAME + PARAMETER_STUB)
 os.makedirs(images_dir, exist_ok=True)
 
 #phi initialisation
