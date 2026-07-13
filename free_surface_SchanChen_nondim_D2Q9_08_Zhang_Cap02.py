@@ -15,6 +15,7 @@ from matplotlib.figure import Figure
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
 
+import argparse
 import os
 import time
 from dataclasses import dataclass
@@ -632,6 +633,19 @@ USE_CASES = {
 ACTIVE_CASE = "proof_capillary"
 PHI_DISTRIBUTION = USE_CASES[ACTIVE_CASE]["PHI_DISTRIBUTION"]
 fc = USE_CASES[ACTIVE_CASE]["fc"]  # current FlowConfig
+
+# CLI overrides for param_study.py sweeps (tau_g, tau_f, vf_theta)
+_arg_parser = argparse.ArgumentParser()
+_arg_parser.add_argument('--tau_g', type=float, default=None)
+_arg_parser.add_argument('--tau_f', type=float, default=None)
+_arg_parser.add_argument('--vf_theta', type=float, default=None)
+_args, _ = _arg_parser.parse_known_args()
+if _args.tau_g is not None:
+    fc.tau_g = _args.tau_g
+if _args.tau_f is not None:
+    fc.tau_f = _args.tau_f
+if _args.vf_theta is not None:
+    fc.vf_theta = _args.vf_theta
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
