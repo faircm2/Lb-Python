@@ -1,3 +1,4 @@
+import csv
 import os
 import matplotlib
 matplotlib.use("Agg")   # must be before pyplot
@@ -1599,3 +1600,64 @@ class Plotter2D:
                              f'chi_diagnostic_theta{theta_str}_iter{iteration:05d}.png')
         plt.savefig(fname, dpi=120)
         plt.close()
+
+    def load_profile(self, runs_dir, label):
+        """Reads param_study_runs/<label>/interface_profile.csv (exact
+        x -> interface_y data, written by param_study.py from real phi
+        data). Returns (xs, ys), or (None, None) if not found."""
+        path = os.path.join(runs_dir, label, 'interface_profile.csv')
+        if not os.path.exists(path):
+            return None, None
+        xs, ys = [], []
+        with open(path, 'r', newline='') as f:
+            for row in csv.DictReader(f):
+                xs.append(int(row['x']))
+                ys.append(float(row['interface_y']) if row['interface_y'] != '' else float('nan'))
+        return xs, ys
+
+    def plot_profile_overlays(self, results_csv, runs_dir, group_param, color_param,
+                               out_subdir='overlays', y_lim=(140, 160)):
+        """Superimposes each run's interface_profile.csv (from a
+        param_study.py sweep), grouped by group_param (one PNG per unique
+        value) and colored by color_param (one line per unique value within
+        each group). If group_param is constant across the sweep (e.g. a
+        single-parameter study), this naturally collapses to one plot."""
+        with open(results_csv, 'r', newline='') as f:
+            rows = [r for r in csv.DictReader(f) if r['result'] == 'DONE']
+
+        group_vals = sorted({float(r[group_param]) for r in rows})
+        out_dir = os.path.join(self.script_dir, out_subdir)
+        os.makedirs(out_dir, exist_ok=True)
+        cmap = matplotlib.colormaps['viridis']
+
+        saved_paths = []
+        for gval in group_vals:
+            group = sorted([r for r in rows if float(r[group_param]) == gval],
+                            key=lambda r: float(r[color_param]))
+            if not group:
+                continue
+
+            fig, ax = plt.subplots(figsize=(9, 6))
+            for i, r in enumerate(group):
+                xs, ys = self.load_profile(runs_dir, r['label'])
+                if xs is None:
+                    self.debug_log('WARN', f"skipping {r['label']} -- no interface_profile.csv")
+                    continue
+                color = cmap(i / max(1, len(group) - 1))
+                ax.plot(xs, ys, label=f"{color_param}={r[color_param]}",
+                        color=color, linewidth=1.8)
+
+            ax.set_xlabel('x-index')
+            ax.set_ylabel('interface y-index (phi=0.5 crossing)')
+            ax.set_title(f'Superimposed meniscus profiles, {group_param}={gval} (exact)')
+            ax.set_ylim(*y_lim)
+            ax.legend(title=color_param)
+            ax.grid(alpha=0.3)
+
+            out_path = os.path.join(out_dir, f'overlay_{group_param}{gval}.png')
+            fig.savefig(out_path, dpi=200, bbox_inches='tight')
+            plt.close(fig)
+            self.debug_log('INIT', f'Saved overlay: {out_path}')
+            saved_paths.append(out_path)
+
+        return saved_paths

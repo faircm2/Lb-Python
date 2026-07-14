@@ -1,10 +1,11 @@
 """
 Parameter study orchestrator for free_surface_SchanChen_nondim_D2Q9_08_Zhang_Cap02.py
 
-Phase 1 (this file, as configured): sweeps the cartesian product of
-tau_g x tau_f (60 combos), holding vf_theta fixed at FIXED_VF_THETA. Once
-those results are in, phase 2 (a separate vf_theta-only sweep, locking in
-whichever tau_g/tau_f phase 1 picks) can reuse this same structure.
+Generic sweep engine: SWEEP_PARAMS defines which param(s) vary (cartesian
+product over however many are listed) and FIXED_PARAMS holds the rest
+constant. Phase 1 swept tau_g x tau_f (fixed vf_theta); phase 2 (as
+configured below) sweeps vf_theta (fixed tau_g/tau_f, locked from the
+phase-1 result).
 
 Runs up to MAX_CONCURRENT sim processes at once (bounded by CPU cores on the
 server). Each run gets its own --phi_results_file so concurrent runs never
@@ -14,12 +15,15 @@ sweep continues with the next combination regardless. After every run
 finishes, a CSV row, an HTML summary (embedding the run's final phi
 snapshot), and an exact interface_profile.csv (phi=0.5 crossing for every
 x-column) are written, so partial progress is inspectable even if the sweep
-is interrupted.
+is interrupted. Once everything finishes, Plotter2D.plot_profile_overlays
+and (for 2-param sweeps) Plotter3D.plot_metric_surface generate the final
+comparison plots automatically.
 
 Usage: python param_study.py    (run this file directly, no CLI args needed)
 """
 import csv
 import glob
+import itertools
 import os
 import re
 import subprocess
@@ -28,13 +32,13 @@ import time
 
 import numpy as np
 
+from plotter_2d import Plotter2D
+from plotter_3d import Plotter3D
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PYTHON = sys.executable
 SIM_SCRIPT = os.path.join(SCRIPT_DIR, 'free_surface_SchanChen_nondim_D2Q9_08_Zhang_Cap02.py')
 IMAGES_ROOT = os.path.join(SCRIPT_DIR, 'FreesurfaceImages')
-RUNS_DIR = os.path.join(SCRIPT_DIR, 'param_study_runs')
-RESULTS_CSV = os.path.join(SCRIPT_DIR, 'param_study_phase1_tau_results.csv')
-REPORT_HTML = os.path.join(SCRIPT_DIR, 'param_study_phase1_tau_report.html')
 
 # Must match ACTIVE_CASE / DEFAULT_D_ND / CAPILLARY_PROOF.Kf in the sim script,
 # since the images_dir folder name is derived from these.
@@ -42,9 +46,19 @@ ACTIVE_CASE = 'proof_capillary'
 NODES = 300
 KF_BASELINE = 0.002
 
-TAU_G_RANGE = [0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
-TAU_F_RANGE = [1.00, 1.10, 1.20, 1.30, 1.50, 2.00]
-FIXED_VF_THETA = 60.0  # held constant for phase 1; phase 2 sweeps this instead
+# ── Phase config ─────────────────────────────────────────────────────────
+# Phase 1 was: SWEEP_PARAMS = [('tau_g', [...10 values]), ('tau_f', [...6 values])],
+#              FIXED_PARAMS = dict(vf_theta=60.0)
+PHASE = 'phase2_theta'
+SWEEP_PARAMS = [
+    ('vf_theta', [50, 60, 70, 80, 89, 90, 91, 100, 120, 130]),
+]
+FIXED_PARAMS = dict(tau_g=0.65, tau_f=1.25)
+# ─────────────────────────────────────────────────────────────────────────
+
+RUNS_DIR = os.path.join(SCRIPT_DIR, f'param_study_{PHASE}_runs')
+RESULTS_CSV = os.path.join(SCRIPT_DIR, f'param_study_{PHASE}_results.csv')
+REPORT_HTML = os.path.join(SCRIPT_DIR, f'param_study_{PHASE}_report.html')
 
 MAX_CONCURRENT = 2  # matches the 2 cores on the Hetzner box
 POLL_SECONDS = 30
@@ -52,18 +66,22 @@ STALL_LIMIT = 5  # 5 x 30s = 2.5 min with no progress -> kill as stalled
 
 
 def make_param_sets():
+    sweep_names = [name for name, _ in SWEEP_PARAMS]
+    value_lists = [values for _, values in SWEEP_PARAMS]
+
     sets = []
     n = 0
-    for tau_g in TAU_G_RANGE:
-        for tau_f in TAU_F_RANGE:
-            n += 1
-            sets.append(dict(
-                run_index=n,
-                tau_g=float(tau_g),
-                tau_f=float(tau_f),
-                vf_theta=float(FIXED_VF_THETA),
-                label=f"run{n:03d}_taug{tau_g}_tauf{tau_f}",
-            ))
+    for combo in itertools.product(*value_lists):
+        n += 1
+        params = dict(FIXED_PARAMS)
+        params.update(zip(sweep_names, combo))
+        params = {k: float(v) for k, v in params.items()}
+        label = f"run{n:03d}_" + "_".join(f"{name}{params[name]}" for name in sweep_names)
+        sets.append(dict(
+            run_index=n,
+            tau_g=params['tau_g'], tau_f=params['tau_f'], vf_theta=params['vf_theta'],
+            label=label,
+        ))
     return sets
 
 
@@ -229,15 +247,16 @@ def write_html_report(rows):
         except ValueError:
             return str(v)
 
+    sweep_names = [name for name, _ in SWEEP_PARAMS]
     parts = [
-        '<html><head><meta charset="utf-8"><title>Param Study: tau_g x tau_f x vf_theta</title>',
+        f'<html><head><meta charset="utf-8"><title>Param Study: {PHASE}</title>',
         '<style>',
         'body{font-family:sans-serif;font-size:13px;} table{border-collapse:collapse;width:100%;}',
         'th,td{border:1px solid #ccc;padding:4px 8px;text-align:center;vertical-align:middle;}',
         'th{background:#eee;position:sticky;top:0;} img{max-height:120px;}',
         '.ok{color:green;font-weight:bold;} .fail{color:#b00;font-weight:bold;}',
         '</style></head><body>',
-        '<h2>Parameter study: tau_g x tau_f x vf_theta</h2>',
+        f'<h2>Parameter study: {PHASE} (sweeping {", ".join(sweep_names)})</h2>',
         '<table>',
         '<tr><th>run</th><th>tau_g</th><th>tau_f</th><th>vf_theta</th>'
         '<th>meniscus rise/fall</th><th>sigma check (ratio)</th>'
@@ -356,12 +375,50 @@ def finalize_run(state, result):
     write_html_report(rows)
 
 
+def _plot_log(category, message):
+    print(f"[ORCHESTRATOR] [{category}] {message}", flush=True)
+
+
+def generate_plots():
+    """Builds the final comparison plots via Plotter2D/Plotter3D, using
+    whichever param(s) this phase actually swept."""
+    sweep_names = [name for name, _ in SWEEP_PARAMS]
+
+    plotter2d = Plotter2D(
+        script_dir=SCRIPT_DIR, script_filename=f'param_study_{PHASE}',
+        images_subdir=SCRIPT_DIR, total_iterations=1, filename_padding_width=5,
+        debug_log=_plot_log, PLOTREALTIME=False,
+    )
+
+    if len(sweep_names) >= 2:
+        group_param, color_param = sweep_names[0], sweep_names[1]
+    else:
+        # single swept param -> pick a fixed param as the (single-value) group
+        color_param = sweep_names[0]
+        group_param = 'tau_g' if color_param != 'tau_g' else 'tau_f'
+
+    plotter2d.plot_profile_overlays(
+        results_csv=RESULTS_CSV, runs_dir=RUNS_DIR,
+        group_param=group_param, color_param=color_param,
+        out_subdir=f'menisci_overlays_{PHASE}',
+    )
+
+    if len(sweep_names) == 2:
+        plotter3d = Plotter3D(script_dir=SCRIPT_DIR, results_csv=RESULTS_CSV, debug_log=_plot_log)
+        plotter3d.plot_metric_surface(
+            x_param=sweep_names[0], y_param=sweep_names[1], z_field='meniscus_rise',
+            out_path=f'meniscus_vs_{sweep_names[0]}_{sweep_names[1]}.png',
+            title=f'Meniscus rise/fall vs {sweep_names[0]} and {sweep_names[1]}',
+            z_label='meniscus rise/fall (lattice units)',
+        )
+
+
 def main():
     param_sets = make_param_sets()
     total = len(param_sets)
     completed = get_completed_labels()
     pending = [p for p in param_sets if p['label'] not in completed]
-    print(f"[ORCHESTRATOR] Parameter study starting: {total} runs "
+    print(f"[ORCHESTRATOR] Parameter study starting ({PHASE}): {total} runs "
           f"({len(completed)} already done, {len(pending)} to run, "
           f"up to {MAX_CONCURRENT} concurrent)", flush=True)
 
@@ -386,6 +443,9 @@ def main():
 
     print(f"[ORCHESTRATOR] ALL DONE — {total} runs complete. "
           f"See {RESULTS_CSV} and {REPORT_HTML}", flush=True)
+
+    generate_plots()
+    print(f"[ORCHESTRATOR] Plots generated.", flush=True)
 
 
 if __name__ == '__main__':
