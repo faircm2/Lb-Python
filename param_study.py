@@ -6,13 +6,15 @@ tau_g x tau_f (60 combos), holding vf_theta fixed at FIXED_VF_THETA. Once
 those results are in, phase 2 (a separate vf_theta-only sweep, locking in
 whichever tau_g/tau_f phase 1 picks) can reuse this same structure.
 
-Launches the sim once per combination via CLI overrides
-(--tau_g/--tau_f/--vf_theta). Each run is aborted early if a NaN/Inf/crash is
+Runs up to MAX_CONCURRENT sim processes at once (bounded by CPU cores on the
+server). Each run gets its own --phi_results_file so concurrent runs never
+clobber each other's output. Each run is aborted early if a NaN/Inf/crash is
 detected in its log (no point burning iterations on a blown-up sim), and the
-sweep continues with the next combination regardless. After every run, a CSV
-row and an HTML summary (embedding the run's final phi snapshot) are
-written/refreshed, so partial progress is inspectable even if the sweep is
-interrupted.
+sweep continues with the next combination regardless. After every run
+finishes, a CSV row, an HTML summary (embedding the run's final phi
+snapshot), and an exact interface_profile.csv (phi=0.5 crossing for every
+x-column) are written, so partial progress is inspectable even if the sweep
+is interrupted.
 
 Usage: python param_study.py    (run this file directly, no CLI args needed)
 """
@@ -30,7 +32,6 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PYTHON = sys.executable
 SIM_SCRIPT = os.path.join(SCRIPT_DIR, 'free_surface_SchanChen_nondim_D2Q9_08_Zhang_Cap02.py')
 IMAGES_ROOT = os.path.join(SCRIPT_DIR, 'FreesurfaceImages')
-PHI_RESULTS_FILE = os.path.join(SCRIPT_DIR, 'phi_results.txt')
 RUNS_DIR = os.path.join(SCRIPT_DIR, 'param_study_runs')
 RESULTS_CSV = os.path.join(SCRIPT_DIR, 'param_study_phase1_tau_results.csv')
 REPORT_HTML = os.path.join(SCRIPT_DIR, 'param_study_phase1_tau_report.html')
@@ -45,6 +46,7 @@ TAU_G_RANGE = [0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
 TAU_F_RANGE = [1.00, 1.10, 1.20, 1.30, 1.50, 2.00]
 FIXED_VF_THETA = 60.0  # held constant for phase 1; phase 2 sweeps this instead
 
+MAX_CONCURRENT = 2  # matches the 2 cores on the Hetzner box
 POLL_SECONDS = 30
 STALL_LIMIT = 5  # 5 x 30s = 2.5 min with no progress -> kill as stalled
 
@@ -76,12 +78,13 @@ def images_dir_for(tau_g, tau_f, vf_theta):
     return os.path.join(IMAGES_ROOT, script_filename + stub)
 
 
-def build_cmd(params):
+def build_cmd(params, phi_results_filename):
     return [
         PYTHON, SIM_SCRIPT,
         '--tau_g', str(params['tau_g']),
         '--tau_f', str(params['tau_f']),
         '--vf_theta', str(params['vf_theta']),
+        '--phi_results_file', phi_results_filename,
     ]
 
 
@@ -104,46 +107,52 @@ def last_sigma_ratio(text):
     return float(matches[-1]) if matches else None
 
 
-def compute_meniscus_rise(phi_results_path):
-    """Reads phi_results.txt (written every iteration by the sim, so this is
-    the final iteration's field once the process has exited) and measures
-    the phi=0.5 interface height at the left/right edges relative to the
-    centerline (x=Xn//2). Positive = edges sit higher than center (meniscus
-    rises at the walls); negative = edges sit lower (falls)."""
+def _interface_y(col, y_idx):
+    # Find the actual phi=0.5 crossing via a sign change, not "first index
+    # >= 0.5" -- that only works if the profile rises with y. Here phi
+    # falls with y (liquid near y=0, gas near y=Yn+1), so argmax-of-bool
+    # would just return index 0 every time (already True) and never find
+    # the real transition.
+    sign = np.sign(col - 0.5)
+    changes = np.where(np.diff(sign) != 0)[0]
+    if len(changes) == 0:
+        return None
+    idx = int(changes[0])
+    y0, y1 = y_idx[idx], y_idx[idx + 1]
+    p0, p1 = col[idx], col[idx + 1]
+    if p1 == p0:
+        return float(y0)
+    return float(y0 + (0.5 - p0) * (y1 - y0) / (p1 - p0))
+
+
+def _load_phi_field(phi_results_path):
+    """Reads a phi_results_*.txt (written once, on the final iteration) into
+    full[x, y], y=0 bottom .. y=Yn+1 top. Returns None if unavailable."""
     if not os.path.exists(phi_results_path):
         return None
-
     with open(phi_results_path, 'r') as f:
         f.readline()  # header: "phi_min phi_max"
         data = np.loadtxt(f)
-
     if data.ndim != 2:
         return None
+    return data[::-1, :].T
 
-    full = data[::-1, :].T  # full[x, y], y=0 bottom .. y=Yn+1 top
+
+def compute_meniscus_rise(phi_results_path):
+    """Measures the phi=0.5 interface height at the left/right edges
+    relative to the centerline (x=Xn//2). Positive = edges sit higher than
+    center (meniscus rises at the walls); negative = edges sit lower
+    (falls)."""
+    full = _load_phi_field(phi_results_path)
+    if full is None:
+        return None
+
     x_ext, y_ext = full.shape
     y_idx = np.arange(y_ext)
 
-    def interface_y(col):
-        # Find the actual phi=0.5 crossing via a sign change, not "first index
-        # >= 0.5" -- that only works if the profile rises with y. Here phi
-        # falls with y (liquid near y=0, gas near y=Yn+1), so argmax-of-bool
-        # would just return index 0 every time (already True) and never find
-        # the real transition.
-        sign = np.sign(col - 0.5)
-        changes = np.where(np.diff(sign) != 0)[0]
-        if len(changes) == 0:
-            return None
-        idx = int(changes[0])
-        y0, y1 = y_idx[idx], y_idx[idx + 1]
-        p0, p1 = col[idx], col[idx + 1]
-        if p1 == p0:
-            return float(y0)
-        return float(y0 + (0.5 - p0) * (y1 - y0) / (p1 - p0))
-
-    y_center = interface_y(full[x_ext // 2, :])
-    y_left = interface_y(full[1, :])
-    y_right = interface_y(full[x_ext - 2, :])
+    y_center = _interface_y(full[x_ext // 2, :], y_idx)
+    y_left = _interface_y(full[1, :], y_idx)
+    y_right = _interface_y(full[x_ext - 2, :], y_idx)
 
     if y_center is None or y_left is None or y_right is None:
         return None
@@ -151,88 +160,30 @@ def compute_meniscus_rise(phi_results_path):
     return (y_left - y_center + y_right - y_center) / 2.0
 
 
+def save_full_interface_profile(phi_results_path, out_csv_path):
+    """Saves the phi=0.5 interface y-position for every x column, so runs can
+    be overlaid exactly (no image-decoding needed). Returns True if written."""
+    full = _load_phi_field(phi_results_path)
+    if full is None:
+        return False
+
+    x_ext, y_ext = full.shape
+    y_idx = np.arange(y_ext)
+
+    with open(out_csv_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['x', 'interface_y'])
+        for x in range(x_ext):
+            y = _interface_y(full[x, :], y_idx)
+            writer.writerow([x, '' if y is None else y])
+    return True
+
+
 def latest_snapshot(images_dir):
     if not os.path.isdir(images_dir):
         return None
     hits = sorted(glob.glob(os.path.join(images_dir, 'phi_snapshot_iter_*.png')))
     return hits[-1] if hits else None
-
-
-def run_one(params, total):
-    label = params['label']
-    run_log_path = os.path.join(RUNS_DIR, f'{label}.log')
-    os.makedirs(RUNS_DIR, exist_ok=True)
-
-    print(f"\n{'=' * 60}", flush=True)
-    print(f"[ORCHESTRATOR] Run {params['run_index']}/{total} — {label}", flush=True)
-    print(f"[ORCHESTRATOR] tau_g={params['tau_g']} tau_f={params['tau_f']} "
-          f"vf_theta={params['vf_theta']}", flush=True)
-
-    cmd = build_cmd(params)
-    with open(run_log_path, 'w') as log_f:
-        proc = subprocess.Popen(cmd, cwd=SCRIPT_DIR, stdout=log_f, stderr=subprocess.STDOUT)
-
-    last_progress = 0
-    stall_count = 0
-    result = 'UNKNOWN'
-
-    while True:
-        time.sleep(POLL_SECONDS)
-
-        with open(run_log_path, 'r', errors='replace') as f:
-            text = f.read()
-
-        if has_crashed(text):
-            print(f"[ORCHESTRATOR] Crash/instability detected — killing", flush=True)
-            proc.kill()
-            proc.wait()
-            result = 'UNSTABLE'
-            break
-
-        if proc.poll() is not None:
-            result = 'DONE' if proc.returncode == 0 else 'FAILED'
-            break
-
-        progress = get_progress(text)
-        print(f"[ORCHESTRATOR] {label}: iter={progress}", flush=True)
-
-        if progress == last_progress:
-            stall_count += 1
-            if stall_count >= STALL_LIMIT:
-                print(f"[ORCHESTRATOR] Stalled at iter={progress} — killing", flush=True)
-                proc.kill()
-                proc.wait()
-                result = 'STALLED'
-                break
-        else:
-            stall_count = 0
-        last_progress = progress
-
-    with open(run_log_path, 'r', errors='replace') as f:
-        final_text = f.read()
-
-    sigma_ratio = last_sigma_ratio(final_text)
-    meniscus_rise = compute_meniscus_rise(PHI_RESULTS_FILE) if result == 'DONE' else None
-
-    run_dir = os.path.join(RUNS_DIR, label)
-    os.makedirs(run_dir, exist_ok=True)
-    image_rel_path = None
-    src_img = latest_snapshot(images_dir_for(params['tau_g'], params['tau_f'], params['vf_theta']))
-    if src_img:
-        dst_img = os.path.join(run_dir, 'final_snapshot.png')
-        with open(src_img, 'rb') as sf, open(dst_img, 'wb') as df:
-            df.write(sf.read())
-        image_rel_path = os.path.relpath(dst_img, SCRIPT_DIR)
-
-    print(f"[ORCHESTRATOR] {label}: FINISHED — {result}  "
-          f"meniscus_rise={meniscus_rise}  sigma_ratio={sigma_ratio}", flush=True)
-
-    return dict(
-        result=result,
-        sigma_ratio=sigma_ratio,
-        meniscus_rise=meniscus_rise,
-        image_path=image_rel_path,
-    )
 
 
 def get_completed_labels():
@@ -311,29 +262,127 @@ def write_html_report(rows):
         f.write('\n'.join(parts))
 
 
+def launch_run(params, total):
+    label = params['label']
+    os.makedirs(RUNS_DIR, exist_ok=True)
+    run_log_path = os.path.join(RUNS_DIR, f'{label}.log')
+    phi_results_path = os.path.join(SCRIPT_DIR, f'phi_results_{label}.txt')
+
+    print(f"\n{'=' * 60}", flush=True)
+    print(f"[ORCHESTRATOR] Launching {params['run_index']}/{total} — {label}  "
+          f"tau_g={params['tau_g']} tau_f={params['tau_f']} "
+          f"vf_theta={params['vf_theta']}", flush=True)
+
+    cmd = build_cmd(params, os.path.basename(phi_results_path))
+    log_f = open(run_log_path, 'w')
+    proc = subprocess.Popen(cmd, cwd=SCRIPT_DIR, stdout=log_f, stderr=subprocess.STDOUT)
+
+    return dict(
+        params=params, label=label, total=total,
+        run_log_path=run_log_path, phi_results_path=phi_results_path,
+        proc=proc, log_f=log_f, last_progress=0, stall_count=0,
+    )
+
+
+def poll_run(state):
+    """Checks one run's status. Returns a result string ('DONE'/'UNSTABLE'/
+    'FAILED'/'STALLED') if it just finished, else None (still running)."""
+    with open(state['run_log_path'], 'r', errors='replace') as f:
+        text = f.read()
+
+    if has_crashed(text):
+        print(f"[ORCHESTRATOR] {state['label']}: crash/instability detected — killing", flush=True)
+        state['proc'].kill()
+        state['proc'].wait()
+        return 'UNSTABLE'
+
+    if state['proc'].poll() is not None:
+        return 'DONE' if state['proc'].returncode == 0 else 'FAILED'
+
+    progress = get_progress(text)
+    print(f"[ORCHESTRATOR] {state['label']}: iter={progress}", flush=True)
+
+    if progress == state['last_progress']:
+        state['stall_count'] += 1
+        if state['stall_count'] >= STALL_LIMIT:
+            print(f"[ORCHESTRATOR] {state['label']}: stalled at iter={progress} — killing", flush=True)
+            state['proc'].kill()
+            state['proc'].wait()
+            return 'STALLED'
+    else:
+        state['stall_count'] = 0
+    state['last_progress'] = progress
+    return None
+
+
+def finalize_run(state, result):
+    state['log_f'].close()
+    params = state['params']
+    label = state['label']
+
+    with open(state['run_log_path'], 'r', errors='replace') as f:
+        final_text = f.read()
+
+    sigma_ratio = last_sigma_ratio(final_text)
+    meniscus_rise = compute_meniscus_rise(state['phi_results_path']) if result == 'DONE' else None
+
+    run_dir = os.path.join(RUNS_DIR, label)
+    os.makedirs(run_dir, exist_ok=True)
+    image_rel_path = None
+    src_img = latest_snapshot(images_dir_for(params['tau_g'], params['tau_f'], params['vf_theta']))
+    if src_img:
+        dst_img = os.path.join(run_dir, 'final_snapshot.png')
+        with open(src_img, 'rb') as sf, open(dst_img, 'wb') as df:
+            df.write(sf.read())
+        image_rel_path = os.path.relpath(dst_img, SCRIPT_DIR)
+
+    if result == 'DONE':
+        save_full_interface_profile(state['phi_results_path'], os.path.join(run_dir, 'interface_profile.csv'))
+
+    # per-run phi_results file no longer needed once the profile/rise are extracted
+    if os.path.exists(state['phi_results_path']):
+        os.remove(state['phi_results_path'])
+
+    print(f"[ORCHESTRATOR] {label}: FINISHED — {result}  "
+          f"meniscus_rise={meniscus_rise}  sigma_ratio={sigma_ratio}", flush=True)
+
+    row = dict(
+        run=params['run_index'], label=label,
+        tau_g=params['tau_g'], tau_f=params['tau_f'], vf_theta=params['vf_theta'],
+        meniscus_rise=meniscus_rise, sigma_ratio=sigma_ratio,
+        result=result, image_path=image_rel_path,
+    )
+    rows = write_csv_row(row)
+    write_html_report(rows)
+
+
 def main():
     param_sets = make_param_sets()
     total = len(param_sets)
     completed = get_completed_labels()
+    pending = [p for p in param_sets if p['label'] not in completed]
     print(f"[ORCHESTRATOR] Parameter study starting: {total} runs "
-          f"({len(completed)} already done)", flush=True)
+          f"({len(completed)} already done, {len(pending)} to run, "
+          f"up to {MAX_CONCURRENT} concurrent)", flush=True)
 
-    for params in param_sets:
-        label = params['label']
-        if label in completed:
-            print(f"[ORCHESTRATOR] Skipping {label} — already in CSV", flush=True)
-            continue
+    active = []  # list of run-state dicts
 
-        outcome = run_one(params, total)
-        row = dict(
-            run=params['run_index'], label=label,
-            tau_g=params['tau_g'], tau_f=params['tau_f'], vf_theta=params['vf_theta'],
-            meniscus_rise=outcome['meniscus_rise'], sigma_ratio=outcome['sigma_ratio'],
-            result=outcome['result'], image_path=outcome['image_path'],
-        )
-        rows = write_csv_row(row)
-        write_html_report(rows)
-        print(f"[ORCHESTRATOR] Progress: {params['run_index']}/{total} complete", flush=True)
+    while pending or active:
+        while pending and len(active) < MAX_CONCURRENT:
+            active.append(launch_run(pending.pop(0), total))
+
+        time.sleep(POLL_SECONDS)
+
+        still_active = []
+        for state in active:
+            result = poll_run(state)
+            if result is None:
+                still_active.append(state)
+            else:
+                finalize_run(state, result)
+                done_count = len(get_completed_labels())
+                print(f"[ORCHESTRATOR] Progress: {done_count}/{total} complete", flush=True)
+        active = still_active
 
     print(f"[ORCHESTRATOR] ALL DONE — {total} runs complete. "
           f"See {RESULTS_CSV} and {REPORT_HTML}", flush=True)

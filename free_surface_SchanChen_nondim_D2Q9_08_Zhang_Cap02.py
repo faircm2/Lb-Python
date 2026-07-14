@@ -639,6 +639,7 @@ _arg_parser = argparse.ArgumentParser()
 _arg_parser.add_argument('--tau_g', type=float, default=None)
 _arg_parser.add_argument('--tau_f', type=float, default=None)
 _arg_parser.add_argument('--vf_theta', type=float, default=None)
+_arg_parser.add_argument('--phi_results_file', type=str, default='phi_results.txt')
 _args, _ = _arg_parser.parse_known_args()
 if _args.tau_g is not None:
     fc.tau_g = _args.tau_g
@@ -646,6 +647,7 @@ if _args.tau_f is not None:
     fc.tau_f = _args.tau_f
 if _args.vf_theta is not None:
     fc.vf_theta = _args.vf_theta
+PHI_RESULTS_FILENAME = _args.phi_results_file
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -1812,7 +1814,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     # (nothing reads it until the process exits), so writing it every
     # iteration was ~15 min of pure waste per 12001-iteration run.
     if iteration == fc.TOTAL_ITERATIONS - 1:
-        save_phi_results(_phi, fc.phi_star_G, fc.phi_star_L)
+        save_phi_results(_phi, fc.phi_star_G, fc.phi_star_L, filename=PHI_RESULTS_FILENAME)
 
 
     _phi  = set_solid_nodes(iteration, fc, _phi)

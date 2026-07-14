@@ -1,2 +1,1 @@
 run,label,tau_g,tau_f,vf_theta,meniscus_rise,sigma_ratio,result,image_path
-12,run012_taug0.6_tauf2.0,0.6,2.0,60.0,3.6580532004302597,1.017,DONE,param_study_runs/run012_taug0.6_tauf2.0/final_snapshot.png
