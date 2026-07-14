@@ -1,11 +1,15 @@
 FreesurfaceImages/
 __pycache__/
 *.pyc
+*.log
 lbm_debug.log
 phi_results.txt
+phi_results_*.txt
+param_study_master.log
 github-repo-token.txt
 literature/
 .ipynb_checkpoints/
 *.ipynb
 frames2D/
 explosion/
+_old_outputs/
