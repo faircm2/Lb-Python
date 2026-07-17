@@ -13,3 +13,5 @@ literature/
 frames2D/
 explosion/
 _old_outputs/
+*.png
+lb_results/

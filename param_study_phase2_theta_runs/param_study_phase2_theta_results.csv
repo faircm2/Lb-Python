@@ -1,0 +1,11 @@
+run,label,tau_g,tau_f,vf_theta,meniscus_rise,sigma_ratio,result,image_path
+1,run001_vf_theta50.0,0.65,1.25,50.0,6.674212114652789,1.0172,DONE,param_study_phase2_theta_runs/run001_vf_theta50.0/final_snapshot.png
+2,run002_vf_theta60.0,0.65,1.25,60.0,5.373065316713365,1.0172,DONE,param_study_phase2_theta_runs/run002_vf_theta60.0/final_snapshot.png
+3,run003_vf_theta70.0,0.65,1.25,70.0,3.8253386228458055,1.0171,DONE,param_study_phase2_theta_runs/run003_vf_theta70.0/final_snapshot.png
+4,run004_vf_theta80.0,0.65,1.25,80.0,2.0558916700732937,1.0171,DONE,param_study_phase2_theta_runs/run004_vf_theta80.0/final_snapshot.png
+6,run006_vf_theta90.0,0.65,1.25,90.0,-0.009350601684644744,1.0171,DONE,param_study_phase2_theta_runs/run006_vf_theta90.0/final_snapshot.png
+5,run005_vf_theta89.0,0.65,1.25,89.0,0.2058724656763502,1.0171,DONE,param_study_phase2_theta_runs/run005_vf_theta89.0/final_snapshot.png
+7,run007_vf_theta91.0,0.65,1.25,91.0,-0.2284197751746433,1.0171,DONE,param_study_phase2_theta_runs/run007_vf_theta91.0/final_snapshot.png
+8,run008_vf_theta100.0,0.65,1.25,100.0,-2.4253475993774885,1.0171,DONE,param_study_phase2_theta_runs/run008_vf_theta100.0/final_snapshot.png
+9,run009_vf_theta120.0,0.65,1.25,120.0,-8.962398830406102,1.0175,DONE,param_study_phase2_theta_runs/run009_vf_theta120.0/final_snapshot.png
+10,run010_vf_theta130.0,0.65,1.25,130.0,-13.70915951077356,1.0185,DONE,param_study_phase2_theta_runs/run010_vf_theta130.0/final_snapshot.png
