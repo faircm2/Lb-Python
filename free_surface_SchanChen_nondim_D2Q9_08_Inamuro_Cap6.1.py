@@ -65,8 +65,6 @@ class FlowConfig:
     vf_sigma: float
     '''θ - equilibrium contact angle'''
     vf_theta: float
-    '''cap force multiplier'''
-    vf_capillaryForceMultiplier: float
 
     # --- Defaults ---
     xi: float = 5.0                     # gas/liquid interface thickness
@@ -425,7 +423,6 @@ PROOF_STEP1 = FlowConfig(
     Kf = 1e-6 * n_dx**2, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=1,
-    vf_capillaryForceMultiplier=1.0,
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0    
@@ -441,7 +438,6 @@ PROOF_STEP2 = FlowConfig(
     Kf=0.0008, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -456,7 +452,6 @@ PROOF_STEP3 = FlowConfig(
     Kf=0.008, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -471,7 +466,6 @@ PROOF_STEP4 = FlowConfig(
     Kf=0.008, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -486,7 +480,6 @@ PROOF_STEP5 = FlowConfig(
     Kf=0.008, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -501,7 +494,6 @@ PROOF_STEP6 = FlowConfig(
     Kf=0.008, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES= 1, #8*4
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 0.0
@@ -516,7 +508,6 @@ PROOF_STEP7 = FlowConfig(
     Kf=0.05, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -531,7 +522,6 @@ PROOF_STEP8 = FlowConfig(
     Kf=0.05, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -546,7 +536,6 @@ PROOF_STEP9 = FlowConfig(
     Kf=0.05, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -562,7 +551,6 @@ PROOF_INCLINED = FlowConfig(
     Kf=0.005, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     MULTIPLES=1,
-    vf_capillaryForceMultiplier=1.0,      
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 0.0
@@ -584,8 +572,7 @@ CAPILLARY_PROOF = FlowConfig(
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the^^^^ diffuse interface, reducing sharp edges.
     vf_W = 4, #was 6
     vf_sigma = 0.01, #0.072
-    vf_theta = 120.0, #60
-    vf_capillaryForceMultiplier=1,
+    vf_theta = 60.0, #60
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
     ADD_SURFACE_TENSION_FORCE = 1,
@@ -601,7 +588,6 @@ CAPILLARY_WAVE = FlowConfig(
     tau_f=1.0, tau_g=1.0,
     Kf=0.5 * n_dx**2, Kg=0.0,
     epsilon_cutoff=1e-4,
-    vf_capillaryForceMultiplier=1,
     MULTIPLES=1,    
     vf_W = 4,
     vf_sigma = 0.001,
@@ -617,7 +603,6 @@ DROPLET_COLLISION = FlowConfig(
     tau_f=1.0, tau_g=1.0,
     Kf=0.5 * n_dx**2, Kg=20.0,
     epsilon_cutoff=1e-4,
-    vf_capillaryForceMultiplier=1,
     MULTIPLES=1,        
     vf_W = 4,
     vf_sigma = 0.001,
@@ -633,7 +618,6 @@ BUBBLE_FLOW = FlowConfig(
     tau_f=1.0, tau_g=1.0,
     Kf=0.08 * n_dx**2, Kg=1e-7 * n_dx**2,
     epsilon_cutoff=1e-5,
-    vf_capillaryForceMultiplier=1,
     MULTIPLES=1,        
     vf_W = 4,
     vf_sigma = 0.001,
@@ -728,7 +712,7 @@ def chemical_potential_Inamuro(fc, __phi): #mu_c
     Chemical potential μ_c = ∂ψ/∂ϕ - Kf ∇²ϕ
     Uses your c_laplacian(_phi) (with the correct 1/(3 dx²) D2Q9 form).
     """
-    psi_deriv = c_psi_phi(fc, __phi) - mu0_Inamuro(fc)
+    psi_deriv = c_psi_phi(fc, __phi) # - mu0_Inamuro(fc)
     lap_phi = c_laplacian(__phi)  # n_dx/n_dy handled inside c_laplacian as needed
     _mu_c = psi_deriv - fc.Kf * lap_phi
     return _mu_c
@@ -738,6 +722,13 @@ def Fs_inamuro(fc, _phi, n_dx, n_dy):
     dphi_dx, dphi_dy = c_first_derivative0(_phi, n_dx, n_dy)
     nabla_phi = np.stack([dphi_dx, dphi_dy], axis=0)
     return chemical_potential_Inamuro(fc, _phi) * nabla_phi    
+
+
+def Fs_zhang(fc, _phi, n_dx, n_dy):
+    _phi_n, _, _ = normalizePhiExt(fc, _phi)
+    dphi_dx, dphi_dy = c_first_derivative0(_phi, n_dx, n_dy)
+    nabla_phi = np.stack([dphi_dx, dphi_dy], axis=0)
+    return chemical_potential_Zhang(fc, _phi_n) * nabla_phi   
 
 
 #Inamuro eq(10): p0 from eq(6)F[i]*
@@ -2527,9 +2518,6 @@ while iteration < fc.TOTAL_ITERATIONS:
     #1. Shan-Chen - A=tau*n_dt
     A = n_dt * n_dt
 
-    # 1. Body mass force
-    body_force = A * bodyForce(fc.F_lattice, rho)*n_dt / (2.0 * rho) # * fc.CF)
-
     # Bond Nummber
     Bnon = rho_0 * fc.g * dx**2 / fc.vf_sigma
     Blat = rho_0 * fc.g * n_dx**2 / fc.vf_sigma
@@ -2552,34 +2540,43 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"mu_c (Inamuro) min={_mu_c.min():.4e} max={_mu_c.max():.4e} mean={_mu_c.mean():.4e}")
         print(f"mu_phi (Zhang, using normalized phi) min={_mu_zhang.min():.4e} max={_mu_zhang.max():.4e} mean={_mu_zhang.mean():.4e}")  
 
+
+    # 1. Body mass force
+    body_force = A * bodyForce(fc.F_lattice, rho)*n_dt # * fc.CF)
+
     
     if fc.ADD_SURFACE_TENSION_FORCE:
         if iteration in iterationsOfInterest and fc.vf_theta > 90:
             print("phi at left wall (ghost + first fluid nodes):", _phi[0:3, yc])
 
-        #zhang_surface_tension_force = calc_capillary_force(iteration, fc, _phi, _phi_n)
-        #_capillary_force = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force * fc.vf_capillaryForceMultiplier
+        zhang_surface_tension_force = calc_capillary_force(iteration, fc, _phi, _phi_n)
+        capillary_force_zhang_eq_53_n = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
+        assert capillary_force_zhang_eq_53_n.shape == (2, Xn+2, Yn+2), f"capillary_force_zhang_eq_53_n shape: {capillary_force_zhang_eq_53_n.shape}"
 
-        #if fc.ADD_SURFACE_TENSION_FORCE == 1:
-        # Zhang eq(5): Fs is the surface tension force, expressed in a potential form 
-        #zhang_surface_tension_force = zhang_fc(fc, _phi)
-        _Fs = Fs_inamuro(fc, _phi, n_dx, n_dy)
-        zhang_surface_tension_force = _Fs
-        assert zhang_surface_tension_force.shape == (2, Xn+2, Yn+2), f"zhang_surface_tension_force shape: {zhang_surface_tension_force.shape}"
-        _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force * fc.vf_capillaryForceMultiplier
+        # Zhang eq(53): fc is the the capillary force for an element dl 
+        capillary_force_zhang_eq_53 = zhang_fc(fc, _phi)
+        assert capillary_force_zhang_eq_53.shape == (2, Xn+2, Yn+2), f"capillary_force_zhang_eq_53 shape: {capillary_force_zhang_eq_53.shape}"
+        # Zhang eq(5): Fs is the surface tension force, expressed in a potential form, using chemical potential from Inamuro eq(18)
+        capillary_force_inamuro_eq_53 = Fs_inamuro(fc, _phi, n_dx, n_dy)
+        assert capillary_force_inamuro_eq_53.shape == (2, Xn+2, Yn+2), f"capillary_force_inamuro_eq_53 shape: {capillary_force_inamuro_eq_53.shape}"
+        # Zhang eq(5): Fs is the surface tension force, expressed in a potential form, using chemical potential from Zhang eq(6)
+        capillary_force_zhang_eq_5 = Fs_zhang(fc, _phi, n_dx, n_dy)
+        assert capillary_force_zhang_eq_5.shape == (2, Xn+2, Yn+2), f"capillary_force_zhang_eq_5 shape: {capillary_force_zhang_eq_5.shape}"
+        
+        _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * capillary_force_zhang_eq_53_n
 
-        if False:
+        if True:
             u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
                 + fc.ADD_BODY_FORCE * body_force \
                 + _capillary_force
-        u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
-            + fc.ADD_BODY_FORCE * body_force \
-            + 1/(2*rho) * _capillary_force
+        if False:
+            u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
+                + 1/(2*rho) * fc.ADD_BODY_FORCE * body_force \
+                + 1/(2*rho) * _capillary_force
     else:
         u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
-            + fc.ADD_BODY_FORCE * body_force
-        #    + fc.ADD_BODY_FORCE * body_force \
-        #    + fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force * fc.vf_capillaryForceMultiplier
+            +  1/(2*rho) * fc.ADD_BODY_FORCE * body_force
+        #    + 1/(2*rho) * fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
         
     if iteration in iterationsOfInterest:
         if fc.ADD_SURFACE_TENSION_FORCE:

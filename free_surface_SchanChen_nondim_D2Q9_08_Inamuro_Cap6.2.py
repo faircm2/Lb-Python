@@ -588,7 +588,7 @@ CAPILLARY_PROOF = FlowConfig(
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
-    ADD_SURFACE_TENSION_FORCE = 1,
+    ADD_SURFACE_TENSION_FORCE = 0,
     ADD_BODY_FORCE = 1    
 )
 
@@ -1342,7 +1342,7 @@ def print_top_layers(_phi_array, num_nodes=4, num_layers=2):
         print()  # new line
 
 
-def bounceBackTopBottom_conservation(fc, iteration, __fi, __gi, nx, ny):
+def bounceBackTopBottom_conservation_old(fc, iteration, __fi, __gi, nx, ny):
     ghost_layer_addition = 0
     # channel i  = 0,1,2,3,4,5,6,7,8
     # anti-channel i_ = 0,3,4,1,2,7,8,5,6
@@ -1390,7 +1390,40 @@ def bounceBackTopBottom_conservation(fc, iteration, __fi, __gi, nx, ny):
     return __fi, __gi    
 
 
-def bounceBackLeftRight_conservation(fc, iteration, __fi, __gi, nx, ny):
+def bounceBackTopBottom_conservation_zhang(fc, iteration, __gi, __fi, nx, ny):
+    # channel i  = 0,1,2,3,4,5,6,7,8
+    # anti-channel i_ = 0,3,4,1,2,7,8,5,6
+
+    # bottom wall (y=1) - no-slip halfway bounce-back
+    # straight vertical reflection
+    __fi[2, :, 1] = __fi[4,:,0]                 # 4-> 2, die GhostNodes spielen keine Rolle
+    __gi[2, :, 1] = __gi[4,:,0]                 # 4-> 2, die GhostNodes spielen keine Rolle
+    # diagonal reflections with horizontal shift
+    __fi[5,1:nx-1,1] = __fi[7,0:nx-2,0]         # 7 -> 5
+    __gi[5,1:nx-1,1] = __gi[7,0:nx-2,0]         # 7 -> 5
+    __fi[6,1:nx-1,1] = __fi[8,2:nx,0]           # 8 -> 6
+    __gi[6,1:nx-1,1] = __gi[8,2:nx,0]           # 8 -> 6
+
+    # top wall (y=ny) - no-slip halfway bounce-back
+    # straight vertical reflection
+    __fi[4,:,ny-2] = __fi[2,:,ny-1]             # 2-> 4, die GhostNodes spielen keine Rolle
+    __gi[4,:,ny-2] = __gi[2,:,ny-1]             # 2-> 4, die GhostNodes spielen keine Rolle
+    # diagonal reflections with horizontal shift
+    __gi[7,1:nx-1,ny-2] = __gi[5,2:nx,ny-1]     # 5 -> 7
+    __fi[7,1:nx-1,ny-2] = __fi[5,2:nx,ny-1]     # 5 -> 7
+    __gi[8,1:nx-1,ny-2] = __gi[6,0:nx-2,ny-1]   # 6 -> 8
+    __fi[8,1:nx-1,ny-2] = __fi[6,0:nx-2,ny-1]   # 6 -> 8
+
+    if iteration in iterationsOfInterest:
+        __phi = phi(fc, __gi)
+        print(f"------ iteration: {iteration} -------------------------------------------------------------------")
+        print_top_layers(__phi, num_nodes=4, num_layers=3)
+
+
+    return __gi, __fi     
+
+
+def bounceBackLeftRight_conservation_old(fc, iteration, __fi, __gi, nx, ny):
     # Left wall (x=1) - no-slip halfway bounce-back
     __fi[1, 1, 1:ny+1] = __fi[3, 0, 1:ny+1]      # E ← W
     __gi[1, 1, 1:ny+1] = __gi[3, 0, 1:ny+1]
@@ -1426,6 +1459,34 @@ def bounceBackLeftRight_conservation(fc, iteration, __fi, __gi, nx, ny):
     __gi[:, nx+1, :] = 0.0        
 
     return __fi, __gi
+
+
+def bounceBackLeftRight_conservation_zhang(fc, iteration, __gi, __fi, nx, ny):
+
+    # Left wall (x=1) - no-slip halfway bounce-back
+    __fi[1,1,:] = __fi[3,0,:]                   # 3-> 1, die GhostNodes spielen keine Rolle
+    __gi[1,1,:] = __gi[3,0,:]                   # 3-> 1, die GhostNodes spielen keine Rolle
+    #f[1],1,:]=f[3,0,:] # 3-> 1, die GhostNodes spielen keine Rolle    
+    __fi[5,1,1:ny-1] = __fi[7,0,0:ny-2]         # 7 -> 5
+    __gi[5,1,1:ny-1] = __gi[7,0,0:ny-2]         # 7 -> 5    
+    #f[5,1,1:N-1]=f[7,0,0:N-2] # 7 -> 5    
+    __fi[8,1,1:ny-1] = __fi[6,0,2:ny]           # 6 -> 8
+    __gi[8,1,1:ny-1] = __gi[6,0,2:ny]           # 6 -> 8
+    #f[8,1,1:N-1]=f[6,0,2:-1]  # 6 -> 8    
+
+    # Right wall (x=nx) - no-slip halfway bounce-back
+    __fi[3,nx-2,:] = __fi[1,nx-1,:]             # 3-> 1, die GhostNodes spielen keine Rolle
+    __gi[3,nx-2,:] = __gi[1,nx-1,:]             # 3-> 1, die GhostNodes spielen keine Rolle
+    #f[3,1,:]=f[1,0,:] # 3-> 1, die GhostNodes spielen keine Rolle    
+    __fi[7,nx-2,1:ny-1] = __fi[5,nx-1,2:ny]     # 5 -> 7
+    __gi[7,nx-2,1:ny-1] = __gi[5,nx-1,2:ny]     # 5 -> 7
+    #f[7,1,1:N-1]=f[5,0,2:-1] # 5 -> 7    
+    __fi[6,nx-2,1:ny-1] = __fi[8,nx-1,0:ny-2]   # 8 -> 6
+    __gi[6,nx-2,1:ny-1] = __gi[8,nx-1,0:ny-2]   # 8 -> 6
+    #f[6,1,1:N-1]=f[8,0,0:N-2]  # 8 -> 6    
+
+
+    return __gi, __fi
 
 
 def init_step_phi(xn, yn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
@@ -1975,7 +2036,7 @@ def calc_capillary_force(iteration, fc, __phi, _phi_n ):
     _zhang_fc_phi_n = zhang_fc(fc, _phi_n)
     if iteration in iterationsOfInterest:
         print(f"θ={fc.vf_theta:3.0f} | left-wall Fy (mean at interface height): "
-            f"{np.mean(zhang_surface_tension_force[1,1,yc-5:yc+5]):+.3e}  "
+            f"{np.mean(_zhang_fc_phi_n[1,1,yc-5:yc+5]):+.3e}  "
             f"(should be negative for θ>90°)")
         
     _zhang_fc_phi = zhang_fc(fc, __phi)
@@ -2312,12 +2373,12 @@ while iteration < fc.TOTAL_ITERATIONS:
     #update_ghost_nodes_top_bottom(_fi_c, _gi_c, Yn)        
 
     # 4. top/bottom conservative bounceback
-    _fi_star, _gi_star = bounceBackTopBottom_conservation(fc, iteration, _fi_star, _gi_star, Xn, Yn)
+    _fi_star, _gi_star = bounceBackTopBottom_conservation_zhang(fc, iteration, _fi_star, _gi_star, Xn+2, Yn+2)
     
 
     #4.1b. top/bottom conservative bounceback
     #apply_periodic_boundary_conditions(_fi, _gi)    
-    _fi, _gi = bounceBackLeftRight_conservation(fc, iteration, _fi_star, _gi_star, Xn, Yn)
+    _fi, _gi = bounceBackLeftRight_conservation_zhang(fc, iteration, _fi_star, _gi_star, Xn+2, Yn+2)
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # 1. Moment update
@@ -2327,6 +2388,10 @@ while iteration < fc.TOTAL_ITERATIONS:
     # === LIGHT INTERFACE SMOOTHING TO REDUCE GRID PINNING ===
     # Apply very light Gaussian filter — smooth meniscus and reduce sharp corners
     #_phi = gaussian_filter(_phi, sigma=0.15)   # sigma=0.5–1.0 is usually enough
+
+
+    # phi values at boundaries should be set
+    _phi, _phi_n = set_solid_nodes(iteration, fc, _phi)    
 
     # ──────────────────────────────
     # Mass conservation diagnostoics
@@ -2350,7 +2415,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         debug_log('ITER', 'Iter %d: phi at y=0: %.3e, y=50: %.3e, y=51: %.3e', iteration, np.mean(_phi[:,1]), np.mean(_phi[:,50]), np.mean(_phi[:,51])) 
         debug_log('ITER', 'Iter %d: rho min=%.3e, max=%.3e', iteration, np.min(rho), np.max(rho))        
         
-    if iteration in iterationsOfInterest and iteration in (fc.TOTAL_ITERATIONS-1):
+    if iteration in iterationsOfInterest or iteration == fc.TOTAL_ITERATIONS - 1:
         yc = int(np.argmin(np.abs(_phi[Xn//2, :] - phi_mid)))
         #phi mapping
         plotter.save_phi_snapshot(_phi, iteration, fc.phi_star_G, fc.phi_star_L)    
@@ -2398,10 +2463,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         save_phi_results(phi_n_, phi_star_G_, phi_star_L_)
 
 
-    # phi values at boundaries should be set
-    __phi, _phi_n = set_solid_nodes(iteration, fc, _phi)
-    _phi = __phi
-
     if iteration in iterationsOfInterest:
         dphi_dx, _ = c_first_derivative0(_phi)
         print(f"dφ/dx at [1, 97:103] = {np.round(dphi_dx[1, 97:103], 6)}")
@@ -2410,12 +2471,12 @@ while iteration < fc.TOTAL_ITERATIONS:
         if iteration in iterationsOfInterest and fc.vf_theta > 90:
             print("phi at left wall (ghost + first fluid nodes):", _phi[0:3, yc])
 
-        zhang_surface_tension_force = calc_capillary_force(iteration, fc, __phi, _phi_n)
-        _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force * fc.vf_capillaryForceMultiplier
+        zhang_surface_tension_force = calc_capillary_force(iteration, fc, _phi, _phi_n)
+        _capillary_force = zhang_surface_tension_force * fc.vf_capillaryForceMultiplier
 
         u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
             + fc.ADD_BODY_FORCE * body_force \
-            + _capillary_force
+            + fc.ADD_SURFACE_TENSION_FORCE * _capillary_force
 
     else:
 
