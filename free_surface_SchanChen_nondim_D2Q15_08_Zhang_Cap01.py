@@ -878,13 +878,20 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     _Fi = Fi(fc, Fs, G, u_ckl, rho)
 
     # eq(13): collision
-    z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
+    #z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
+    omega_f = 1.0 / fc.tau_f
+    z_fi_star = (z_fi_c - z_fi)      # 1 new array
+    z_fi_star *= omega_f             # in-place
+    z_fi_star += z_fi                # in-place  (now equals z_fi - omega_f*(z_fi-z_fi_c))
+    z_fi_star += n_dt * _Fi          # n_dt*_Fi is 1 new array; += is in-place
 
     # eq(15): streaming
-    streamed = [
-        np.roll(z_fi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2)) for i in range(fc.velocitySetSize)
-    ]
-    z_fi[:] = np.stack(streamed, axis=0)
+    #streamed = [
+    #    np.roll(z_fi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2)) for i in range(fc.velocitySetSize)
+    #]
+    #z_fi[:] = np.stack(streamed, axis=0)
+    for i in range(fc.velocitySetSize):
+        z_fi[i] = np.roll(z_fi_star[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
 
 
     return z_fi
@@ -992,22 +999,18 @@ def zfi_c(fc, u, rho, p):
 
 # Zhang eq(12): collision function of order parameter distribution function 
 def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
-    """
-    Fully vectorized collision and streaming for fi distribution (D2Q15).
-    No Python loops anywhere - negative debug uses vectorized argmin/where.
-    Assumes globals: RAISE_LESS_THAN_ZERO_ERROR, iteration, c(15,2).
-    """
-    # Collision: fully vectorized BGK
     omega_g = 1.0 / fc.tau_g
-    z_gi_star = z_gi - omega_g * (z_gi - z_gi_c)  +  n_dt * Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl)
+    _Gi = Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl)
 
-    # Streaming: batched rolls
-    streamed = [
-        np.roll(z_gi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2)) for i in range(fc.velocitySetSize)
-    ]
-    z_gi[:] = np.stack(streamed, axis=0)
+    z_gi_star = (z_gi_c - z_gi)      # 1 new array
+    z_gi_star *= omega_g             # in-place
+    z_gi_star += z_gi                # in-place  (now equals z_gi - omega_g*(z_gi-z_gi_c))
+    z_gi_star += n_dt * _Gi          # n_dt*_Gi is 1 new array; += is in-place
 
-    return z_gi 
+    for i in range(fc.velocitySetSize):
+        z_gi[i] = np.roll(z_gi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2))
+
+    return z_gi
 
 
 # Zhang bottom p 32, 2nd column:
