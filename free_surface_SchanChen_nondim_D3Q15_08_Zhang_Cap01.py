@@ -1713,7 +1713,7 @@ p = np.zeros((Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 # Before the main loop
-z_gi = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration, out=np.zeros((fc.velocitySetSize,) + _phi.shape))
+z_gi = zgi_c(fc, u_ckl, _phi, iteration, out=z_gi)
 z_fi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_fi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 
