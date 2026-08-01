@@ -1821,10 +1821,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         validate_field(z_gi_c, 'z_gi_c', iter=iteration, allow_neg=True)
         validate_field(z_fi_c, 'z_fi_c', iter=iteration, allow_neg=True)  
 
-    # isolate Gi() specifically, since dphi_u_dt just went live for the first time
-    if iteration % 100 == 0:
-        _Gi_check = Gi(fc, __phi_old, _u_ckl_old, _phi, u_ckl, out=np.empty_like(_Fi_buf))    
-        validate_field(_Gi_check, 'Gi output', iter=iteration, allow_neg=True)
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # Zhang functions: 3.Collision/Relaxation, 4.Streaming (advection)
@@ -1866,8 +1862,8 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────
     # NEW: Measure ϕ mass from previous step
     phi_old_total = np.sum(_phi[1:Xn+1, 1:Yn+1, 1:Zn+1])
-    __phi_old = np.copy(_phi) 
-    _u_ckl_old = np.copy(u_ckl) 
+    np.copyto(__phi_old, _phi)
+    np.copyto(_u_ckl_old, u_ckl)
     # ──────────────────────────────     
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
