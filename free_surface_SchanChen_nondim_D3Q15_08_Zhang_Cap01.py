@@ -870,7 +870,7 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
 
 # Zhang eq(13): collision function of pressure distribution function 
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
-
+    global _Fi_buf, _star_buf
     Fi(fc, Fs, G, u_ckl, rho, out=_Fi_buf)
     omega_f = 1.0 / fc.tau_f
     np.subtract(z_fi_c, z_fi, out=_star_buf)
@@ -942,6 +942,7 @@ def zfi_c(fc, u, rho, p, out):
 
 # Zhang eq(12): collision function of order parameter distribution function 
 def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
+    global _Fi_buf, _star_buf
     Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out=_Fi_buf)   # writes into existing buffer - no new array
     omega_g = 1.0 / fc.tau_g
 
