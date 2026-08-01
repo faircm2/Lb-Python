@@ -1974,7 +1974,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         _fi_term  = np.einsum('ia,ijkl->ajkl', c, z_fi) / (Cs2 * rho)
         _bf_term  = (1.0 / (2.0 * rho)) * fc.ADD_BODY_FORCE  * body_force
         _cap_term = (1.0 / (2.0 * rho)) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force
-        _Fs_bulk  = Fs(fc, _phi, n_dx, n_dy, n_dz)
+        _Fs_bulk  = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf)
         _Fs_term  = (1.0 / (2.0 * rho)) * fc.ADD_SURFACE_TENSION_FORCE * _Fs_bulk
 
         print(f"\n── CL DIAG iter={iteration}  left-wall contact line at y={y_cl}, z={z_cl} ──")
