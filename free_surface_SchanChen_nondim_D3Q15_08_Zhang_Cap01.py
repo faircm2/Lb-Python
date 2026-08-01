@@ -1648,6 +1648,7 @@ start = time.perf_counter()
 y0 = (Yn-1)/2
 z0 = (Zn-1)/2
 x,y,z = np.meshgrid(np.arange(Xn+2), np.arange(Yn+2), np.arange(Zn+2), indexing='ij')
+print(f"[MEM] after meshgrid: {_rss_mb():.0f} MB", flush=True)
 
 PARAMETER_STUB = "__" + ACTIVE_CASE + "__nodes_" + str(DEFAULT_D_ND) + "__tau_f_" + str(fc.tau_f) + "__tau_g_" + str(fc.tau_g) + "__Kf_" + str(fc.Kf) + "__Theta_" + str(fc.vf_theta)
 images_dir = os.path.join(images_subdir, SCRIPT_FILENAME + PARAMETER_STUB)
@@ -1664,6 +1665,7 @@ if PHI_DISTRIBUTION == "STEP":
     density_profile_x_position = int(2/3*Xn)
     density_profile_y_position = int(2/3*Yn)   
     density_profile_z_position = int(2/3*Zn)   
+    print(f"[MEM] after phi init: {_rss_mb():.0f} MB", flush=True)
 if PHI_DISTRIBUTION == "HORIZONTAL":
     # Replace the original _phi initialization with a call to the method
     _phi = init_horizontal_phi(Xn+2, Yn+2, Zn+2, fc.phi_star_G, fc.phi_star_L, height=(Zn+1)/2, W=fc.vf_W)
@@ -1726,6 +1728,8 @@ _u_ckl_old = np.copy(u_ckl)
 
 rho, mu = density_and_viscosity(fc, _phi)
 zhang_surface_tension_force = np.zeros((3, Xn+2, Yn+2, Zn+2))
+print(f"[MEM] after main array block: {_rss_mb():.0f} MB", flush=True)
+
 
 # --- Compact Iteration Snapshots (Directly Using TOTAL_ITERATIONS) ---
 '''
@@ -1768,6 +1772,7 @@ epsilon_u_ckl_list = []
 
 _Fi_buf = np.empty_like(z_fi)      # reused by Fi()
 _star_buf = np.empty_like(z_fi)    # reused by zfi()'s and zgi()'s z_*_star
+print(f"[MEM] after scratch buffers: {_rss_mb():.0f} MB", flush=True)
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # simulation
@@ -1780,6 +1785,7 @@ if PLOTREALTIME:
     #ax_phi, ax_rho, ax_vort = axes
     plt.ion()  # turn on interactive mode
 
+print(f"[MEM] before main loop: {_rss_mb():.0f} MB", flush=True)
 
 while iteration < fc.TOTAL_ITERATIONS:
     if iteration % 100 == 0:
@@ -2167,6 +2173,7 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     #Step 4: re-iterate
     iteration += 1
+    print(f"[MEM] end of iteration {iteration}: {_rss_mb():.0f} MB", flush=True)
 
     print(f"---timings after iter {iteration}---")
     for _k, _v in sorted(_t.items(), key=lambda kv: -kv[1]):
