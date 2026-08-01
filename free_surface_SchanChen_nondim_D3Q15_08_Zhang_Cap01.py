@@ -860,7 +860,6 @@ def z_lambda(fc, __phi):
     return _z_lambda
 
 
-
 def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
     _u_ckl = np.einsum('ia,ijkl->ajkl', c, _z_fi) / (Cs2 * rho)  \
         + 1/(2*rho) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force \
@@ -871,28 +870,16 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
 
 # Zhang eq(13): collision function of pressure distribution function 
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
-    """
-    Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
-    """
-    # Zhang eq(20)/(21): forcing term Fi, shape (9, nx, ny)
-    _Fi = Fi(fc, Fs, G, u_ckl, rho)
 
-    # eq(13): collision
-    #z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
+    Fi(fc, Fs, G, u_ckl, rho, out=_Fi_buf)
     omega_f = 1.0 / fc.tau_f
-    z_fi_star = (z_fi_c - z_fi)      # 1 new array
-    z_fi_star *= omega_f             # in-place
-    z_fi_star += z_fi                # in-place  (now equals z_fi - omega_f*(z_fi-z_fi_c))
-    z_fi_star += n_dt * _Fi          # n_dt*_Fi is 1 new array; += is in-place
-
-    # eq(15): streaming
-    #streamed = [
-    #    np.roll(z_fi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2)) for i in range(fc.velocitySetSize)
-    #]
-    #z_fi[:] = np.stack(streamed, axis=0)
+    np.subtract(z_fi_c, z_fi, out=_star_buf)
+    _star_buf *= omega_f
+    _star_buf += z_fi
+    _Fi_buf *= n_dt
+    _star_buf += _Fi_buf
     for i in range(fc.velocitySetSize):
-        z_fi[i] = np.roll(z_fi_star[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
-
+        z_fi[i] = np.roll(_star_buf[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
 
     return z_fi
 
@@ -920,29 +907,7 @@ def Fs(fc, __phi, n_dx, n_dy, n_dz):
 
 
 # Zhang eq(20): Fi discrete forcing term for pressure distribution function in eq(13)
-def Fi_old(fc, Fs, G, u_ckl, rho):
-    ei_dot_u = np.einsum('ic,cjkl->ijkl', c, u_ckl)  
-    u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)  
-    s0 = 1 + ei_dot_u / Cs2 + ei_dot_u**2 / (2 * Cs4) - u_sq / (2 * Cs2)
-    s = E_exp * s0
-
-    term1 = 1 - 1 / (2 * fc.tau_f)
-    ei_u = c_exp - u_ckl[np.newaxis]
-
-    drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2, n_dx, n_dy, n_dz)
-    stack_grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0) 
-
-    forces_s = (Fs * fc.ADD_SURFACE_TENSION_FORCE + G * fc.ADD_BODY_FORCE)[np.newaxis] * s[:, np.newaxis] 
-    second_term = (s - E_exp)[:, np.newaxis] * stack_grad_rho[np.newaxis]
-    assert forces_s.shape == second_term.shape, f"forces {forces_s.shape} vs second_term {second_term.shape}"
-    assert ei_u.shape == forces_s.shape, f"ei_u {ei_u.shape} vs forces {forces_s.shape}"    
-
-    _Fi = term1 * np.einsum('icjkl,icjkl->ijkl', ei_u, forces_s + second_term)
-    
-    return _Fi
-
-
-def Fi(fc, Fs, G, u_ckl, rho):
+def Fi(fc, Fs, G, u_ckl, rho, out):
     u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)                      # (X,Y,Z) - once
 
     term1 = 1 - 1 / (2 * fc.tau_f)
@@ -951,7 +916,7 @@ def Fi(fc, Fs, G, u_ckl, rho):
     drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2, n_dx, n_dy, n_dz)
     stack_grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0)        # (3,X,Y,Z) - once
 
-    _Fi = np.zeros((fc.velocitySetSize, Xn+2, Yn+2, Zn+2))
+    #_Fi = np.zeros((fc.velocitySetSize, Xn+2, Yn+2, Zn+2))
     for i in range(fc.velocitySetSize):
         ei_dot_u_i = c[i,0]*u_ckl[0] + c[i,1]*u_ckl[1] + c[i,2]*u_ckl[2]  # (X,Y,Z)
         s0_i = 1 + ei_dot_u_i / Cs2 + ei_dot_u_i**2 / (2 * Cs4) - u_sq / (2 * Cs2)
@@ -961,54 +926,33 @@ def Fi(fc, Fs, G, u_ckl, rho):
         forces_s_i = combined_force * s_i                                 # (3,X,Y,Z)
         second_term_i = (s_i - E[i]) * stack_grad_rho                     # (3,X,Y,Z)
 
-        _Fi[i] = term1 * np.sum(ei_u_i * (forces_s_i + second_term_i), axis=0)  # (X,Y,Z)
+        out[i] = term1 * np.sum(ei_u_i * (forces_s_i + second_term_i), axis=0)  # (X,Y,Z)
 
-    return _Fi    
+    return out    
 
 
 # Zhang eq(18): equilibrium function for pressure disrtibution function
-def zfi_c_old(fc, u, rho, p):
-    """
-    Zhang eq(18): fi equilibrium distribution for D2Q15.
-    fi^eq = wi[p + rho(ei·u + (ei·u)²/(2cs²) - u²/2)]
-    """
-    u_dot_u = np.sum(u**2, axis=0)                          # (nx, ny, nz)
-    c_dot_u = np.einsum('ia,axyz->ixyz', c, u)                # (15, nx, ny, nz)
-
-    term0 = E_exp * rho
-    term1 = E_exp * p                                       # wi * p
-    term2 = term0 * c_dot_u                           # wi * rho * (ei·u)
-    term3 = term0 * (3.0/2.0) * c_dot_u**2            # wi * rho * (ei·u)²/(2cs²)
-    term4 = term0 * 0.5 * u_dot_u                     # wi * rho * u²/2
-
-    z_fi_c = term1 + term2 + term3 - term4
-
-    return z_fi_c
-
-
-def zfi_c(fc, u, rho, p):
-    u_dot_u = np.sum(u**2, axis=0)  # (X,Y,Z) - once
-
-    z_fi_c = np.zeros((fc.velocitySetSize,) + u.shape[1:])
+def zfi_c(fc, u, rho, p, out):
+    u_dot_u = np.sum(u**2, axis=0)
     for i in range(fc.velocitySetSize):
         c_dot_u_i = c[i,0]*u[0] + c[i,1]*u[1] + c[i,2]*u[2]
-        z_fi_c[i] = E[i] * (p + rho*c_dot_u_i + rho*1.5*c_dot_u_i**2 - rho*0.5*u_dot_u)
-
-    return z_fi_c    
+        out[i] = E[i] * (p + rho*c_dot_u_i + rho*1.5*c_dot_u_i**2 - rho*0.5*u_dot_u)
+    return out
 
 
 # Zhang eq(12): collision function of order parameter distribution function 
 def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
+    Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out=_Fi_buf)   # writes into existing buffer - no new array
     omega_g = 1.0 / fc.tau_g
-    _Gi = Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl)
 
-    z_gi_star = (z_gi_c - z_gi)      # 1 new array
-    z_gi_star *= omega_g             # in-place
-    z_gi_star += z_gi                # in-place  (now equals z_gi - omega_g*(z_gi-z_gi_c))
-    z_gi_star += n_dt * _Gi          # n_dt*_Gi is 1 new array; += is in-place
+    np.subtract(z_gi_c, z_gi, out=_star_buf)   # writes into existing buffer - no new array
+    _star_buf *= omega_g                       # in-place
+    _star_buf += z_gi                          # in-place  (now equals z_gi - omega_g*(z_gi-z_gi_c))
+    _Fi_buf *= n_dt                            # in-place (scales the Gi buffer itself)
+    _star_buf += _Fi_buf                       # in-place
 
     for i in range(fc.velocitySetSize):
-        z_gi[i] = np.roll(z_gi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2))
+        z_gi[i] = np.roll(_star_buf[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2))
 
     return z_gi
 
@@ -1026,47 +970,29 @@ def n(fc, __phi):
 
 
 # Zhang eq(19): Gi discrete forcing term for order parameter in eq(12)
-def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl):
+def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out):
     term1 = 1 - 1 / (2 * fc.tau_g)
     # ∂t(ϕu) - Note that in the above equations, the time derivative term ∂t(ϕu) 
     # is explicitly computed by a difference between two consecutive time steps
     dphi_u_dt = __phi[np.newaxis] * _u_ckl - __phi_old[np.newaxis] * _u_ckl_old
     cs2_lambda_n = Cs2 * z_lambda(fc, __phi) * n(fc, __phi)
     vec = dphi_u_dt  + cs2_lambda_n
-    ei_dot_vec = np.einsum('ic,cjkl->ijkl', c, vec)
 
-    _Gi = term1 * E_exp * ei_dot_vec / Cs2
+    np.einsum('ic,cjkl->ijkl', c, vec, out=out)
+    out *= (term1 * E_exp / Cs2)
 
-    return _Gi
+    return out
 
 
 # Zhang eq(17): equilibrium distribution function for pressure distribution
-def zgi_c_old(fc, u, _phi, iteration):
-    """
-    Zhang eq(17): gi equilibrium distribution for D2Q9.
-    gi^eq = wi * phi * (1 + ei·u/cs²)
-    """
-    c_dot_u = np.einsum('ia,axyz->ixyz', c, u)  # (15, nx, ny)
-    _zgi_c = E_exp * _phi * (1 + 3.0 * c_dot_u)
-
-    _term1 = - np.max(np.abs(-c_dot_u))
-    _term2 = np.max(np.abs(_zgi_c))
-    PhiTerms.append((iteration, _term1, _term2))
-
-    return _zgi_c
-
-
-def zgi_c(fc, u, _phi, iteration):
-    z_fi_c_out = np.zeros((fc.velocitySetSize,) + u.shape[1:])
+def zgi_c(fc, u, _phi, iteration, out):
     max_abs_c_dot_u = 0.0
     for i in range(fc.velocitySetSize):
         c_dot_u_i = c[i,0]*u[0] + c[i,1]*u[1] + c[i,2]*u[2]
-        z_fi_c_out[i] = E[i] * _phi * (1 + 3.0 * c_dot_u_i)
+        out[i] = E[i] * _phi * (1 + 3.0 * c_dot_u_i)
         max_abs_c_dot_u = max(max_abs_c_dot_u, np.max(np.abs(c_dot_u_i)))
-
-    PhiTerms.append((iteration, -max_abs_c_dot_u, np.max(np.abs(z_fi_c_out))))
-
-    return z_fi_c_out    
+    PhiTerms.append((iteration, -max_abs_c_dot_u, np.max(np.abs(out))))
+    return out
 
 
 def print_top_layers(_phi_array, num_nodes=4, num_layers=2, y_slice=0):
@@ -1786,7 +1712,7 @@ p = np.zeros((Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 # Before the main loop
-z_gi = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration)
+z_gi = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration, out=np.zeros((fc.velocitySetSize,) + _phi.shape))
 z_fi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_fi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 
@@ -1830,6 +1756,14 @@ u_ckl_midpoint0 = u_ckl[0,int(Xn//2),int(Yn//2),int(Zn//2)]
 epsilon_u_ckl = 0
 epsilon_u_ckl_list = []
 
+
+# ──────────────────────────────────────────────────────────────────────────────────────────
+# pre-allocated buffers to prevent simulateous buiffer allocation in the methods Fi(), z_fi()
+# ──────────────────────────────────────────────────────────────────────────────────────────
+
+_Fi_buf = np.empty_like(z_fi)      # reused by Fi()
+_star_buf = np.empty_like(z_fi)    # reused by zfi()'s and zgi()'s z_*_star
+
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # simulation
 # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -1868,9 +1802,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # === 1. Compute equilibrium distributions (fi_c, gi_c) ===
     # Zhang eq(17):  equilibrium distribution function for order parameter
-    _t0 = time.perf_counter(); z_gi_c = zgi_c(fc, u_ckl, _phi, iteration); _mark('zgi_c', _t0)
+    _t0 = time.perf_counter(); z_gi_c = zgi_c(fc, u_ckl, _phi, iteration, out=z_gi_c); _mark('zgi_c', _t0)
     # Zhang eq(18):  equilibrium distribution function for pressure distribution function
-    _t0 = time.perf_counter(); z_fi_c = zfi_c(fc, u_ckl, rho, p); _mark('zfi_c', _t0)
+    _t0 = time.perf_counter(); z_fi_c = zfi_c(fc, u_ckl, rho, p, out=z_fi_c); _mark('zfi_c', _t0)
 
     if iteration % 100 == 0:
         validate_field(z_gi_c, 'z_gi_c', iter=iteration, allow_neg=True)
@@ -1878,7 +1812,7 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     # isolate Gi() specifically, since dphi_u_dt just went live for the first time
     if iteration % 100 == 0:
-        _Gi_check = Gi(fc, __phi_old, _u_ckl_old, _phi, u_ckl)        
+        _Gi_check = Gi(fc, __phi_old, _u_ckl_old, _phi, u_ckl, out=np.empty_like(_Fi_buf))    
         validate_field(_Gi_check, 'Gi output', iter=iteration, allow_neg=True)
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
