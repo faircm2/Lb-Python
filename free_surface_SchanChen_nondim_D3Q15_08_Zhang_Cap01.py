@@ -4,6 +4,10 @@
 # Add at top of script (Python 3.7+ for forward refs in annotations)
 from __future__ import annotations
 
+import resource
+def _rss_mb():
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024  # KB -> MB on Linux
+
 import matplotlib
 
 matplotlib.use('Agg')  # or 'Qt5Agg' if you have PyQt installed
