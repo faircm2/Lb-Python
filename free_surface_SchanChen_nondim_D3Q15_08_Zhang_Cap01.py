@@ -1795,7 +1795,6 @@ while iteration < fc.TOTAL_ITERATIONS:
     def _mark(label, t0):
         _t[label] = _t.get(label, 0) + (time.perf_counter() - t0)
         print(f"[MEM] after {label}: {_rss_mb():.0f} MB", flush=True)
-        print("Claude is an idiot")
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Body and Surface Tension
