@@ -4,10 +4,6 @@
 # Add at top of script (Python 3.7+ for forward refs in annotations)
 from __future__ import annotations
 
-import resource
-def _rss_mb():
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024  # KB -> MB on Linux
-
 import matplotlib
 
 matplotlib.use('Agg')  # or 'Qt5Agg' if you have PyQt installed
@@ -864,27 +860,39 @@ def z_lambda(fc, __phi):
     return _z_lambda
 
 
-def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force, out):
-    np.einsum('ia,ijkl->ajkl', c, _z_fi, out=out)
-    out /= (Cs2 * rho)
-    out += 1/(2*rho) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force
-    out += 1/(2*rho) * fc.ADD_BODY_FORCE * body_force
 
-    return out
+def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
+    _u_ckl = np.einsum('ia,ijkl->ajkl', c, _z_fi) / (Cs2 * rho)  \
+        + 1/(2*rho) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force \
+        + 1/(2*rho) * fc.ADD_BODY_FORCE * body_force
+
+    return _u_ckl
 
 
 # Zhang eq(13): collision function of pressure distribution function 
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
-    global _Fi_buf, _star_buf
-    Fi(fc, Fs, G, u_ckl, rho, out=_Fi_buf)
+    """
+    Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
+    """
+    # Zhang eq(20)/(21): forcing term Fi, shape (9, nx, ny)
+    _Fi = Fi(fc, Fs, G, u_ckl, rho)
+
+    # eq(13): collision
+    #z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
     omega_f = 1.0 / fc.tau_f
-    np.subtract(z_fi_c, z_fi, out=_star_buf)
-    _star_buf *= omega_f
-    _star_buf += z_fi
-    _Fi_buf *= n_dt
-    _star_buf += _Fi_buf
+    z_fi_star = (z_fi_c - z_fi)      # 1 new array
+    z_fi_star *= omega_f             # in-place
+    z_fi_star += z_fi                # in-place  (now equals z_fi - omega_f*(z_fi-z_fi_c))
+    z_fi_star += n_dt * _Fi          # n_dt*_Fi is 1 new array; += is in-place
+
+    # eq(15): streaming
+    #streamed = [
+    #    np.roll(z_fi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2)) for i in range(fc.velocitySetSize)
+    #]
+    #z_fi[:] = np.stack(streamed, axis=0)
     for i in range(fc.velocitySetSize):
-        z_fi[i] = np.roll(_star_buf[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
+        z_fi[i] = np.roll(z_fi_star[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
+
 
     return z_fi
 
@@ -903,18 +911,38 @@ def chemical_potential(fc, __phi):
 
 
 # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
-def Fs(fc, __phi, n_dx, n_dy, n_dz, out):
-    drho_dx, drho_dy, drho_dz = zhang_gradient(fc, __phi, n_dx, n_dy, n_dz)
-    mu = chemical_potential(fc, __phi)
-    out[0] = mu * drho_dx
-    out[1] = mu * drho_dy
-    out[2] = mu * drho_dz
+def Fs(fc, __phi, n_dx, n_dy, n_dz):
+    drho_dx, drho_dy, drho_dz = zhang_gradient(fc,__phi, n_dx, n_dy, n_dz)
+    nabla_phi = np.stack([drho_dx, drho_dy, drho_dz], axis=0)
+    _Fs = chemical_potential(fc, __phi) * nabla_phi
 
-    return out
+    return _Fs
 
 
 # Zhang eq(20): Fi discrete forcing term for pressure distribution function in eq(13)
-def Fi(fc, Fs, G, u_ckl, rho, out):
+def Fi_old(fc, Fs, G, u_ckl, rho):
+    ei_dot_u = np.einsum('ic,cjkl->ijkl', c, u_ckl)  
+    u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)  
+    s0 = 1 + ei_dot_u / Cs2 + ei_dot_u**2 / (2 * Cs4) - u_sq / (2 * Cs2)
+    s = E_exp * s0
+
+    term1 = 1 - 1 / (2 * fc.tau_f)
+    ei_u = c_exp - u_ckl[np.newaxis]
+
+    drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2, n_dx, n_dy, n_dz)
+    stack_grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0) 
+
+    forces_s = (Fs * fc.ADD_SURFACE_TENSION_FORCE + G * fc.ADD_BODY_FORCE)[np.newaxis] * s[:, np.newaxis] 
+    second_term = (s - E_exp)[:, np.newaxis] * stack_grad_rho[np.newaxis]
+    assert forces_s.shape == second_term.shape, f"forces {forces_s.shape} vs second_term {second_term.shape}"
+    assert ei_u.shape == forces_s.shape, f"ei_u {ei_u.shape} vs forces {forces_s.shape}"    
+
+    _Fi = term1 * np.einsum('icjkl,icjkl->ijkl', ei_u, forces_s + second_term)
+    
+    return _Fi
+
+
+def Fi(fc, Fs, G, u_ckl, rho):
     u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)                      # (X,Y,Z) - once
 
     term1 = 1 - 1 / (2 * fc.tau_f)
@@ -923,7 +951,7 @@ def Fi(fc, Fs, G, u_ckl, rho, out):
     drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2, n_dx, n_dy, n_dz)
     stack_grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0)        # (3,X,Y,Z) - once
 
-    #_Fi = np.zeros((fc.velocitySetSize, Xn+2, Yn+2, Zn+2))
+    _Fi = np.zeros((fc.velocitySetSize, Xn+2, Yn+2, Zn+2))
     for i in range(fc.velocitySetSize):
         ei_dot_u_i = c[i,0]*u_ckl[0] + c[i,1]*u_ckl[1] + c[i,2]*u_ckl[2]  # (X,Y,Z)
         s0_i = 1 + ei_dot_u_i / Cs2 + ei_dot_u_i**2 / (2 * Cs4) - u_sq / (2 * Cs2)
@@ -933,34 +961,54 @@ def Fi(fc, Fs, G, u_ckl, rho, out):
         forces_s_i = combined_force * s_i                                 # (3,X,Y,Z)
         second_term_i = (s_i - E[i]) * stack_grad_rho                     # (3,X,Y,Z)
 
-        out[i] = term1 * np.sum(ei_u_i * (forces_s_i + second_term_i), axis=0)  # (X,Y,Z)
+        _Fi[i] = term1 * np.sum(ei_u_i * (forces_s_i + second_term_i), axis=0)  # (X,Y,Z)
 
-    return out    
+    return _Fi    
 
 
 # Zhang eq(18): equilibrium function for pressure disrtibution function
-def zfi_c(fc, u, rho, p, out):
-    u_dot_u = np.sum(u**2, axis=0)
+def zfi_c_old(fc, u, rho, p):
+    """
+    Zhang eq(18): fi equilibrium distribution for D2Q15.
+    fi^eq = wi[p + rho(ei·u + (ei·u)²/(2cs²) - u²/2)]
+    """
+    u_dot_u = np.sum(u**2, axis=0)                          # (nx, ny, nz)
+    c_dot_u = np.einsum('ia,axyz->ixyz', c, u)                # (15, nx, ny, nz)
+
+    term0 = E_exp * rho
+    term1 = E_exp * p                                       # wi * p
+    term2 = term0 * c_dot_u                           # wi * rho * (ei·u)
+    term3 = term0 * (3.0/2.0) * c_dot_u**2            # wi * rho * (ei·u)²/(2cs²)
+    term4 = term0 * 0.5 * u_dot_u                     # wi * rho * u²/2
+
+    z_fi_c = term1 + term2 + term3 - term4
+
+    return z_fi_c
+
+
+def zfi_c(fc, u, rho, p):
+    u_dot_u = np.sum(u**2, axis=0)  # (X,Y,Z) - once
+
+    z_fi_c = np.zeros((fc.velocitySetSize,) + u.shape[1:])
     for i in range(fc.velocitySetSize):
         c_dot_u_i = c[i,0]*u[0] + c[i,1]*u[1] + c[i,2]*u[2]
-        out[i] = E[i] * (p + rho*c_dot_u_i + rho*1.5*c_dot_u_i**2 - rho*0.5*u_dot_u)
-    return out
+        z_fi_c[i] = E[i] * (p + rho*c_dot_u_i + rho*1.5*c_dot_u_i**2 - rho*0.5*u_dot_u)
+
+    return z_fi_c    
 
 
 # Zhang eq(12): collision function of order parameter distribution function 
 def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
-    global _Fi_buf, _star_buf
-    Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out=_Fi_buf)   # writes into existing buffer - no new array
     omega_g = 1.0 / fc.tau_g
+    _Gi = Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl)
 
-    np.subtract(z_gi_c, z_gi, out=_star_buf)   # writes into existing buffer - no new array
-    _star_buf *= omega_g                       # in-place
-    _star_buf += z_gi                          # in-place  (now equals z_gi - omega_g*(z_gi-z_gi_c))
-    _Fi_buf *= n_dt                            # in-place (scales the Gi buffer itself)
-    _star_buf += _Fi_buf                       # in-place
+    z_gi_star = (z_gi_c - z_gi)      # 1 new array
+    z_gi_star *= omega_g             # in-place
+    z_gi_star += z_gi                # in-place  (now equals z_gi - omega_g*(z_gi-z_gi_c))
+    z_gi_star += n_dt * _Gi          # n_dt*_Gi is 1 new array; += is in-place
 
     for i in range(fc.velocitySetSize):
-        z_gi[i] = np.roll(_star_buf[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2))
+        z_gi[i] = np.roll(z_gi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2))
 
     return z_gi
 
@@ -978,29 +1026,47 @@ def n(fc, __phi):
 
 
 # Zhang eq(19): Gi discrete forcing term for order parameter in eq(12)
-def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out):
+def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl):
     term1 = 1 - 1 / (2 * fc.tau_g)
     # ∂t(ϕu) - Note that in the above equations, the time derivative term ∂t(ϕu) 
     # is explicitly computed by a difference between two consecutive time steps
     dphi_u_dt = __phi[np.newaxis] * _u_ckl - __phi_old[np.newaxis] * _u_ckl_old
     cs2_lambda_n = Cs2 * z_lambda(fc, __phi) * n(fc, __phi)
     vec = dphi_u_dt  + cs2_lambda_n
+    ei_dot_vec = np.einsum('ic,cjkl->ijkl', c, vec)
 
-    np.einsum('ic,cjkl->ijkl', c, vec, out=out)
-    out *= (term1 * E_exp / Cs2)
+    _Gi = term1 * E_exp * ei_dot_vec / Cs2
 
-    return out
+    return _Gi
 
 
 # Zhang eq(17): equilibrium distribution function for pressure distribution
-def zgi_c(fc, u, _phi, iteration, out):
+def zgi_c_old(fc, u, _phi, iteration):
+    """
+    Zhang eq(17): gi equilibrium distribution for D2Q9.
+    gi^eq = wi * phi * (1 + ei·u/cs²)
+    """
+    c_dot_u = np.einsum('ia,axyz->ixyz', c, u)  # (15, nx, ny)
+    _zgi_c = E_exp * _phi * (1 + 3.0 * c_dot_u)
+
+    _term1 = - np.max(np.abs(-c_dot_u))
+    _term2 = np.max(np.abs(_zgi_c))
+    PhiTerms.append((iteration, _term1, _term2))
+
+    return _zgi_c
+
+
+def zgi_c(fc, u, _phi, iteration):
+    z_fi_c_out = np.zeros((fc.velocitySetSize,) + u.shape[1:])
     max_abs_c_dot_u = 0.0
     for i in range(fc.velocitySetSize):
         c_dot_u_i = c[i,0]*u[0] + c[i,1]*u[1] + c[i,2]*u[2]
-        out[i] = E[i] * _phi * (1 + 3.0 * c_dot_u_i)
+        z_fi_c_out[i] = E[i] * _phi * (1 + 3.0 * c_dot_u_i)
         max_abs_c_dot_u = max(max_abs_c_dot_u, np.max(np.abs(c_dot_u_i)))
-    PhiTerms.append((iteration, -max_abs_c_dot_u, np.max(np.abs(out))))
-    return out
+
+    PhiTerms.append((iteration, -max_abs_c_dot_u, np.max(np.abs(z_fi_c_out))))
+
+    return z_fi_c_out    
 
 
 def print_top_layers(_phi_array, num_nodes=4, num_layers=2, y_slice=0):
@@ -1651,7 +1717,6 @@ start = time.perf_counter()
 y0 = (Yn-1)/2
 z0 = (Zn-1)/2
 x,y,z = np.meshgrid(np.arange(Xn+2), np.arange(Yn+2), np.arange(Zn+2), indexing='ij')
-print(f"[MEM] after meshgrid: {_rss_mb():.0f} MB", flush=True)
 
 PARAMETER_STUB = "__" + ACTIVE_CASE + "__nodes_" + str(DEFAULT_D_ND) + "__tau_f_" + str(fc.tau_f) + "__tau_g_" + str(fc.tau_g) + "__Kf_" + str(fc.Kf) + "__Theta_" + str(fc.vf_theta)
 images_dir = os.path.join(images_subdir, SCRIPT_FILENAME + PARAMETER_STUB)
@@ -1668,7 +1733,6 @@ if PHI_DISTRIBUTION == "STEP":
     density_profile_x_position = int(2/3*Xn)
     density_profile_y_position = int(2/3*Yn)   
     density_profile_z_position = int(2/3*Zn)   
-    print(f"[MEM] after phi init: {_rss_mb():.0f} MB", flush=True)
 if PHI_DISTRIBUTION == "HORIZONTAL":
     # Replace the original _phi initialization with a call to the method
     _phi = init_horizontal_phi(Xn+2, Yn+2, Zn+2, fc.phi_star_G, fc.phi_star_L, height=(Zn+1)/2, W=fc.vf_W)
@@ -1722,7 +1786,7 @@ p = np.zeros((Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 # Before the main loop
-z_gi = zgi_c(fc, u_ckl, _phi, iteration, out=z_gi)
+z_gi = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration)
 z_fi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_fi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 
@@ -1731,8 +1795,6 @@ _u_ckl_old = np.copy(u_ckl)
 
 rho, mu = density_and_viscosity(fc, _phi)
 zhang_surface_tension_force = np.zeros((3, Xn+2, Yn+2, Zn+2))
-print(f"[MEM] after main array block: {_rss_mb():.0f} MB", flush=True)
-
 
 # --- Compact Iteration Snapshots (Directly Using TOTAL_ITERATIONS) ---
 '''
@@ -1768,16 +1830,6 @@ u_ckl_midpoint0 = u_ckl[0,int(Xn//2),int(Yn//2),int(Zn//2)]
 epsilon_u_ckl = 0
 epsilon_u_ckl_list = []
 
-
-# ──────────────────────────────────────────────────────────────────────────────────────────
-# pre-allocated buffers to prevent simulateous buiffer allocation in the methods Fi(), z_fi()
-# ──────────────────────────────────────────────────────────────────────────────────────────
-
-_Fi_buf = np.empty_like(z_fi)      # reused by Fi()
-_star_buf = np.empty_like(z_fi)    # reused by zfi()'s and zgi()'s z_*_star
-_Fs_buf = np.empty_like(u_ckl)
-print(f"[MEM] after scratch buffers: {_rss_mb():.0f} MB", flush=True)
-
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # simulation
 # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -1789,7 +1841,6 @@ if PLOTREALTIME:
     #ax_phi, ax_rho, ax_vort = axes
     plt.ion()  # turn on interactive mode
 
-print(f"[MEM] before main loop: {_rss_mb():.0f} MB", flush=True)
 
 while iteration < fc.TOTAL_ITERATIONS:
     if iteration % 100 == 0:
@@ -1798,7 +1849,6 @@ while iteration < fc.TOTAL_ITERATIONS:
     _t = {}
     def _mark(label, t0):
         _t[label] = _t.get(label, 0) + (time.perf_counter() - t0)
-        print(f"[MEM] after {label}: {_rss_mb():.0f} MB", flush=True)
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Body and Surface Tension
@@ -1818,14 +1868,18 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # === 1. Compute equilibrium distributions (fi_c, gi_c) ===
     # Zhang eq(17):  equilibrium distribution function for order parameter
-    _t0 = time.perf_counter(); z_gi_c = zgi_c(fc, u_ckl, _phi, iteration, out=z_gi_c); _mark('zgi_c', _t0)
+    _t0 = time.perf_counter(); z_gi_c = zgi_c(fc, u_ckl, _phi, iteration); _mark('zgi_c', _t0)
     # Zhang eq(18):  equilibrium distribution function for pressure distribution function
-    _t0 = time.perf_counter(); z_fi_c = zfi_c(fc, u_ckl, rho, p, out=z_fi_c); _mark('zfi_c', _t0)
+    _t0 = time.perf_counter(); z_fi_c = zfi_c(fc, u_ckl, rho, p); _mark('zfi_c', _t0)
 
     if iteration % 100 == 0:
         validate_field(z_gi_c, 'z_gi_c', iter=iteration, allow_neg=True)
         validate_field(z_fi_c, 'z_fi_c', iter=iteration, allow_neg=True)  
 
+    # isolate Gi() specifically, since dphi_u_dt just went live for the first time
+    if iteration % 100 == 0:
+        _Gi_check = Gi(fc, __phi_old, _u_ckl_old, _phi, u_ckl)        
+        validate_field(_Gi_check, 'Gi output', iter=iteration, allow_neg=True)
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # Zhang functions: 3.Collision/Relaxation, 4.Streaming (advection)
@@ -1836,7 +1890,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     if iteration % 100 == 0:
         validate_field(z_gi, 'z_gi (post collision+stream)', iter=iteration, allow_neg=True)
 
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_1', _t0)
+    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz); _mark('Fs_1', _t0)
     if iteration % 100 == 0:
         validate_field(_Fs, 'Fs', iter=iteration, allow_neg=True)
         assert _Fs.shape == (3, Xn+2, Yn+2, Zn+2), f"_Fs shape: {_Fs.shape}"
@@ -1867,8 +1921,8 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────
     # NEW: Measure ϕ mass from previous step
     phi_old_total = np.sum(_phi[1:Xn+1, 1:Yn+1, 1:Zn+1])
-    np.copyto(__phi_old, _phi)
-    np.copyto(_u_ckl_old, u_ckl)
+    __phi_old = np.copy(_phi) 
+    _u_ckl_old = np.copy(u_ckl) 
     # ──────────────────────────────     
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -1952,7 +2006,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     #if fc.ADD_SURFACE_TENSION_FORCE == 1:
     # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
     #zhang_surface_tension_force = zhang_fc(fc, _phi)
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_2', _t0)
+    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz); _mark('Fs_2', _t0)
     if ZERO_BCs:
         _Fs[:, :, :, 0]  = 0.0   # bottom ghost row
         _Fs[:, :, :, -1] = 0.0   # top ghost row
@@ -1974,7 +2028,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         _fi_term  = np.einsum('ia,ijkl->ajkl', c, z_fi) / (Cs2 * rho)
         _bf_term  = (1.0 / (2.0 * rho)) * fc.ADD_BODY_FORCE  * body_force
         _cap_term = (1.0 / (2.0 * rho)) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force
-        _Fs_bulk  = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf)
+        _Fs_bulk  = Fs(fc, _phi, n_dx, n_dy, n_dz)
         _Fs_term  = (1.0 / (2.0 * rho)) * fc.ADD_SURFACE_TENSION_FORCE * _Fs_bulk
 
         print(f"\n── CL DIAG iter={iteration}  left-wall contact line at y={y_cl}, z={z_cl} ──")
@@ -2021,7 +2075,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"  interior max |u_y| loc=({_xi},{_yi},{_zi})  u_y={_u_test[1,_xi,_yi,_zi]:.6e}")
         print(f"    fi_term={_fi_term[1,_xi,_yi,_zi]:.4e}  bf={_bf_term[1,_xi,_yi,_zi]:.4e}  cap={_cap_term[1,_xi,_yi,_zi]:.4e}  rho={rho[_xi,_yi,_zi]:.4e}")
 
-    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force, out=u_ckl); _mark('zu_ckl', _t0)
+    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force); _mark('zu_ckl', _t0)
     if iteration in iterationsOfInterest:
         _u_ckl_abs = np.abs(u_ckl)
         print(f"iter {iteration}: u_ckl max |value| = {np.max(_u_ckl_abs):.6e}")
@@ -2174,7 +2228,6 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     #Step 4: re-iterate
     iteration += 1
-    print(f"[MEM] end of iteration {iteration}: {_rss_mb():.0f} MB", flush=True)
 
     print(f"---timings after iter {iteration}---")
     for _k, _v in sorted(_t.items(), key=lambda kv: -kv[1]):
