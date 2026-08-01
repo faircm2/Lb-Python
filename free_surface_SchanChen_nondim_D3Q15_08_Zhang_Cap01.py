@@ -864,12 +864,13 @@ def z_lambda(fc, __phi):
     return _z_lambda
 
 
-def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
-    _u_ckl = np.einsum('ia,ijkl->ajkl', c, _z_fi) / (Cs2 * rho)  \
-        + 1/(2*rho) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force \
-        + 1/(2*rho) * fc.ADD_BODY_FORCE * body_force
+def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force, out):
+    np.einsum('ia,ijkl->ajkl', c, _z_fi, out=out)
+    out /= (Cs2 * rho)
+    out += 1/(2*rho) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force
+    out += 1/(2*rho) * fc.ADD_BODY_FORCE * body_force
 
-    return _u_ckl
+    return out
 
 
 # Zhang eq(13): collision function of pressure distribution function 
@@ -902,12 +903,14 @@ def chemical_potential(fc, __phi):
 
 
 # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
-def Fs(fc, __phi, n_dx, n_dy, n_dz):
-    drho_dx, drho_dy, drho_dz = zhang_gradient(fc,__phi, n_dx, n_dy, n_dz)
-    nabla_phi = np.stack([drho_dx, drho_dy, drho_dz], axis=0)
-    _Fs = chemical_potential(fc, __phi) * nabla_phi
+def Fs(fc, __phi, n_dx, n_dy, n_dz, out):
+    drho_dx, drho_dy, drho_dz = zhang_gradient(fc, __phi, n_dx, n_dy, n_dz)
+    mu = chemical_potential(fc, __phi)
+    out[0] = mu * drho_dx
+    out[1] = mu * drho_dy
+    out[2] = mu * drho_dz
 
-    return _Fs
+    return out
 
 
 # Zhang eq(20): Fi discrete forcing term for pressure distribution function in eq(13)
@@ -1772,6 +1775,7 @@ epsilon_u_ckl_list = []
 
 _Fi_buf = np.empty_like(z_fi)      # reused by Fi()
 _star_buf = np.empty_like(z_fi)    # reused by zfi()'s and zgi()'s z_*_star
+_Fs_buf = np.empty_like(u_ckl)
 print(f"[MEM] after scratch buffers: {_rss_mb():.0f} MB", flush=True)
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -1832,7 +1836,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     if iteration % 100 == 0:
         validate_field(z_gi, 'z_gi (post collision+stream)', iter=iteration, allow_neg=True)
 
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz); _mark('Fs_1', _t0)
+    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_1', _t0)
     if iteration % 100 == 0:
         validate_field(_Fs, 'Fs', iter=iteration, allow_neg=True)
         assert _Fs.shape == (3, Xn+2, Yn+2, Zn+2), f"_Fs shape: {_Fs.shape}"
@@ -1948,7 +1952,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     #if fc.ADD_SURFACE_TENSION_FORCE == 1:
     # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
     #zhang_surface_tension_force = zhang_fc(fc, _phi)
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz); _mark('Fs_2', _t0)
+    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_2', _t0)
     if ZERO_BCs:
         _Fs[:, :, :, 0]  = 0.0   # bottom ghost row
         _Fs[:, :, :, -1] = 0.0   # top ghost row
@@ -2017,7 +2021,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"  interior max |u_y| loc=({_xi},{_yi},{_zi})  u_y={_u_test[1,_xi,_yi,_zi]:.6e}")
         print(f"    fi_term={_fi_term[1,_xi,_yi,_zi]:.4e}  bf={_bf_term[1,_xi,_yi,_zi]:.4e}  cap={_cap_term[1,_xi,_yi,_zi]:.4e}  rho={rho[_xi,_yi,_zi]:.4e}")
 
-    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force); _mark('zu_ckl', _t0)
+    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force, out=u_ckl); _mark('zu_ckl', _t0)
     if iteration in iterationsOfInterest:
         _u_ckl_abs = np.abs(u_ckl)
         print(f"iter {iteration}: u_ckl max |value| = {np.max(_u_ckl_abs):.6e}")
