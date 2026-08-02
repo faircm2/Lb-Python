@@ -874,32 +874,29 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
     return _u_ckl
 
 
+### ------- numba conversion ------------
 # Zhang eq(13): collision function of pressure distribution function 
+@njit(parallel=True, fastmath=True)
+def zfi_stream_kernel(z_fi, z_fi_c, Fi_arr, tau_f, n_dt, c, out, Xn2, Yn2, Zn2, Q):
+    omega_f = 1.0 / tau_f
+    for x in prange(Xn2):
+        for y in range(Yn2):
+            for z in range(Zn2):
+                for i in range(Q):
+                    star = z_fi[i,x,y,z] - omega_f*(z_fi[i,x,y,z] - z_fi_c[i,x,y,z]) + n_dt*Fi_arr[i,x,y,z]
+                    xs = (x + c[i,0]) % Xn2
+                    ys = (y + c[i,1]) % Yn2
+                    zs = (z + c[i,2]) % Zn2
+                    out[i, xs, ys, zs] = star
+    return out
+
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
-    """
-    Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
-    """
-    # Zhang eq(20)/(21): forcing term Fi, shape (9, nx, ny)
-    _Fi = Fi(fc, Fs, G, u_ckl, rho, out=_Fi_buf)
-
-    # eq(13): collision
-    #z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
-    omega_f = 1.0 / fc.tau_f
-    z_fi_star = (z_fi_c - z_fi)      # 1 new array
-    z_fi_star *= omega_f             # in-place
-    z_fi_star += z_fi                # in-place  (now equals z_fi - omega_f*(z_fi-z_fi_c))
-    z_fi_star += n_dt * _Fi          # n_dt*_Fi is 1 new array; += is in-place
-
-    # eq(15): streaming
-    #streamed = [
-    #    np.roll(z_fi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2)) for i in range(fc.velocitySetSize)
-    #]
-    #z_fi[:] = np.stack(streamed, axis=0)
-    for i in range(fc.velocitySetSize):
-        z_fi[i] = np.roll(z_fi_star[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
-
-
+    Fi(fc, Fs, G, u_ckl, rho, out=_Fi_buf)
+    Xn2, Yn2, Zn2 = z_fi.shape[1], z_fi.shape[2], z_fi.shape[3]
+    zfi_stream_kernel(z_fi, z_fi_c, _Fi_buf, fc.tau_f, n_dt, c, _stream_buf, Xn2, Yn2, Zn2, fc.velocitySetSize)
+    z_fi[:] = _stream_buf
     return z_fi
+### ------- numba conversion ------------
 
 
 # Zhang eq(6): Chemical potential
@@ -1019,23 +1016,30 @@ def zfi_c_kernel(u, rho, p, c, E, out, Xn2, Yn2, Zn2, Q):
 def zfi_c(fc, u, rho, p, out):
     Xn2, Yn2, Zn2 = u.shape[1], u.shape[2], u.shape[3]
     return zfi_c_kernel(u, rho, p, c, E, out, Xn2, Yn2, Zn2, fc.velocitySetSize)   
-### ------- numba conversion ------------
 
 
 # Zhang eq(12): collision function of order parameter distribution function 
+@njit(parallel=True, fastmath=True)
+def zgi_stream_kernel(z_gi, z_gi_c, Gi_arr, tau_g, n_dt, c, out, Xn2, Yn2, Zn2, Q):
+    omega_g = 1.0 / tau_g
+    for x in prange(Xn2):
+        for y in range(Yn2):
+            for z in range(Zn2):
+                for i in range(Q):
+                    star = z_gi[i,x,y,z] - omega_g*(z_gi[i,x,y,z] - z_gi_c[i,x,y,z]) + n_dt*Gi_arr[i,x,y,z]
+                    xs = (x + c[i,0]) % Xn2
+                    ys = (y + c[i,1]) % Yn2
+                    zs = (z + c[i,2]) % Zn2
+                    out[i, xs, ys, zs] = star
+    return out
+
 def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
-    omega_g = 1.0 / fc.tau_g
-    _Gi = Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl)
-
-    z_gi_star = (z_gi_c - z_gi)      # 1 new array
-    z_gi_star *= omega_g             # in-place
-    z_gi_star += z_gi                # in-place  (now equals z_gi - omega_g*(z_gi-z_gi_c))
-    z_gi_star += n_dt * _Gi          # n_dt*_Gi is 1 new array; += is in-place
-
-    for i in range(fc.velocitySetSize):
-        z_gi[i] = np.roll(z_gi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2))
-
+    Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out=_Fi_buf)
+    Xn2, Yn2, Zn2 = z_gi.shape[1], z_gi.shape[2], z_gi.shape[3]
+    zgi_stream_kernel(z_gi, z_gi_c, _Fi_buf, fc.tau_g, n_dt, c, _stream_buf, Xn2, Yn2, Zn2, fc.velocitySetSize)
+    z_gi[:] = _stream_buf
     return z_gi
+### ------- numba conversion ------------
 
 
 # Zhang bottom p 32, 2nd column:
@@ -1049,20 +1053,27 @@ def n(fc, __phi):
 
     return _n
 
-
+### -------- numba conversion -------
 # Zhang eq(19): Gi discrete forcing term for order parameter in eq(12)
-def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl):
-    term1 = 1 - 1 / (2 * fc.tau_g)
-    # ∂t(ϕu) - Note that in the above equations, the time derivative term ∂t(ϕu) 
-    # is explicitly computed by a difference between two consecutive time steps
+@njit(parallel=True, fastmath=True)
+def Gi_kernel(vec, c, E, term1, Cs2, out, Xn2, Yn2, Zn2, Q):
+    for x in prange(Xn2):
+        for y in range(Yn2):
+            for z in range(Zn2):
+                v0 = vec[0, x, y, z]; v1 = vec[1, x, y, z]; v2 = vec[2, x, y, z]
+                for i in range(Q):
+                    ei_dot_vec = c[i,0]*v0 + c[i,1]*v1 + c[i,2]*v2
+                    out[i, x, y, z] = term1 * E[i] * ei_dot_vec / Cs2
+    return out
+
+def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out):
+    term1 = 1.0 - 1.0 / (2.0 * fc.tau_g)
     dphi_u_dt = __phi[np.newaxis] * _u_ckl - __phi_old[np.newaxis] * _u_ckl_old
     cs2_lambda_n = Cs2 * z_lambda(fc, __phi) * n(fc, __phi)
-    vec = dphi_u_dt  + cs2_lambda_n
-    ei_dot_vec = np.einsum('ic,cjkl->ijkl', c, vec)
-
-    _Gi = term1 * E_exp * ei_dot_vec / Cs2
-
-    return _Gi
+    vec = dphi_u_dt + cs2_lambda_n
+    Xn2, Yn2, Zn2 = _u_ckl.shape[1], _u_ckl.shape[2], _u_ckl.shape[3]
+    return Gi_kernel(vec, c, E, term1, Cs2, out, Xn2, Yn2, Zn2, fc.velocitySetSize)
+### -------- numba conversion -------
 
 
 # Zhang eq(17): equilibrium distribution function for pressure distribution
@@ -1814,7 +1825,9 @@ z_gi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration)
 z_fi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_fi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
+
 _Fi_buf = np.zeros((15, Xn+2, Yn+2, Zn+2), dtype=np.float64)
+_stream_buf = np.zeros((15, Xn+2, Yn+2, Zn+2), dtype=np.float64)
 
 __phi_old = np.copy(_phi) 
 _u_ckl_old = np.copy(u_ckl)
@@ -1904,7 +1917,7 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     # isolate Gi() specifically, since dphi_u_dt just went live for the first time
     if iteration % 100 == 0:
-        _Gi_check = Gi(fc, __phi_old, _u_ckl_old, _phi, u_ckl)        
+        _Gi_check = Gi(fc, __phi_old, _u_ckl_old, _phi, u_ckl, out=np.empty_like(_Fi_buf))
         validate_field(_Gi_check, 'Gi output', iter=iteration, allow_neg=True)
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
