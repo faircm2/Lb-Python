@@ -4,7 +4,16 @@
 # Add at top of script (Python 3.7+ for forward refs in annotations)
 from __future__ import annotations
 
+import tracemalloc
+tracemalloc.start()
+_tm_snapshot = None
+
 from numba import njit, prange, set_num_threads
+import psutil
+_process = psutil.Process()
+def _rss_mb():
+    return _process.memory_info().rss / (1024 * 1024)
+
 import os
 
 set_num_threads(int(os.environ.get("SIM_NUM_THREADS", "1")))
@@ -179,7 +188,7 @@ ADD_METRICS = True
 ZERO_BCs = False
 
 # Constants
-DEFAULT_D_ND = 300
+DEFAULT_D_ND = 200
 SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
 SCRIPT_FULL_PATH = os.path.abspath(__file__) 
 SCRIPTS_PATH = "scripts/freesurface/"
@@ -823,25 +832,28 @@ def density_and_viscosity(fc, _phi):
     return _rho, _mu
 
 
+### --------- numba conversion ------------
 #Zhang eq(27):  the hydrodynamic pressure -> first-order moment
-def zp(fc, _z_fi, _rho, u_ckl, iteration, n_dx=1.0, n_dy=1.0, n_dz=1.0):
-    """
-    Vectorized evolution for p (hydrodynamic pressur) - D2Q9 streaming/collision.
-    p =[i=0..8] ∑fi + δt/2 u⋅∇ρCs²
-    """
-    # channel velocity components
-    term1 = np.sum(_z_fi, axis=0)  # Shape (nx, ny, nz)
+@njit(parallel=True, fastmath=True)
+def zp_kernel(u_ckl, grad_rho, n_dt, Cs2, out, Xn2, Yn2, Zn2):
+    coef = (n_dt / 2.0) * Cs2
+    for x in prange(Xn2):
+        for y in range(Yn2):
+            for z in range(Zn2):
+                u_dot_grad_rho = (u_ckl[0,x,y,z]*grad_rho[0,x,y,z] +
+                                   u_ckl[1,x,y,z]*grad_rho[1,x,y,z] +
+                                   u_ckl[2,x,y,z]*grad_rho[2,x,y,z])
+                out[x,y,z] = out[x,y,z] + coef * u_dot_grad_rho
+    return out
 
-    # force term
-    drho_dx, drho_dy, drho_dz = zhang_gradient(fc,_rho, n_dx, n_dy, n_dz)
-    grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0)   # (3, nx, ny, nz)
-    u_dot_grad_rho = np.einsum('cijk,cijk->ijk', u_ckl, grad_rho)
-    term2 = (n_dt / 2) * u_dot_grad_rho * Cs2
-
-    # hydrodynamic pressure
-    _p = term1 + term2
-
-    return _p
+def zp(fc, _z_fi, _rho, u_ckl, iteration, out, n_dx=1.0, n_dy=1.0, n_dz=1.0):
+    np.sum(_z_fi, axis=0, out=out)
+    drho_dx, drho_dy, drho_dz = zhang_gradient(fc, _rho, n_dx, n_dy, n_dz)
+    grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0)
+    Xn2, Yn2, Zn2 = u_ckl.shape[1], u_ckl.shape[2], u_ckl.shape[3]
+    zp_kernel(u_ckl, grad_rho, n_dt, Cs2, out, Xn2, Yn2, Zn2)
+    return out
+### --------- numba conversion ------------
 
 
 # mobility - anti-diffusion term in Allen–Cahn equation
@@ -911,14 +923,26 @@ def chemical_potential(fc, __phi):
 
     return _mu_phi    
 
-
+### ---- numba conversion ----
 # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
-def Fs(fc, __phi, n_dx, n_dy, n_dz):
-    drho_dx, drho_dy, drho_dz = zhang_gradient(fc,__phi, n_dx, n_dy, n_dz)
-    nabla_phi = np.stack([drho_dx, drho_dy, drho_dz], axis=0)
-    _Fs = chemical_potential(fc, __phi) * nabla_phi
+@njit(parallel=True, fastmath=True)
+def Fs_kernel(mu, dphi_dx, dphi_dy, dphi_dz, out, Xn2, Yn2, Zn2):
+    for x in prange(Xn2):
+        for y in range(Yn2):
+            for z in range(Zn2):
+                m = mu[x,y,z]
+                out[0,x,y,z] = m * dphi_dx[x,y,z]
+                out[1,x,y,z] = m * dphi_dy[x,y,z]
+                out[2,x,y,z] = m * dphi_dz[x,y,z]
+    return out
 
-    return _Fs
+def Fs(fc, __phi, n_dx, n_dy, n_dz, out):
+    drho_dx, drho_dy, drho_dz = zhang_gradient(fc, __phi, n_dx, n_dy, n_dz)
+    mu = chemical_potential(fc, __phi)
+    Xn2, Yn2, Zn2 = __phi.shape[0], __phi.shape[1], __phi.shape[2]
+    Fs_kernel(mu, drho_dx, drho_dy, drho_dz, out, Xn2, Yn2, Zn2)
+    return out
+### ---- numba conversion ----
 
 
 # Zhang eq(20): Fi discrete forcing term for pressure distribution function in eq(13)
@@ -1077,32 +1101,31 @@ def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out):
 
 
 # Zhang eq(17): equilibrium distribution function for pressure distribution
-def zgi_c_old(fc, u, _phi, iteration):
-    """
-    Zhang eq(17): gi equilibrium distribution for D2Q9.
-    gi^eq = wi * phi * (1 + ei·u/cs²)
-    """
-    c_dot_u = np.einsum('ia,axyz->ixyz', c, u)  # (15, nx, ny)
-    _zgi_c = E_exp * _phi * (1 + 3.0 * c_dot_u)
+### numba ----- conversion --------
+@njit(parallel=True, fastmath=True)
+def zgi_c_kernel(u, phi, c, E, out, Xn2, Yn2, Zn2, Q):
+    for x in prange(Xn2):
+        for y in range(Yn2):
+            for z in range(Zn2):
+                u0 = u[0, x, y, z]; u1 = u[1, x, y, z]; u2 = u[2, x, y, z]
+                p = phi[x, y, z]
+                for i in range(Q):
+                    c_dot_u = c[i,0]*u0 + c[i,1]*u1 + c[i,2]*u2
+                    out[i, x, y, z] = E[i] * p * (1.0 + 3.0 * c_dot_u)
+    return out
 
-    _term1 = - np.max(np.abs(-c_dot_u))
-    _term2 = np.max(np.abs(_zgi_c))
-    PhiTerms.append((iteration, _term1, _term2))
+def zgi_c(fc, u, _phi, iteration, out):
+    Xn2, Yn2, Zn2 = u.shape[1], u.shape[2], u.shape[3]
+    zgi_c_kernel(u, _phi, c, E, out, Xn2, Yn2, Zn2, fc.velocitySetSize)
 
-    return _zgi_c
-
-
-def zgi_c(fc, u, _phi, iteration):
-    z_fi_c_out = np.zeros((fc.velocitySetSize,) + u.shape[1:])
     max_abs_c_dot_u = 0.0
     for i in range(fc.velocitySetSize):
         c_dot_u_i = c[i,0]*u[0] + c[i,1]*u[1] + c[i,2]*u[2]
-        z_fi_c_out[i] = E[i] * _phi * (1 + 3.0 * c_dot_u_i)
         max_abs_c_dot_u = max(max_abs_c_dot_u, np.max(np.abs(c_dot_u_i)))
 
-    PhiTerms.append((iteration, -max_abs_c_dot_u, np.max(np.abs(z_fi_c_out))))
-
-    return z_fi_c_out    
+    PhiTerms.append((iteration, -max_abs_c_dot_u, np.max(np.abs(out))))
+    return out  
+### numba ----- conversion --------
 
 
 def print_top_layers(_phi_array, num_nodes=4, num_layers=2, y_slice=0):
@@ -1778,40 +1801,27 @@ if PHI_DISTRIBUTION == "HORIZONTAL":
 
 
 PhiTerms = []
-rho_bounds = []
 Invariants = []
-MomentumBounds = []
 StabilityConditions = []
 GrowthMetric_uckl_x = []
 GrowthMetric_uckl_y = []
 GrowthMetric_uckl_z = []
 GrowthMetric_uckl_star_y = []
-GrowthMetric_div_u_raw = []
-GrowthMetric_u_ckl_du_dy = []
 DivU_max = []
-fcBounds_left = []
-fcBounds_right = []
 SpuriousFields = []
 PhiCollector = []
-PhiOnPlaneCollector_0 = []
-PhiOnPlaneCollector_1 = []
-PhiOnPlaneCollector_2 = []
-BondNumber = []
 
 iteration = 0
 
 list_avg_velocities_x = {}
 list_avg_velocities_y = {}
-list_avg_velocities_z = {}
 
 list_phi = {}
 list_dphi_0 = {}
 list_dphi_1 = {}
-list_dphi_2 = {}
 
 list_BodyForce_0 = {}
 list_BodyForce_1 = {}
-list_BodyForce_2 = {}
 list_NetForce = {}
 
 yc = (Yn+2)//2
@@ -1822,11 +1832,12 @@ p = np.zeros((Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_gi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 # Before the main loop
-z_gi = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration)
+z_gi = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration, out=z_gi)
 z_fi_c = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 z_fi = np.zeros((15, Xn+2, Yn+2, Zn+2),dtype=np.float64)
 
 _Fi_buf = np.zeros((15, Xn+2, Yn+2, Zn+2), dtype=np.float64)
+_Fs_buf = np.empty_like(u_ckl)
 _stream_buf = np.zeros((15, Xn+2, Yn+2, Zn+2), dtype=np.float64)
 
 __phi_old = np.copy(_phi) 
@@ -1846,7 +1857,6 @@ t = np.linspace(0, 1, n_rem + 1)[1:]
 post = np.floor((1 - np.exp(-exp * t)) * (TOTAL_ITERATIONS - 1 - fixed[-1])).astype(int) + fixed[-1]
 iterationsOfInterest = sorted(set(fixed + post.tolist()))[:no_slices]'''
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
-density_slices = []
 
 plotter = Plotter2D(
     script_dir=script_dir,
@@ -1862,7 +1872,6 @@ plotter = Plotter2D(
 rho_min = np.min(rho)
 rho_max = np.max(rho)
 title = "Density map"
-plotter.density_map_standalone(rho[:, :, zc], rho_min, rho_max, title, iteration)
 plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)
 
 u_ckl_midpoint0 = u_ckl[0,int(Xn//2),int(Yn//2),int(Zn//2)]
@@ -1888,6 +1897,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     _t = {}
     def _mark(label, t0):
         _t[label] = _t.get(label, 0) + (time.perf_counter() - t0)
+        print(f"[MEM] after {label}: {_rss_mb():.0f} MB", flush=True)
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Body and Surface Tension
@@ -1907,7 +1917,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # === 1. Compute equilibrium distributions (fi_c, gi_c) ===
     # Zhang eq(17):  equilibrium distribution function for order parameter
-    _t0 = time.perf_counter(); z_gi_c = zgi_c(fc, u_ckl, _phi, iteration); _mark('zgi_c', _t0)
+    _t0 = time.perf_counter(); z_gi_c = zgi_c(fc, u_ckl, _phi, iteration, out=z_gi_c); _mark('zgi_c', _t0)
     # Zhang eq(18):  equilibrium distribution function for pressure distribution function
     _t0 = time.perf_counter(); z_fi_c = zfi_c(fc, u_ckl, rho, p, out=z_fi_c); _mark('zfi_c', _t0)
 
@@ -1929,7 +1939,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     if iteration % 100 == 0:
         validate_field(z_gi, 'z_gi (post collision+stream)', iter=iteration, allow_neg=True)
 
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz); _mark('Fs_1', _t0)
+    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_1', _t0)
     if iteration % 100 == 0:
         validate_field(_Fs, 'Fs', iter=iteration, allow_neg=True)
         assert _Fs.shape == (3, Xn+2, Yn+2, Zn+2), f"_Fs shape: {_Fs.shape}"
@@ -1995,19 +2005,15 @@ while iteration < fc.TOTAL_ITERATIONS:
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :, zc].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :, zc].copy()
-        list_avg_velocities_z[iteration] = u_ckl[2, 1:-1, :, zc].copy()
         list_phi[iteration] = _phi[:,yc,zc].copy()
         list_dphi_0[iteration] = zhang_gradient(fc, _phi)[0][:, yc, zc].copy()
         list_dphi_1[iteration] = zhang_gradient(fc, _phi)[1][:, yc, zc].copy()
-        list_dphi_2[iteration] = zhang_gradient(fc, _phi)[2][:, yc, zc].copy()
         
         # density mapping
         rho_min = np.min(rho)
         rho_max = np.max(rho)
         title = "Density map"
-        plotter.density_map_standalone(rho[:, :, zc], rho_min, rho_max, title, iteration)
         rho_slice = rho[density_profile_x_position, :, zc].copy()
-        density_slices.append((iteration, rho_slice))
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Surface Tension
@@ -2020,11 +2026,6 @@ while iteration < fc.TOTAL_ITERATIONS:
     Bnon = rho_0 * fc.g * dx**2 / fc.vf_sigma
     Blat = rho_0 * fc.g * n_dx**2 / fc.vf_sigma
     #if iteration == 0 or iteration==(fc.TOTAL_ITERATIONS - 1) or iteration % 500 == 0:
-    if ADD_METRICS and iteration in iterationsOfInterest:
-        BondNumber.append((iteration, Bnon, Blat))
-        debug_log('ITER', 'iteration: %d; Bond no. (non-dimensional): %.1f %%; Bond no. (lattice) %.1f %%', 
-            iteration, Bnon, Blat)
-        
 
     # 2. Surface tensions forces
     # Only write on the final iteration -- np.savetxt formats every cell as
@@ -2045,7 +2046,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     #if fc.ADD_SURFACE_TENSION_FORCE == 1:
     # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
     #zhang_surface_tension_force = zhang_fc(fc, _phi)
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz); _mark('Fs_2', _t0)
+    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_2', _t0)
     if ZERO_BCs:
         _Fs[:, :, :, 0]  = 0.0   # bottom ghost row
         _Fs[:, :, :, -1] = 0.0   # top ghost row
@@ -2067,7 +2068,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         _fi_term  = np.einsum('ia,ijkl->ajkl', c, z_fi) / (Cs2 * rho)
         _bf_term  = (1.0 / (2.0 * rho)) * fc.ADD_BODY_FORCE  * body_force
         _cap_term = (1.0 / (2.0 * rho)) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force
-        _Fs_bulk  = Fs(fc, _phi, n_dx, n_dy, n_dz)
+        _Fs_bulk  = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf)
         _Fs_term  = (1.0 / (2.0 * rho)) * fc.ADD_SURFACE_TENSION_FORCE * _Fs_bulk
 
         print(f"\n── CL DIAG iter={iteration}  left-wall contact line at y={y_cl}, z={z_cl} ──")
@@ -2132,7 +2133,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         # Store 2D data (existing)
         list_BodyForce_0[iteration] = body_force[0][:, yc, zc].copy()
         list_BodyForce_1[iteration] = body_force[1][:, yc, zc].copy()
-        list_BodyForce_2[iteration] = body_force[2][:, yc, zc].copy()
         netForce = fc.ADD_BODY_FORCE * body_force + fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
         list_NetForce[iteration] = netForce[1][:, yc, zc].copy()
 
@@ -2154,14 +2154,8 @@ while iteration < fc.TOTAL_ITERATIONS:
             )
 
     if ADD_METRICS and iteration in iterationsOfInterest:
-        fcBounds_left.append((iteration,
-                        zhang_surface_tension_force[0,1,yc,:].copy(), # left-x  
-                        zhang_surface_tension_force[1,1,yc,:].copy())) # left-y 
-        fcBounds_right.append((iteration,
-                        zhang_surface_tension_force[0,Xn,yc,:].copy(), # right-x  
-                        zhang_surface_tension_force[1,Xn,yc,:].copy())) # right-y   
-
-        _, left_x, left_y = fcBounds_left[-1]
+        left_x = zhang_surface_tension_force[0,1,yc,:].copy()
+        left_y = zhang_surface_tension_force[1,1,yc,:].copy()
         plotter.phi_boundary_forces_vertical(
                     left_x, left_y,
                     label_left_x="Left wall Fx",
@@ -2172,7 +2166,8 @@ while iteration < fc.TOTAL_ITERATIONS:
                     figsize=(7, 5)
                 )
 
-        _, right_x, right_y = fcBounds_right[-1]
+        right_x = zhang_surface_tension_force[0,Xn,yc,:].copy()
+        right_y = zhang_surface_tension_force[1,Xn,yc,:].copy()
         plotter.phi_boundary_forces_vertical(
                     right_x, right_y,
                     label_left_x="Right wall Fx",
@@ -2186,7 +2181,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     #Step2a. calculate h, p
     # Zhang eq(27) - hydrostatic pressure
     ############################ 2. Add Successive Over-Relaxation (SOR) with Residual Monitoring (Accelerate/Damp) #################
-    _t0 = time.perf_counter(); p = zp(fc, z_fi, rho, u_ckl, iteration); _mark('zp', _t0)  # Use damped div_u if added above
+    _t0 = time.perf_counter(); p = zp(fc, z_fi, rho, u_ckl, iteration, out=p); _mark('zp', _t0)  # Use damped div_u if added above
     #################################################################################################################################
 
 
@@ -2205,10 +2200,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         StabilityConditions.append((iteration, ssc, osc))
 
         invariant = np.sum(rho*u_ckl[0])
-        MomentumBounds.append((iteration, u_ckl_x_min, u_ckl_x_max, invariant))
         rho_min = np.min(rho)
         rho_max = np.max(rho)    
-        rho_bounds.append((iteration, rho_min, rho_max))
         Invariants.append((iteration, invariant))
         debug_log('FIELD', 'Iteration=%d; max|u_x|=%.2e; invariant=%.2e', iteration, u_ckl_x_max, invariant)
         GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
@@ -2221,9 +2214,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         dw_dx, dw_dy, dw_dz = zhang_gradient(fc, u_ckl[2])
         div_u_raw = du_dx + dv_dy + dw_dz
 
-        GrowthMetric_div_u_raw.append((iteration, np.max(np.abs(du_dx)), np.max(np.abs(du_dy)), np.max(np.abs(div_u_raw))))
-        GrowthMetric_u_ckl_du_dy.append((iteration, du_dy))            
-
         spuriousField1 = np.max(np.abs(zhang_gradient(fc, p)))
         laplacian_phi = zhang_laplacian(fc, _phi)
         spuriousField2 = np.max(np.abs(laplacian_phi))
@@ -2235,12 +2225,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         #  NEW – collect vertical integrals of φ
         phi_total = np.sum(_phi[1:Xn+1, 1:Yn+1, 1:Zn+1])
         PhiCollector.append((iteration, phi_total))
-        phi_on_plane = _phi[1, 1:Yn+1, 1:Zn+1]
-        PhiOnPlaneCollector_0.append((iteration, phi_on_plane))
         phi_on_plane = _phi[(Xn+1)//2, 0:Yn, 0:Zn]
-        PhiOnPlaneCollector_1.append((iteration, phi_on_plane))
-        phi_on_plane = _phi[1, 1:Yn+1, 1:Zn+1]
-
+        
     #streaming has commenced
    
     # Update plots and parameters
@@ -2265,8 +2251,18 @@ while iteration < fc.TOTAL_ITERATIONS:
     if (PLOTREALTIME and (iteration == fc.TOTAL_ITERATIONS - 1)):
         plotter.update(iteration, _phi[:, :, zc], rho[:, :, zc], u_ckl[:, :, :, zc])
 
+
     #Step 4: re-iterate
     iteration += 1
+    if iteration == 5:
+        _tm_snapshot = tracemalloc.take_snapshot()
+    elif iteration == 20:
+        snap2 = tracemalloc.take_snapshot()
+        top_stats = snap2.compare_to(_tm_snapshot, 'lineno')
+        print("=== TOP MEMORY GROWTH BY LINE (iter 5 -> 20) ===", flush=True)
+        for stat in top_stats[:15]:
+            print(stat, flush=True)
+
 
     print(f"---timings after iter {iteration}---")
     for _k, _v in sorted(_t.items(), key=lambda kv: -kv[1]):
@@ -2363,14 +2359,13 @@ plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, n
 plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
 
 # phi plots at centerline
-iteration, phi_on_plane = PhiOnPlaneCollector_1[-1]
 plotter.phi_profile(phi_on_plane, f"phi_profile_", iteration=iteration)
 
 _iteration = fc.TOTAL_ITERATIONS
 plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
 plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
-plotter.density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn, iteration)
+#plotter.density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn, iteration)
 
 if PRESSURE_IN_DENSITY_MAP:
     min_value = 0 
@@ -2452,7 +2447,6 @@ if ADD_METRICS:
 
 
     if fc.ADD_SURFACE_TENSION_FORCE == 1:
-        _, left_x, left_y = fcBounds_left[-1]
         plotter.phi_boundary_forces_vertical(
                     left_x, left_y,
                     label_left_x="Left wall Fx",
@@ -2463,7 +2457,6 @@ if ADD_METRICS:
                     figsize=(7, 5)
                 )
 
-        _, right_x, right_y = fcBounds_right[-1]
         plotter.phi_boundary_forces_vertical(
                     right_x, right_y,
                     label_left_x="Right wall Fx",
