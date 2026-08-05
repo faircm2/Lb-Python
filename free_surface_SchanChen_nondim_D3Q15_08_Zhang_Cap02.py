@@ -1818,7 +1818,7 @@ title = "Density map"
 plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)
 u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
 plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
-plotter.plot_field_layers(u_mag, "u_mag", Z_LAYER_INDICES, iteration)
+plotter.plot_field_layers(u_mag, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
 
 u_ckl_midpoint0 = u_ckl[0,int(Xn//2),int(Yn//2),int(Zn//2)]
 epsilon_u_ckl = 0
@@ -1950,8 +1950,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         #phi mapping
         plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)  
         u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
-        plotter.plot_field_layers(_phi, "phi", Z_LAYER_INDICES, iteration)
-        plotter.plot_field_layers(u_mag, "u_mag", Z_LAYER_INDICES, iteration)          
+        plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
+        plotter.plot_field_layers(u_mag, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
 
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :, zc].copy()
@@ -2262,7 +2262,7 @@ end = time.perf_counter()
 diff = end - start
 
 plotter.save_phi_snapshot(_phi[:, :, zc], iteration - 1, fc.phi_star_G, fc.phi_star_L)
-plotter.plot_field_layers(_phi, "phi", Z_LAYER_INDICES, iteration)
+plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
 
 rho_in, rho_out = _rho_full_range[1, Yn//2, Zn//2], _rho_full_range[Xn, Yn//2, Zn//2]
 rho_min = np.min(_rho_full_range)
