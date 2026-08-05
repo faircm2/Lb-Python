@@ -1857,6 +1857,7 @@ t = np.linspace(0, 1, n_rem + 1)[1:]
 post = np.floor((1 - np.exp(-exp * t)) * (TOTAL_ITERATIONS - 1 - fixed[-1])).astype(int) + fixed[-1]
 iterationsOfInterest = sorted(set(fixed + post.tolist()))[:no_slices]'''
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
+Z_LAYER_INDICES = np.linspace(1, Zn, 6, dtype=int).tolist()
 
 plotter = Plotter2D(
     script_dir=script_dir,
@@ -2000,7 +2001,10 @@ while iteration < fc.TOTAL_ITERATIONS:
        
     if iteration in iterationsOfInterest:
         #phi mapping
-        plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)    
+        plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)
+        u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
+        plotter.plot_field_layers(_phi, "phi", Z_LAYER_INDICES, iteration)
+        plotter.plot_field_layers(u_mag, "u_mag", Z_LAYER_INDICES, iteration)
 
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :, zc].copy()
@@ -2225,6 +2229,23 @@ while iteration < fc.TOTAL_ITERATIONS:
         #  NEW – collect vertical integrals of φ
         phi_total = np.sum(_phi[1:Xn+1, 1:Yn+1, 1:Zn+1])
         PhiCollector.append((iteration, phi_total))
+
+        # dump the diagnostic lists to disk every checkpoint (overwrites,
+        # always holds the full history so far) - avoids needing to raid
+        # the live process's memory to see them mid-run
+        np.savez_compressed(
+            os.path.join(images_dir, "diagnostic_lists.npz"),
+            PhiTerms=np.array(PhiTerms),
+            Invariants=np.array(Invariants),
+            StabilityConditions=np.array(StabilityConditions),
+            GrowthMetric_uckl_x=np.array(GrowthMetric_uckl_x),
+            GrowthMetric_uckl_y=np.array(GrowthMetric_uckl_y),
+            GrowthMetric_uckl_star_y=np.array(GrowthMetric_uckl_star_y),
+            SpuriousFields=np.array(SpuriousFields),
+            DivU_max=np.array(DivU_max),
+            PhiCollector=np.array(PhiCollector),
+        )
+
         phi_on_plane = _phi[(Xn+1)//2, 0:Yn, 0:Zn]
         
     #streaming has commenced

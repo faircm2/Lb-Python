@@ -174,7 +174,7 @@ ADD_METRICS = True
 ZERO_BCs = False
 
 # Constants
-DEFAULT_D_ND = 300
+DEFAULT_D_ND = 200
 SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
 SCRIPT_FULL_PATH = os.path.abspath(__file__) 
 SCRIPTS_PATH = "scripts/freesurface/"
