@@ -1331,7 +1331,7 @@ class Plotter2D:
         ax = fig.add_subplot(111)
         #plt.figure(figsize=(8, 6))
 
-        im = ax.imshow(_phi.T, origin='lower', cmap='RdBu', vmin=phi_star_G, vmax=phi_star_L)
+        im = ax.imshow(_phi.T, origin='lower', cmap='RdBu_r', vmin=phi_star_G, vmax=phi_star_L)
 
         # Create a divider so the colorbar matches the axes height
         divider = make_axes_locatable(ax)
@@ -1662,29 +1662,44 @@ class Plotter2D:
 
         return saved_paths
 
-    def plot_field_layers(self, field_3d, field_name, z_indices, iteration, cmap='viridis'):
+    def plot_field_layers(self, field_3d, field_name, iteration, z_indices,
+                           second_indices, second_axis='y', cmap='viridis'):
         """
-        Multi-panel grid of 2D (x,y) heatmaps of field_3d at several fixed z
-        heights, so the interface/velocity/density shape through the cube's
-        height can be compared at a glance.
+        Two-row grid of 2D heatmaps through the cube: top row is XY slices
+        at each z in z_indices (view down the height axis), bottom row is
+        slices along `second_axis` (XZ view if second_axis='y', YZ view if
+        second_axis='x') at each index in second_indices.
         """
-        n = len(z_indices)
-        ncols = 3
-        nrows = int(np.ceil(n / ncols))
-        fig = Figure(figsize=(4 * ncols, 4 * nrows))
+        ncols = max(len(z_indices), len(second_indices))
+        fig = Figure(figsize=(4 * ncols, 8))
         canvas = FigureCanvas(fig)
-        axes = fig.subplots(nrows, ncols, squeeze=False)
+        axes = fig.subplots(2, ncols, squeeze=False)
 
         vmin, vmax = np.min(field_3d), np.max(field_3d)
         im = None
         for idx, z in enumerate(z_indices):
-            ax = axes[idx // ncols, idx % ncols]
+            ax = axes[0, idx]
             im = ax.imshow(field_3d[:, :, z].T, origin='lower', cmap=cmap, vmin=vmin, vmax=vmax)
-            ax.set_title(f"z={z}")
+            ax.set_title(f"z={z} (XY)")
             ax.set_xlabel('x-index')
             ax.set_ylabel('y-index')
-        for idx in range(n, nrows * ncols):
-            axes[idx // ncols, idx % ncols].axis('off')
+        for idx in range(len(z_indices), ncols):
+            axes[0, idx].axis('off')
+
+        for idx, s in enumerate(second_indices):
+            ax = axes[1, idx]
+            if second_axis == 'y':
+                im = ax.imshow(field_3d[:, s, :].T, origin='lower', cmap=cmap, vmin=vmin, vmax=vmax)
+                ax.set_title(f"y={s} (XZ)")
+                ax.set_xlabel('x-index')
+                ax.set_ylabel('z-index')
+            else:
+                im = ax.imshow(field_3d[s, :, :].T, origin='lower', cmap=cmap, vmin=vmin, vmax=vmax)
+                ax.set_title(f"x={s} (YZ)")
+                ax.set_xlabel('y-index')
+                ax.set_ylabel('z-index')
+        for idx in range(len(second_indices), ncols):
+            axes[1, idx].axis('off')
 
         fig.suptitle(f"{field_name} — layers through cube (iter {iteration})")
         fig.colorbar(im, ax=axes, shrink=0.7, label=field_name)

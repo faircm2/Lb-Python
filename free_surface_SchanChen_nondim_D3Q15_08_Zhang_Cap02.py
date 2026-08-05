@@ -1797,7 +1797,8 @@ t = np.linspace(0, 1, n_rem + 1)[1:]
 post = np.floor((1 - np.exp(-exp * t)) * (TOTAL_ITERATIONS - 1 - fixed[-1])).astype(int) + fixed[-1]
 iterationsOfInterest = sorted(set(fixed + post.tolist()))[:no_slices]'''
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
-Z_LAYER_INDICES = np.linspace(1, Zn, 6, dtype=int).tolist()
+Z_LAYER_INDICES = np.linspace(1, Zn, 3, dtype=int).tolist()
+Y_LAYER_INDICES = np.linspace(1, Yn, 3, dtype=int).tolist()
 
 plotter = Plotter2D(
     script_dir=script_dir,
@@ -1816,7 +1817,7 @@ title = "Density map"
 #plotter.density_map_standalone(rho[:, :, zc], rho_min, rho_max, title, iteration)
 plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)
 u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
-plotter.plot_field_layers(_phi, "phi", Z_LAYER_INDICES, iteration)
+plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
 plotter.plot_field_layers(u_mag, "u_mag", Z_LAYER_INDICES, iteration)
 
 u_ckl_midpoint0 = u_ckl[0,int(Xn//2),int(Yn//2),int(Zn//2)]
