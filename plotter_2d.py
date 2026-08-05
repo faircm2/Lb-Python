@@ -1661,3 +1661,36 @@ class Plotter2D:
             saved_paths.append(out_path)
 
         return saved_paths
+
+    def plot_field_layers(self, field_3d, field_name, z_indices, iteration, cmap='viridis'):
+        """
+        Multi-panel grid of 2D (x,y) heatmaps of field_3d at several fixed z
+        heights, so the interface/velocity/density shape through the cube's
+        height can be compared at a glance.
+        """
+        n = len(z_indices)
+        ncols = 3
+        nrows = int(np.ceil(n / ncols))
+        fig = Figure(figsize=(4 * ncols, 4 * nrows))
+        canvas = FigureCanvas(fig)
+        axes = fig.subplots(nrows, ncols, squeeze=False)
+
+        vmin, vmax = np.min(field_3d), np.max(field_3d)
+        im = None
+        for idx, z in enumerate(z_indices):
+            ax = axes[idx // ncols, idx % ncols]
+            im = ax.imshow(field_3d[:, :, z].T, origin='lower', cmap=cmap, vmin=vmin, vmax=vmax)
+            ax.set_title(f"z={z}")
+            ax.set_xlabel('x-index')
+            ax.set_ylabel('y-index')
+        for idx in range(n, nrows * ncols):
+            axes[idx // ncols, idx % ncols].axis('off')
+
+        fig.suptitle(f"{field_name} — layers through cube (iter {iteration})")
+        fig.colorbar(im, ax=axes, shrink=0.7, label=field_name)
+
+        filename = f"{field_name}_layers_iter_{iteration:0{self.FILENAME_PADDING_WIDTH}d}.png"
+        save_path = os.path.join(self.IMAGES_SUBDIR, filename)
+        canvas.print_figure(save_path, dpi=150, bbox_inches='tight')
+
+        self.debug_log('INIT', 'Saved %s layer grid: %s', field_name, save_path)
