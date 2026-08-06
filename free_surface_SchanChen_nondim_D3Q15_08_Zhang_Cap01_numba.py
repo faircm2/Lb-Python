@@ -2158,6 +2158,14 @@ while iteration < fc.TOTAL_ITERATIONS:
                 title="zhang_surface_tension_force"
             )
 
+            np.savez_compressed(
+                os.path.join(images_dir, f"fields_iter_{iteration:0{fc.FILENAME_PADDING_WIDTH}d}.npz"),
+                phi=_phi,
+                u_ckl=u_ckl,
+                chemical_potential=_chemical_potential_Zhang,
+                zhang_surface_tension_force=zhang_surface_tension_force,
+            )
+
     if ADD_METRICS and iteration in iterationsOfInterest:
         left_x = zhang_surface_tension_force[0,1,yc,:].copy()
         left_y = zhang_surface_tension_force[1,1,yc,:].copy()
