@@ -1165,7 +1165,10 @@ def get_iterations_of_interest(total_iterations, no_slices=51, exp_factor=3.0):
     late_samples = np.linspace(mid_end, total_iterations - 1, 16, dtype=int).tolist()
     
     all_iters = sorted(set(fixed + early_dense + mid_samples + late_samples))
-    return all_iters[:no_slices]
+    if len(all_iters) <= no_slices:
+        return all_iters
+    idx = np.linspace(0, len(all_iters) - 1, no_slices, dtype=int)
+    return [all_iters[i] for i in idx]
 
 
 def phi_s(_phi_p, theta, thetaCap, n_dx):
@@ -1513,23 +1516,17 @@ if PHI_DISTRIBUTION == "HORIZONTAL":
 
 
 PhiTerms = []
-rho_bounds = []
+BondNumber = []
 Invariants = []
-MomentumBounds = []
 StabilityConditions = []
 GrowthMetric_uckl_x = []
 GrowthMetric_uckl_y = []
 GrowthMetric_uckl_star_y = []
-GrowthMetric_div_u_raw = []
-GrowthMetric_u_ckl_du_dy = []
-DivU_max = []
 fcBounds_left = []
 fcBounds_right = []
 SpuriousFields = []
 PhiCollector = []
-PhiOnPlaneCollector_0 = []
 PhiOnPlaneCollector_1 = []
-BondNumber = []
 
 iteration = 0
 
@@ -1719,12 +1716,11 @@ while iteration < fc.TOTAL_ITERATIONS:
     # Bond Nummber
     Bnon = rho_0 * fc.g * dx**2 / fc.vf_sigma
     Blat = rho_0 * fc.g * n_dx**2 / fc.vf_sigma
-    #if iteration == 0 or iteration==(fc.TOTAL_ITERATIONS - 1) or iteration % 500 == 0:
+
     if ADD_METRICS and iteration in iterationsOfInterest:
         BondNumber.append((iteration, Bnon, Blat))
-        debug_log('ITER', 'iteration: %d; Bond no. (non-dimensional): %.1f %%; Bond no. (lattice) %.1f %%', 
+        debug_log('ITER', 'iteration: %d; Bond no. (non-dimensional): %.1f %%; Bond no. (lattice) %.1f %%',
             iteration, Bnon, Blat)
-        
 
     # 2. Surface tensions forces
     save_phi_results(_phi, fc.phi_star_G, fc.phi_star_L)
@@ -1882,10 +1878,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         StabilityConditions.append((iteration, ssc, osc))
 
         invariant = np.sum(rho*u_ckl[0])
-        MomentumBounds.append((iteration, u_ckl_x_min, u_ckl_x_max, invariant))
         rho_min = np.min(rho)
         rho_max = np.max(rho)    
-        rho_bounds.append((iteration, rho_min, rho_max))
         Invariants.append((iteration, invariant))
         debug_log('FIELD', 'Iteration=%d; max|u_x|=%.2e; invariant=%.2e', iteration, u_ckl_x_max, invariant)
         GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
@@ -1897,22 +1891,15 @@ while iteration < fc.TOTAL_ITERATIONS:
         dv_dx, dv_dy = zhang_gradient(u_ckl[1])
         div_u_raw = du_dx + dv_dy
 
-        GrowthMetric_div_u_raw.append((iteration, np.max(np.abs(du_dx)), np.max(np.abs(du_dy)), np.max(np.abs(div_u_raw))))
-        GrowthMetric_u_ckl_du_dy.append((iteration, du_dy))            
-
         spuriousField1 = np.max(np.abs(zhang_gradient(p)))
         laplacian_phi = zhang_laplacian(_phi)
         spuriousField2 = np.max(np.abs(laplacian_phi))
         SpuriousFields.append((iteration, spuriousField1, spuriousField2))
 
-        ################################# 6. Additional Diagnostics and Rollbacks ######################################
-        DivU_max.append((iteration, np.max(np.abs(div_u_raw))))
-        ################################################################################################################
         #  NEW – collect vertical integrals of φ
         phi_total = np.sum(_phi[1:Xn+1, 1:Yn+1])
         PhiCollector.append((iteration, phi_total))
         phi_on_plane = _phi[1, 1:Yn+1]
-        PhiOnPlaneCollector_0.append((iteration, phi_on_plane))
         phi_on_plane = _phi[(Xn+1)//2, 0:Yn]
         PhiOnPlaneCollector_1.append((iteration, phi_on_plane))
         phi_on_plane = _phi[1, 1:Yn+1]
@@ -1981,8 +1968,6 @@ while iteration < fc.TOTAL_ITERATIONS:
 end = time.perf_counter()
 #iterationsOfInterest = [0, 10, 50, 100, 200, 500, 1000, 5000, 10000, 12000]
 diff = end - start
-
-plotter.save_phi_snapshot(_phi, iteration - 1, fc.phi_star_G, fc.phi_star_L)
 
 rho_in, rho_out = _rho_full_range[1, Yn // 2], _rho_full_range[Xn, Yn // 2]
 rho_min = np.min(_rho_full_range)
@@ -2091,10 +2076,10 @@ plt.close(fig1)
 # 3 rows, 4 columns
 paneLabel = f"Metrics - D2Q9 LB method for incompressible two-phase ﬂows Zhang et al 2020 Lattice [{Xn} {Yn}] Single processor"
 fig2, ax2 = plt.subplots(
-    3, 4,  
-    figsize=(18, 10), 
+    3, 3,
+    figsize=(18, 10),
     gridspec_kw={
-        'width_ratios': [1, 1, 1, 1],
+        'width_ratios': [1, 1, 1],
         'height_ratios': height_ratios1,
         'left': 0.1, 'right': 0.9, 'top': 0.9, 'bottom': 0.1,
         'wspace': 0.3, 'hspace': 0.4
@@ -2143,12 +2128,12 @@ if ADD_METRICS:
                     figsize=(7, 5)
                 )
 
-    plotter.plot_bounds_ext(PhiCollector, "Mass Conservation (Intg. _phi)", ax2[2, 3])
+    plotter.plot_bounds_ext(PhiCollector, "Mass Conservation (Intg. _phi)", ax2[2, 2])
 
 fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
 save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{fc.TOTAL_ITERATIONS:0{fc.FILENAME_PADDING_WIDTH}d}.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
-debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
+debug_log('INIT', 'Saved 3x3 grid: %s', save_path)
 plt.close(fig2)
 
 

@@ -616,7 +616,7 @@ CAPILLARY_PROOF = FlowConfig(
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the diffuse interface, reducing sharp edges.
     vf_W = 4, #was 6
     vf_sigma = 0.01, #0.072
-    vf_theta = 120.0, #60
+    vf_theta = 90.0, #60
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
@@ -1395,7 +1395,15 @@ def get_iterations_of_interest(total_iterations, no_slices=51, exp_factor=3.0):
     late_samples = np.linspace(mid_end, total_iterations - 1, 16, dtype=int).tolist()
     
     all_iters = sorted(set(fixed + early_dense + mid_samples + late_samples))
-    return all_iters[:no_slices]
+    if len(all_iters) <= no_slices:
+        return all_iters
+    # Evenly subsample indices across the full sorted range instead of just
+    # truncating the front - truncating silently dropped every late-run
+    # ("final convergence") checkpoint whenever there were more than
+    # no_slices candidates, which was every run: the max checkpoint became
+    # ~9840/12001 instead of the intended near-final iteration.
+    idx = np.linspace(0, len(all_iters) - 1, no_slices, dtype=int)
+    return [all_iters[i] for i in idx]
 
 
 def phi_s(_phi_p, theta, thetaCap, n_dx):
@@ -1801,13 +1809,13 @@ if PHI_DISTRIBUTION == "HORIZONTAL":
 
 
 PhiTerms = []
+BondNumber = []
 Invariants = []
 StabilityConditions = []
 GrowthMetric_uckl_x = []
 GrowthMetric_uckl_y = []
 GrowthMetric_uckl_z = []
 GrowthMetric_uckl_star_y = []
-DivU_max = []
 SpuriousFields = []
 PhiCollector = []
 
@@ -1815,6 +1823,7 @@ iteration = 0
 
 list_avg_velocities_x = {}
 list_avg_velocities_y = {}
+list_avg_velocities_z = {}
 
 list_phi = {}
 list_dphi_0 = {}
@@ -1822,6 +1831,7 @@ list_dphi_1 = {}
 
 list_BodyForce_0 = {}
 list_BodyForce_1 = {}
+list_BodyForce_2 = {}
 list_NetForce = {}
 
 yc = (Yn+2)//2
@@ -2010,6 +2020,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         # Store 2D data (existing)
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :, zc].copy()
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :, zc].copy()
+        list_avg_velocities_z[iteration] = u_ckl[2, 1:-1, :, zc].copy()
         list_phi[iteration] = _phi[:,yc,zc].copy()
         list_dphi_0[iteration] = zhang_gradient(fc, _phi)[0][:, yc, zc].copy()
         list_dphi_1[iteration] = zhang_gradient(fc, _phi)[1][:, yc, zc].copy()
@@ -2030,6 +2041,12 @@ while iteration < fc.TOTAL_ITERATIONS:
     # Bond Nummber
     Bnon = rho_0 * fc.g * dx**2 / fc.vf_sigma
     Blat = rho_0 * fc.g * n_dx**2 / fc.vf_sigma
+
+    if ADD_METRICS and iteration in iterationsOfInterest:
+        BondNumber.append((iteration, Bnon, Blat))
+        debug_log('ITER', 'iteration: %d; Bond no. (non-dimensional): %.1f %%; Bond no. (lattice) %.1f %%',
+            iteration, Bnon, Blat)
+
     #if iteration == 0 or iteration==(fc.TOTAL_ITERATIONS - 1) or iteration % 500 == 0:
 
     # 2. Surface tensions forces
@@ -2138,6 +2155,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         # Store 2D data (existing)
         list_BodyForce_0[iteration] = body_force[0][:, yc, zc].copy()
         list_BodyForce_1[iteration] = body_force[1][:, yc, zc].copy()
+        list_BodyForce_2[iteration] = body_force[2][:, yc, zc].copy()
         netForce = fc.ADD_BODY_FORCE * body_force + fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
         list_NetForce[iteration] = netForce[1][:, yc, zc].copy()
 
@@ -2207,6 +2225,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         u_ckl_x_max = np.max(np.abs(u_ckl[0]))
         u_ckl_y_min = np.min(u_ckl[1])
         u_ckl_y_max = np.max(np.abs(u_ckl[1]))
+        u_ckl_z_min = np.min(u_ckl[2])
+        u_ckl_z_max = np.max(np.abs(u_ckl[2]))
 
         ssc = sufficient_stability_condition(u_ckl)
         osc = optimal_stability_condition(u_ckl)
@@ -2219,6 +2239,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         debug_log('FIELD', 'Iteration=%d; max|u_x|=%.2e; invariant=%.2e', iteration, u_ckl_x_max, invariant)
         GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
         GrowthMetric_uckl_y.append((iteration, u_ckl_y_max))
+        GrowthMetric_uckl_z.append((iteration, u_ckl_z_max))
 
         uckl_star_y = np.max(np.abs(u_ckl[1]))
         GrowthMetric_uckl_star_y.append((iteration, uckl_star_y))
@@ -2232,9 +2253,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         spuriousField2 = np.max(np.abs(laplacian_phi))
         SpuriousFields.append((iteration, spuriousField1, spuriousField2))
 
-        ################################# 6. Additional Diagnostics and Rollbacks ######################################
-        DivU_max.append((iteration, np.max(np.abs(div_u_raw))))
-        ################################################################################################################
         #  NEW – collect vertical integrals of φ
         phi_total = np.sum(_phi[1:Xn+1, 1:Yn+1, 1:Zn+1])
         PhiCollector.append((iteration, phi_total))
@@ -2249,9 +2267,8 @@ while iteration < fc.TOTAL_ITERATIONS:
             StabilityConditions=np.array(StabilityConditions),
             GrowthMetric_uckl_x=np.array(GrowthMetric_uckl_x),
             GrowthMetric_uckl_y=np.array(GrowthMetric_uckl_y),
-            GrowthMetric_uckl_star_y=np.array(GrowthMetric_uckl_star_y),
+            GrowthMetric_uckl_z=np.array(GrowthMetric_uckl_z),
             SpuriousFields=np.array(SpuriousFields),
-            DivU_max=np.array(DivU_max),
             PhiCollector=np.array(PhiCollector),
         )
 
@@ -2264,6 +2281,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     if iteration in iterationsOfInterest:
         list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :, zc]
         list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :, zc]
+        list_avg_velocities_z[iteration] = u_ckl[2, 1:-1, :, zc]
 
         #plot force per iteration of interest
   
@@ -2339,8 +2357,6 @@ end = time.perf_counter()
 #iterationsOfInterest = [0, 10, 50, 100, 200, 500, 1000, 5000, 10000, 12000]
 diff = end - start
 
-plotter.save_phi_snapshot(_phi[:, :, zc], iteration - 1, fc.phi_star_G, fc.phi_star_L)
-
 rho_in, rho_out = _rho_full_range[1, Yn//2, Zn//2], _rho_full_range[Xn, Yn//2, Zn//2]
 rho_min = np.min(_rho_full_range)
 rho_max = np.max(_rho_full_range)
@@ -2384,6 +2400,9 @@ filtered_u_ckl_list_x = list(filtered_u_ckl_dict_x.values())
 filtered_u_ckl_dict_y = plotter.filter_u_ckl_fullrange(list_avg_velocities_y, iterationsOfInterest)
 filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
 
+filtered_u_ckl_dict_z = plotter.filter_u_ckl_fullrange(list_avg_velocities_z, iterationsOfInterest)
+filtered_u_ckl_list_z = list(filtered_u_ckl_dict_z.values())
+
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
 plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
 plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
@@ -2396,10 +2415,12 @@ plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iterat
 plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
 #plotter.density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn, iteration)
+bond_series_labels = ["Bond no. (non-dim.)", "Bond no. (lattice)"]
+plotter.plot_bounds_ext(BondNumber, "Bond Number", ax1[2, 0], bond_series_labels)
 
 if PRESSURE_IN_DENSITY_MAP:
-    min_value = 0 
-    _pressure_full_range = (_rho_full_range - min_value) * Cs2 
+    min_value = 0
+    _pressure_full_range = (_rho_full_range - min_value) * Cs2
     _pressure_out = (rho_min - min_value) * Cs2
     _pressure_in = (rho_max - min_value) * Cs2
     title = "Pressure map"
@@ -2410,6 +2431,7 @@ else:
 
 BodyForce_center_0 = list_BodyForce_0.popitem()[1]
 BodyForce_center_1 = list_BodyForce_1.popitem()[1]
+BodyForce_center_2 = list_BodyForce_2.popitem()[1]
 NetForce_center = list_NetForce.popitem()[1]
 
 #phi: Phi, dPhix, dPhiy
@@ -2444,13 +2466,13 @@ debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
 plt.close(fig1)
 
 
-# 3 rows, 4 columns
+# 3 rows, 3 columns
 paneLabel = f"Metrics - D2Q9 LB method for incompressible two-phase ﬂows Zhang et al 2020 Lattice [{Xn} {Yn}] Single processor"
 fig2, ax2 = plt.subplots(
-    3, 4,  
-    figsize=(18, 10), 
+    3, 3,
+    figsize=(18, 10),
     gridspec_kw={
-        'width_ratios': [1, 1, 1, 1],
+        'width_ratios': [1, 1, 1],
         'height_ratios': height_ratios1,
         'left': 0.1, 'right': 0.9, 'top': 0.9, 'bottom': 0.1,
         'wspace': 0.3, 'hspace': 0.4
@@ -2497,12 +2519,12 @@ if ADD_METRICS:
                     figsize=(7, 5)
                 )
 
-    plotter.plot_bounds_ext(PhiCollector, "Mass Conservation (Intg. _phi)", ax2[2, 3])
+    plotter.plot_bounds_ext(PhiCollector, "Mass Conservation (Intg. _phi)", ax2[2, 2])
 
 fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
 save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{fc.TOTAL_ITERATIONS:0{fc.FILENAME_PADDING_WIDTH}d}.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
-debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
+debug_log('INIT', 'Saved 3x3 grid: %s', save_path)
 plt.close(fig2)
 
 

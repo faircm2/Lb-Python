@@ -1661,7 +1661,10 @@ def get_iterations_of_interest(total_iterations, no_slices=51, exp_factor=3.0):
     late_samples = np.linspace(mid_end, total_iterations - 1, 16, dtype=int).tolist()
     
     all_iters = sorted(set(fixed + early_dense + mid_samples + late_samples))
-    return all_iters[:no_slices]
+    if len(all_iters) <= no_slices:
+        return all_iters
+    idx = np.linspace(0, len(all_iters) - 1, no_slices, dtype=int)
+    return [all_iters[i] for i in idx]
 
 
 def calc_phi_w(phi_f, thetaCap, n_dx):
@@ -2286,24 +2289,19 @@ if PHI_DISTRIBUTION == "HORIZONTAL":
 
 
 PhiTerms = []
-rho_bounds = []
 Invariants = []
-MomentumBounds = []
 StabilityConditions = []
 GrowthMetric_uckl_x = []
 GrowthMetric_uckl_y = []
 GrowthMetric_uckl_star_y = []
 GrowthMetric_div_u_raw = []
-GrowthMetric_u_ckl_star_du_dy = []
-DivU_max = []
 fcBounds_left = []
 fcBounds_right = []
 PhIters = []
 SpuriousFields = []
 PhiCollector = []
-PhiOnPlaneCollector_0 = []
 PhiOnPlaneCollector_1 = []
-BondNumber = []
+BondNumber = [] 
 
 iteration = 0
 
@@ -2354,7 +2352,6 @@ t = np.linspace(0, 1, n_rem + 1)[1:]
 post = np.floor((1 - np.exp(-exp * t)) * (TOTAL_ITERATIONS - 1 - fixed[-1])).astype(int) + fixed[-1]
 iterationsOfInterest = sorted(set(fixed + post.tolist()))[:no_slices]'''
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
-density_slices = []
 
 plotter = Plotter2D(
     script_dir=script_dir,
@@ -2507,7 +2504,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         title = "Density map"
         plotter.density_map_standalone(rho, rho_min, rho_max, title, iteration)
         rho_slice = rho[density_profile_x_position, :].copy()
-        density_slices.append((iteration, rho_slice))
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Body and Surface Tension
@@ -2657,10 +2653,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         StabilityConditions.append((iteration, ssc, osc))
 
         invariant = np.sum(rho*u_ckl[0])
-        MomentumBounds.append((iteration, u_ckl_x_min, u_ckl_x_max, invariant))
         rho_min = np.min(rho)
         rho_max = np.max(rho)    
-        rho_bounds.append((iteration, rho_min, rho_max))
         Invariants.append((iteration, invariant))
         debug_log('FIELD', 'Iteration=%d; max|u_x|=%.2e; invariant=%.2e', iteration, u_ckl_x_max, invariant)
         GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
@@ -2673,7 +2667,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         div_u_raw = du_dx + dv_dy
 
         GrowthMetric_div_u_raw.append((iteration, np.max(np.abs(du_dx)), np.max(np.abs(du_dy)), np.max(np.abs(div_u_raw))))
-        GrowthMetric_u_ckl_star_du_dy.append((iteration, du_dy))            
 
         PhIters.append((iteration, ph_iter))
         spuriousField1 = np.max(np.abs(c_first_derivative0(p)))
@@ -2681,15 +2674,10 @@ while iteration < fc.TOTAL_ITERATIONS:
         spuriousField2 = np.max(np.abs(laplacian_phi))
         SpuriousFields.append((iteration, spuriousField1, spuriousField2))
 
-        ################################# 6. Additional Diagnostics and Rollbacks ######################################
-        DivU_max.append((iteration, np.max(np.abs(div_u_raw))))
-        #PhEps_max.append((iteration, np.max(epsilon)))
-        ################################################################################################################
         #  NEW – collect vertical integrals of φ
         phi_total = np.sum(_phi[1:Xn+1, 1:Yn+1])
         PhiCollector.append((iteration, phi_total))
         phi_on_plane = _phi[1, 1:Yn+1]
-        PhiOnPlaneCollector_0.append((iteration, phi_on_plane))
         phi_on_plane = _phi[(Xn+1)//2, 0:Yn]
         PhiOnPlaneCollector_1.append((iteration, phi_on_plane))
         phi_on_plane = _phi[1, 1:Yn+1]
@@ -2751,40 +2739,8 @@ while iteration < fc.TOTAL_ITERATIONS:
             )
 
 
-    if iteration in iterationsOfInterest:
-        # After you compute the derivatives
-        if False:
-            drho_dx, drho_dy = c_first_derivative0(rho)          
-            sigma, new_Kg = compute_inamuro_sigma(
-                phi=phi,
-                rho=rho,
-                Kg=CAPILLARY_PROOF.Kg,
-                dx=CAPILLARY_PROOF.dx,
-                drho_dy=drho_dy          # ← pass the full array
-            )
-            #CAPILLARY_PROOF.Kg = new_Kg      # update your config
-            print("W - Zhang (fc.vf_W): " + str(fc.vf_W))
-            print("xi - Inamuro: " + str(fc.xi))
-
-            print("sigma - Zhang (fc.vf_sigma): " + str(fc.vf_sigma))
-            print("sigma - Inamuro: " + str(sigma))
-
-            print("Kg - Inamuro (CAPILLARY_PROOF.Kg): " + str(CAPILLARY_PROOF.Kg))
-            print("Kg - Zhang: new_Kg: " + str(new_Kg))
-
-        print("Kappa - Zhang (fc.vf_kappa): " + str(fc.vf_kappa))
-        print("Kf - Inamuro (CAPILLARY_PROOF.Kf): " + str(CAPILLARY_PROOF.Kf))
-
-        #CAPILLARY_PROOF.Kf = fc.vf_kappa
-
-        #CAPILLARY_PROOF.Kg = new_Kg
-
-
 end = time.perf_counter()
-#iterationsOfInterest = [0, 10, 50, 100, 200, 500, 1000, 5000, 10000, 12000]
 diff = end - start
-
-plotter.save_phi_snapshot(_phi, iteration - 1, fc.phi_star_G, fc.phi_star_L)
 
 rho_in, rho_out = _rho_full_range[1, Yn // 2], _rho_full_range[Xn, Yn // 2]
 rho_min = np.min(_rho_full_range)
@@ -2883,18 +2839,13 @@ plotter.phi_x_axis_plot_3(
     title=f"_phi + _phid distribution y={yc}"
 )
 
-plotter.save_phi_snapshot(_phi, iteration-1, fc.phi_star_G, fc.phi_star_L)
-
 #chemical potential: Zhang & Inamuro
-if False:
-    if fc.ADD_SURFACE_TENSION_FORCE:
-        zhangChemicalPotential_center = _chemical_potential_Zhang[:,yc].copy()
-        inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()   
+if fc.ADD_SURFACE_TENSION_FORCE:
+    inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()   
 
-        label=r'$\mu_\phi$'
-        label1=r'$Zhang  \mu_\phi$'
-        label2=r'$Inamuro  \mu_\phi$'
-        plotter.phi_x_axis_plot_2(ax1[3, 1], zhangChemicalPotential_center, inamuroChemicalPotential_center, yc, iteration, f"ChemicalPotential distribution y={yc}", label1, label2)
+    label=r'$\mu_\phi$'
+    label1=r'$Inamuro  \mu_\phi$'
+    plotter.phi_x_axis_plot_1(ax1[3, 1], inamuroChemicalPotential_center, yc, iteration, f"ChemicalPotential distribution y={yc}", label1)
 
 text = f"Run-time: {diff:.1f} s"
 fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)

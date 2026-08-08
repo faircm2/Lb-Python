@@ -33,14 +33,55 @@ def make_grid(shape):
 
 
 def render_phi_isosurface(phi, out_path, iso_value=0.5):
-    """Interface shape in 3D - the phase boundary where phi crosses 0.5."""
+    """
+    Interface shape in 3D - the phase boundary where phi crosses 0.5.
+    Colored by height (z) with the same RdBu palette used for the 2D phi
+    plots, and semi-transparent, so meniscus curvature near the walls is
+    visible through the surface instead of only as a silhouette.
+    """
     grid = make_grid(phi.shape)
     grid.point_data["phi"] = phi.flatten(order="F")
 
     contour = grid.contour(isosurfaces=[iso_value], scalars="phi")
+    contour["height"] = contour.points[:, 2]
 
     pl = pv.Plotter(off_screen=True)
-    pl.add_mesh(contour, color="steelblue", smooth_shading=True)
+    pl.add_mesh(contour, scalars="height", cmap="RdBu", opacity=0.6,
+                smooth_shading=True, show_scalar_bar=True)
+    pl.add_axes()
+    pl.camera_position = "iso"
+    pl.screenshot(out_path)
+    pl.close()
+
+
+def render_phi_volume(phi, out_path, iso_value=0.5, gas_opacity=0.15):
+    """
+    Full liquid body shape, not just the interface surface: liquid region
+    as a solid opaque mesh, gas region as a genuinely see-through mesh.
+
+    Not a volume render - volume rendering's per-voxel opacity compositing
+    (add_volume with either a custom opacity array or the built-in presets)
+    proved unpredictable here: custom arrays came out fully blank across a
+    wide tested range, and the "sigmoid" preset came out fully opaque even
+    for the gas region, on the same data, for reasons that didn't match the
+    expected compositing math. Thresholding phi into two separate meshes
+    and setting plain per-mesh opacity is simple, predictable, and what
+    actually produces visible transparency.
+    """
+    grid = make_grid(phi.shape)
+    grid.point_data["phi"] = phi.flatten(order="F")
+
+    # threshold() keeps whole voxel cells, giving a blocky/staircase boundary;
+    # smooth_taubin() (volume-preserving, unlike plain Laplacian smoothing)
+    # smooths that down to the interface without shrinking the shape
+    liquid = grid.threshold(iso_value, scalars="phi").extract_surface(algorithm="dataset_surface")
+    liquid = liquid.smooth_taubin(n_iter=200, pass_band=0.05)
+    gas = grid.threshold(iso_value, scalars="phi", invert=True).extract_surface(algorithm="dataset_surface")
+    gas = gas.smooth_taubin(n_iter=200, pass_band=0.05)
+
+    pl = pv.Plotter(off_screen=True)
+    pl.add_mesh(liquid, color="darkred", opacity=1.0, smooth_shading=True)
+    pl.add_mesh(gas, color="lightblue", opacity=gas_opacity, smooth_shading=True)
     pl.add_axes()
     pl.camera_position = "iso"
     pl.screenshot(out_path)
@@ -60,19 +101,26 @@ def render_scalar_volume(field, field_name, out_path, cmap="viridis"):
 
 
 def render_vector_glyphs(vec_field, field_name, out_path, stride=6, factor=2.0):
-    """vec_field shape: (3, X, Y, Z). Subsampled so glyphs aren't overwhelming."""
+    """
+    vec_field shape: (3, X, Y, Z). Subsampled by stride so glyphs aren't
+    overwhelming. Built as a plain point cloud (not a subsampled ImageData)
+    because extract_points() on a structured grid silently returns zero
+    points with an index array - not worth fighting that API.
+    """
     Xn, Yn, Zn = vec_field.shape[1:]
-    grid = make_grid((Xn, Yn, Zn))
-
-    vectors = np.stack([vec_field[0], vec_field[1], vec_field[2]], axis=-1)
-    vectors = vectors.reshape(-1, 3, order="F")
-    grid.point_data[field_name] = vectors
-    grid.set_active_vectors(field_name)
-
-    sampled = grid.extract_points(
-        np.arange(0, grid.n_points, stride), adjacent_cells=False
+    xs, ys, zs = np.meshgrid(
+        np.arange(0, Xn, stride), np.arange(0, Yn, stride), np.arange(0, Zn, stride),
+        indexing="ij"
     )
-    glyphs = sampled.glyph(orient=field_name, scale=field_name, factor=factor)
+    points = np.stack([xs.ravel(), ys.ravel(), zs.ravel()], axis=-1).astype(float)
+
+    vec_sub = vec_field[:, ::stride, ::stride, ::stride]
+    vectors = np.stack([vec_sub[0], vec_sub[1], vec_sub[2]], axis=-1).reshape(-1, 3)
+
+    cloud = pv.PolyData(points)
+    cloud[field_name] = vectors
+    cloud.set_active_vectors(field_name)
+    glyphs = cloud.glyph(orient=field_name, scale=True, factor=factor)
 
     pl = pv.Plotter(off_screen=True)
     pl.add_mesh(glyphs, cmap="viridis")
@@ -93,12 +141,7 @@ def main():
     tag = os.path.splitext(os.path.basename(args.npz_path))[0]
 
     render_phi_isosurface(fields["phi"], os.path.join(args.out_dir, f"{tag}_phi_isosurface.png"))
-    render_scalar_volume(fields["chemical_potential"], "chemical_potential",
-                          os.path.join(args.out_dir, f"{tag}_chem_pot_volume.png"))
-    render_vector_glyphs(fields["u_ckl"], "u_ckl",
-                          os.path.join(args.out_dir, f"{tag}_u_ckl_glyphs.png"))
-    render_vector_glyphs(fields["zhang_surface_tension_force"], "surface_tension_force",
-                          os.path.join(args.out_dir, f"{tag}_surface_tension_glyphs.png"))
+    render_phi_volume(fields["phi"], os.path.join(args.out_dir, f"{tag}_phi_volume.png"))
 
     print(f"Saved renders for {tag} to {args.out_dir}")
 
