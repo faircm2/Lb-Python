@@ -584,7 +584,7 @@ CAPILLARY_PROOF = FlowConfig(
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the^^^^ diffuse interface, reducing sharp edges.
     vf_W = 4, #was 6
     vf_sigma = 0.01, #0.072
-    vf_theta = 90.0, #60
+    vf_theta = 60.0, #60
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
@@ -1587,7 +1587,15 @@ def get_iterations_of_interest(total_iterations, no_slices=51, exp_factor=3.0):
     late_samples = np.linspace(mid_end, total_iterations - 1, 16, dtype=int).tolist()
     
     all_iters = sorted(set(fixed + early_dense + mid_samples + late_samples))
-    return all_iters[:no_slices]
+    if len(all_iters) <= no_slices:
+        return all_iters
+    # Evenly subsample indices across the full sorted range instead of just
+    # truncating the front - truncating silently dropped every late-run
+    # ("final convergence") checkpoint whenever there were more than
+    # no_slices candidates, which was every run: the max checkpoint became
+    # ~9840/12001 instead of the intended near-final iteration.
+    idx = np.linspace(0, len(all_iters) - 1, no_slices, dtype=int)
+    return [all_iters[i] for i in idx]
 
 
 def calc_phi_w(phi_f, thetaCap, n_dx):
@@ -2164,22 +2172,17 @@ if PHI_DISTRIBUTION == "HORIZONTAL":
 
 
 PhiTerms = []
-rho_bounds = []
 Invariants = []
-MomentumBounds = []
 StabilityConditions = []
 GrowthMetric_uckl_x = []
 GrowthMetric_uckl_y = []
 GrowthMetric_uckl_star_y = []
 GrowthMetric_div_u_raw = []
-GrowthMetric_u_ckl_star_du_dy = []
-DivU_max = []
 fcBounds_left = []
 fcBounds_right = []
 PhIters = []
 SpuriousFields = []
 PhiCollector = []
-PhiOnPlaneCollector_0 = []
 PhiOnPlaneCollector_1 = []
 BondNumber = []
 
@@ -2232,7 +2235,6 @@ t = np.linspace(0, 1, n_rem + 1)[1:]
 post = np.floor((1 - np.exp(-exp * t)) * (TOTAL_ITERATIONS - 1 - fixed[-1])).astype(int) + fixed[-1]
 iterationsOfInterest = sorted(set(fixed + post.tolist()))[:no_slices]'''
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
-density_slices = []
 
 plotter = Plotter2D(
     script_dir=script_dir,
@@ -2350,7 +2352,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         debug_log('ITER', 'Iter %d: phi at y=0: %.3e, y=50: %.3e, y=51: %.3e', iteration, np.mean(_phi[:,1]), np.mean(_phi[:,50]), np.mean(_phi[:,51])) 
         debug_log('ITER', 'Iter %d: rho min=%.3e, max=%.3e', iteration, np.min(rho), np.max(rho))        
         
-    if iteration in iterationsOfInterest and iteration in (fc.TOTAL_ITERATIONS-1):
+    if iteration in iterationsOfInterest and iteration == (fc.TOTAL_ITERATIONS-1):
         yc = int(np.argmin(np.abs(_phi[Xn//2, :] - phi_mid)))
         #phi mapping
         plotter.save_phi_snapshot(_phi, iteration, fc.phi_star_G, fc.phi_star_L)    
@@ -2368,7 +2370,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         title = "Density map"
         plotter.density_map_standalone(rho, rho_min, rho_max, title, iteration)
         rho_slice = rho[density_profile_x_position, :].copy()
-        density_slices.append((iteration, rho_slice))
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Body and Surface Tension
@@ -2503,10 +2504,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         StabilityConditions.append((iteration, ssc, osc))
 
         invariant = np.sum(rho*u_ckl[0])
-        MomentumBounds.append((iteration, u_ckl_x_min, u_ckl_x_max, invariant))
         rho_min = np.min(rho)
         rho_max = np.max(rho)    
-        rho_bounds.append((iteration, rho_min, rho_max))
         Invariants.append((iteration, invariant))
         debug_log('FIELD', 'Iteration=%d; max|u_x|=%.2e; invariant=%.2e', iteration, u_ckl_x_max, invariant)
         GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
@@ -2519,7 +2518,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         div_u_raw = du_dx + dv_dy
 
         GrowthMetric_div_u_raw.append((iteration, np.max(np.abs(du_dx)), np.max(np.abs(du_dy)), np.max(np.abs(div_u_raw))))
-        GrowthMetric_u_ckl_star_du_dy.append((iteration, du_dy))            
 
         PhIters.append((iteration, ph_iter))
         spuriousField1 = np.max(np.abs(c_first_derivative0(p)))
@@ -2527,15 +2525,10 @@ while iteration < fc.TOTAL_ITERATIONS:
         spuriousField2 = np.max(np.abs(laplacian_phi))
         SpuriousFields.append((iteration, spuriousField1, spuriousField2))
 
-        ################################# 6. Additional Diagnostics and Rollbacks ######################################
-        DivU_max.append((iteration, np.max(np.abs(div_u_raw))))
-        #PhEps_max.append((iteration, np.max(epsilon)))
-        ################################################################################################################
         #  NEW – collect vertical integrals of φ
         phi_total = np.sum(_phi[1:Xn+1, 1:Yn+1])
         PhiCollector.append((iteration, phi_total))
         phi_on_plane = _phi[1, 1:Yn+1]
-        PhiOnPlaneCollector_0.append((iteration, phi_on_plane))
         phi_on_plane = _phi[(Xn+1)//2, 0:Yn]
         PhiOnPlaneCollector_1.append((iteration, phi_on_plane))
         phi_on_plane = _phi[1, 1:Yn+1]
@@ -2666,7 +2659,7 @@ fig1, ax1 = plt.subplots(
 # In the fig1, ax1 section
 sectionPosition = int(Xn/2)
 
-# avg_velocities_x, avg_velocities_y
+# --- shared setup, not tied to a single grid cell ---
 filtered_u_ckl_dict_x = plotter.filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
 filtered_u_ckl_list_x = list(filtered_u_ckl_dict_x.values())
 
@@ -2674,18 +2667,29 @@ filtered_u_ckl_dict_y = plotter.filter_u_ckl_fullrange(list_avg_velocities_y, it
 filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
 
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
-plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
-plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+_iteration = fc.TOTAL_ITERATIONS
 
 # phi plots at centerline
 iteration, phi_on_plane = PhiOnPlaneCollector_1[-1]
 plotter.phi_profile(phi_on_plane, f"phi_profile_", iteration=iteration)
 
-_iteration = fc.TOTAL_ITERATIONS
+BodyForce_center_0 = list_BodyForce_0.popitem()[1]
+BodyForce_center_1 = list_BodyForce_1.popitem()[1]
+NetForce_center = list_NetForce.popitem()[1]
+
+# --- (0, 0): Amplitude u_x ---
+plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
+
+# --- (0, 1): Velocity [u_x] map ---
 plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
+
+# --- (1, 0): Amplitude u_y ---
+plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+
+# --- (1, 1): Velocity [u_y] map ---
 plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
-# phi 2D map (replaces density_profiles — both showed density; phi is more informative here)
+# --- (2, 0): phi 2D map (replaces density_profiles — both showed density; phi is more informative here) ---
 im_phi_fig1 = ax1[2, 0].imshow(_phi.T, origin='lower', cmap='RdBu',
                                 vmin=fc.phi_star_G, vmax=fc.phi_star_L)
 ax1[2, 0].set_xlabel('x-index')
@@ -2693,6 +2697,7 @@ ax1[2, 0].set_ylabel('y-index')
 ax1[2, 0].set_title(r'Order parameter $\phi$ (final)')
 fig1.colorbar(im_phi_fig1, ax=ax1[2, 0], fraction=0.046, pad=0.04)
 
+# --- (2, 1): Density map ---
 if PRESSURE_IN_DENSITY_MAP:
     min_value = 0
     _pressure_full_range = (_rho_full_range - min_value) * Cs**2
@@ -2706,10 +2711,7 @@ else:
     # overlay phi interface contour on density map
     ax1[2, 1].contour(_phi.T, levels=[phi_mid], colors='white', linewidths=0.8, linestyles='--')
 
-BodyForce_center_0 = list_BodyForce_0.popitem()[1]
-BodyForce_center_1 = list_BodyForce_1.popitem()[1]
-NetForce_center = list_NetForce.popitem()[1]
-
+# --- (3, 0): _phi + _phid distribution ---
 #phi: Phi, dPhix, dPhiy
 label1 = r'$\phi$'
 label2 = r'$\partial \phi_x$'
@@ -2727,13 +2729,11 @@ plotter.phi_x_axis_plot_3(
     title=f"_phi + _phid distribution y={yc}"
 )
 
-plotter.save_phi_snapshot(_phi, iteration-1, fc.phi_star_G, fc.phi_star_L)
-
-#chemical potential: Zhang & Inamuro
+# --- (3, 1): ChemicalPotential distribution (Zhang & Inamuro) — disabled ---
 if False:
     if fc.ADD_SURFACE_TENSION_FORCE:
         zhangChemicalPotential_center = _chemical_potential_Zhang[:,yc].copy()
-        inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()   
+        inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()
 
         label=r'$\mu_\phi$'
         label1=r'$Zhang  \mu_\phi$'
@@ -2765,7 +2765,6 @@ fig2, ax2 = plt.subplots(
 )
 
 ax2[0, 3].axis('off')   # unused cell
-ax2[2, 2].axis('off')   # unused cell
 
 if ADD_METRICS:
     plotter.plot_bounds_ext(GrowthMetric_uckl_x, "GrowthMetric_uckl_x", ax2[0, 0])
@@ -2801,6 +2800,9 @@ if ADD_METRICS:
 
     series_labels = ["c_first_derivative0(p)","laplacian_phi"]
     plotter.plot_bounds_ext(SpuriousFields, "SpuriousFields", ax2[2, 1], series_labels)
+
+    series_labels = ["Bond no. (non-dim.)", "Bond no. (lattice)"]
+    plotter.plot_bounds_ext(BondNumber, "Bond Number", ax2[2, 2], series_labels)
 
 
     if fc.ADD_SURFACE_TENSION_FORCE == 1:
@@ -2906,6 +2908,9 @@ def _gi_y_terms_at(xi):
 gi_wall   = _gi_y_terms_at(x_w)
 gi_centre = _gi_y_terms_at(x_c)
 
+# Capillary (surface tension) force, y-component at the same wall location
+Fs_wall = _capillary_force[1, x_w, :]
+
 fig3, ax3 = plt.subplots(2, 2, figsize=(14, 12),
                           gridspec_kw={'hspace': 0.45, 'wspace': 0.35},
                           num="fig3 - fi_c/gi_c term breakdown diagnostic")
@@ -2932,6 +2937,7 @@ fi_labels = [
 ]
 for k, (term, lbl) in enumerate(zip(fi_wall, fi_labels)):
     ax3[0, 1].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[0, 1].plot(Fs_wall, y_ax, label='Fs', lw=2.0, color='k')
 ax3[0, 1].axvline(0, color='k', lw=0.5)
 ax3[0, 1].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
 ax3[0, 1].set_xlabel('term value')
@@ -2952,6 +2958,7 @@ gi_labels = [
 ]
 for k, (term, lbl) in enumerate(zip(gi_wall, gi_labels)):
     ax3[1, 0].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[1, 0].plot(Fs_wall, y_ax, label='Fs', lw=2.0, color='k')
 ax3[1, 0].axvline(0, color='k', lw=0.5)
 ax3[1, 0].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
 ax3[1, 0].set_xlabel('term value')

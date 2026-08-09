@@ -165,7 +165,6 @@ class FlowConfig:
 
 
 #flags
-PRESSURE_IN_DENSITY_MAP = False
 PLOTREALTIME = False  
 ADD_METRICS = True
 
@@ -724,11 +723,11 @@ def Fs_inamuro(fc, _phi, n_dx, n_dy):
     return chemical_potential_Inamuro(fc, _phi) * nabla_phi    
 
 
-def Fs_zhang(fc, _phi, n_dx, n_dy):
-    _phi_n, _, _ = normalizePhiExt(fc, _phi)
-    dphi_dx, dphi_dy = c_first_derivative0(_phi, n_dx, n_dy)
-    nabla_phi = np.stack([dphi_dx, dphi_dy], axis=0)
-    return chemical_potential_Zhang(fc, _phi_n) * nabla_phi   
+def Fs_zhang(fc, __phi, n_dx, n_dy):
+    _phi_n, _, _ = normalizePhiExt(fc, __phi)
+    dphi_dx, dphi_dy = c_first_derivative0(_phi_n, n_dx, n_dy)
+    nabla_n_phi = np.stack([dphi_dx, dphi_dy], axis=0)
+    return chemical_potential_Zhang(fc, _phi_n) * nabla_n_phi   
 
 
 #Inamuro eq(10): p0 from eq(6)F[i]*
@@ -1781,14 +1780,14 @@ def compContactAngle(fc):
 
 
 #Chemical potential acc. Zhang eq(6)
-def chemical_potential_Zhang(fc, _phi): #st_mu_phi
+def chemical_potential_Zhang(fc, __phi): #st_mu_phi
     """
     Zhang eq(6): Compute checmial potential μϕ
     μϕ = 4βϕ(ϕ - 1)(ϕ - 0.5) - κ∇2ϕ
     """
-    term1 = 4 * fc.vf_beta * _phi*(_phi - 1.0) * (_phi - 0.5)
+    term1 = 4 * fc.vf_beta * __phi*(__phi) * (__phi - 0.5)
     #term3 = c_laplacian(_phi)
-    term2 = zhang_laplacian(_phi)
+    term2 = zhang_laplacian(__phi)
     _mu_phi =  term1 -  fc.vf_kappa * term2
     return _mu_phi
 
@@ -1852,7 +1851,7 @@ def zhang_weight_function(fc, __phi, eps=1e-12):
     return w
 
 
-def zhang_fc(fc, _phi):
+def zhang_fc(fc, __phi):
     """
     Compute Zhang surface tension force at walls.
     
@@ -1869,9 +1868,9 @@ def zhang_fc(fc, _phi):
         Force array, shape (2, Xn+2, Yn+2)
     """
     #dphidx, dphidy = c_first_derivative0(_phi)
-    dphidx, dphidy = zhang_gradient(_phi)
+    dphidx, dphidy = zhang_gradient(__phi)
 
-    _fc = np.zeros((_phi.shape[0], _phi.shape[1], 2), dtype=np.float64)
+    _fc = np.zeros((__phi.shape[0], __phi.shape[1], 2), dtype=np.float64)
 
     # --- LEFT WALL ---
     i = 1
@@ -1879,7 +1878,7 @@ def zhang_fc(fc, _phi):
     m = m_left(fc)
     delta_x, delta_y = 0.0, n_dy
     abs_phi = np.abs(dphidx[i, j]) * delta_x + np.abs(dphidy[i, j]) * delta_y
-    w = zhang_weight_function(fc, _phi[i, j])
+    w = zhang_weight_function(fc, __phi[i, j])
     val_left = (w * abs_phi)[:, None] * m[None, :]
     _fc[i, j, :] = val_left
 
@@ -1889,7 +1888,7 @@ def zhang_fc(fc, _phi):
     m = m_right(fc)
     delta_x, delta_y = 0.0, n_dy
     abs_phi = np.abs(dphidx[i, j]) * delta_x + np.abs(dphidy[i, j]) * delta_y
-    w = zhang_weight_function(fc, _phi[i, j])
+    w = zhang_weight_function(fc, __phi[i, j])
     val_right = (w * abs_phi)[:, None] * m[None, :]
     _fc[i, j, :] = val_right
 
@@ -1899,7 +1898,7 @@ def zhang_fc(fc, _phi):
     m = m_bottom(fc)
     delta_x, delta_y = 1.0, 0.0
     abs_phi = np.abs(dphidx[i, j]) * delta_x + np.abs(dphidy[i, j]) * delta_y
-    w = zhang_weight_function(fc, _phi[i, j])
+    w = zhang_weight_function(fc, __phi[i, j])
     val_bottom = (w * abs_phi)[:, None] * m[None, :]
     _fc[i, j, :] = val_bottom
 
@@ -1909,14 +1908,14 @@ def zhang_fc(fc, _phi):
     m = m_top(fc)
     delta_x, delta_y = 1.0, 0.0
     abs_phi = np.abs(dphidx[i, j]) * delta_x + np.abs(dphidy[i, j]) * delta_y
-    w = zhang_weight_function(fc, _phi[i, j])
+    w = zhang_weight_function(fc, __phi[i, j])
     val_top = (w * abs_phi)[:, None] * m[None, :]
     _fc[i, j, :] = val_top
 
     return np.transpose(_fc, (2, 0, 1))  # <-- change here
 
 
-def set_solid_nodes(iteration, fc, _phi):
+def set_solid_nodes(iteration, fc, in_phi):
     #2. viscous force - adaptation of Zhang et al. eq(5), with μ_phi exchanged for μ_c
     #fc.vf_kappa = 3 * fc.vf_sigma * fc.vf_W / 2
     #fc.vf_beta = 12 * fc.vf_sigma / fc.vf_W
@@ -1924,7 +1923,7 @@ def set_solid_nodes(iteration, fc, _phi):
     # ------- Capillary effect (wetting on bottom, left, and right walls only) -------
     # n = ∇ϕ|∇ϕ∣
 
-    __phi = _phi.copy()
+    __phi = in_phi.copy()
 
 
     # The outer ghost ring can hold stale values (periodic np.roll streaming
@@ -2075,18 +2074,18 @@ def set_solid_nodes(iteration, fc, _phi):
     return __phi, _phi_n
 
 
-def calc_node_s_diff(iteration, _base, offset, _phi_s, _phi):
+def calc_node_s_diff(iteration, _base, offset, _phi_s, __phi):
     _pos = _base + offset
 
     _pos_0 = _phi_s[_pos]
-    _pos_1 = _phi[1, _pos]
-    _pos_2 = _phi[2, _pos]
-    _pos_3 = _phi[3, _pos]
-    _pos_4 = _phi[4, _pos]
-    _pos_5 = _phi[5, _pos]
-    _pos_6 = _phi[6, _pos]
+    _pos_1 = __phi[1, _pos]
+    _pos_2 = __phi[2, _pos]
+    _pos_3 = __phi[3, _pos]
+    _pos_4 = __phi[4, _pos]
+    _pos_5 = __phi[5, _pos]
+    _pos_6 = __phi[6, _pos]
 
-    _diff_0 = _pos_0 - _phi[0, _pos]
+    _diff_0 = _pos_0 - __phi[0, _pos]
 
     lstNodes = [_pos_0, _pos_1, _pos_2, _pos_3, _pos_4, _pos_5, _pos_6]
 
@@ -2523,13 +2522,9 @@ while iteration < fc.TOTAL_ITERATIONS:
         debug_log('ITER', 'iteration: %d; Bond no. (non-dimensional): %.1f %%; Bond no. (lattice) %.1f %%', 
             iteration, Bnon, Blat)
         
-
-    if iteration in iterationsOfInterest:
         dphi_dx, _ = c_first_derivative0(_phi)
         print(f"dφ/dx at [1, 97:103] = {np.round(dphi_dx[1, 97:103], 6)}")
 
-
-    if iteration in iterationsOfInterest:
         _mu_c = chemical_potential_Inamuro(fc, _phi)
         _phi_n_for_zhang, _, _ = normalizePhiExt(fc, _phi)
         _mu_zhang = chemical_potential_Zhang(fc, _phi_n_for_zhang)
@@ -2559,13 +2554,13 @@ while iteration < fc.TOTAL_ITERATIONS:
         capillary_force_zhang_eq_5 = Fs_zhang(fc, _phi, n_dx, n_dy)
         assert capillary_force_zhang_eq_5.shape == (2, Xn+2, Yn+2), f"capillary_force_zhang_eq_5 shape: {capillary_force_zhang_eq_5.shape}"
         
-        _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * capillary_force_zhang_eq_53_n
+        _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * capillary_force_zhang_eq_5
 
-        if True:
+        if False:
             u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
                 + fc.ADD_BODY_FORCE * body_force \
                 + _capillary_force
-        if False:
+        if True:
             u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
                 + 1/(2*rho) * fc.ADD_BODY_FORCE * body_force \
                 + 1/(2*rho) * _capillary_force
@@ -2761,7 +2756,7 @@ height_ratios0 = [
 height_ratios1 = [top_row_height, bottom_row_height, bottom_row_height] if 'top_row_height' in globals() else [1, 1, 1]
 
 # 4x2 multi-plot grid
-paneLabel = f"Dashboard D2Q9 LB method for incompressible two-phase flows Inamuro et al 2004 Lattice [{Xn} {Yn}] Single processor"
+paneLabel = f"Distributions: D2Q9 for incompressible two-phase flows Inamuro et al 2004 Lattice [{Xn} {Yn}] Single processor"
 fig1, ax1 = plt.subplots(
     4, 2,
     figsize=(15, 10),
@@ -2778,7 +2773,7 @@ fig1, ax1 = plt.subplots(
 # In the fig1, ax1 section
 sectionPosition = int(Xn/2)
 
-# avg_velocities_x, avg_velocities_y
+# --- shared setup, not tied to a single grid cell ---
 filtered_u_ckl_dict_x = plotter.filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
 filtered_u_ckl_list_x = list(filtered_u_ckl_dict_x.values())
 
@@ -2786,42 +2781,45 @@ filtered_u_ckl_dict_y = plotter.filter_u_ckl_fullrange(list_avg_velocities_y, it
 filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
 
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
-plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
-plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+_iteration = fc.TOTAL_ITERATIONS
 
 # phi plots at centerline
 iteration, phi_on_plane = PhiOnPlaneCollector_1[-1]
 plotter.phi_profile(phi_on_plane, f"phi_profile_", iteration=iteration)
 
-_iteration = fc.TOTAL_ITERATIONS
-plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
-plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
-
-# phi 2D map (replaces density_profiles — both showed density; phi is more informative here)
-im_phi_fig1 = ax1[2, 0].imshow(_phi.T, origin='lower', cmap='RdBu',
-                                vmin=fc.phi_star_G, vmax=fc.phi_star_L)
-ax1[2, 0].set_xlabel('x-index')
-ax1[2, 0].set_ylabel('y-index')
-ax1[2, 0].set_title(r'Order parameter $\phi$ (final)')
-fig1.colorbar(im_phi_fig1, ax=ax1[2, 0], fraction=0.046, pad=0.04)
-
-if PRESSURE_IN_DENSITY_MAP:
-    min_value = 0
-    _pressure_full_range = (_rho_full_range - min_value) * Cs**2
-    _pressure_out = (rho_min - min_value) * Cs**2
-    _pressure_in = (rho_max - min_value) * Cs**2
-    title = "Pressure map"
-    plotter.density_mapExt(ax1[2, 1], _pressure_full_range, _pressure_out, _pressure_in, title, iteration)
-else:
-    title = "Density map"
-    plotter.density_mapExt(ax1[2, 1], _rho_full_range, rho_min, rho_max, title, iteration)
-    # overlay phi interface contour on density map
-    ax1[2, 1].contour(_phi.T, levels=[phi_mid], colors='white', linewidths=0.8, linestyles='--')
-
 BodyForce_center_0 = list_BodyForce_0.popitem()[1]
 BodyForce_center_1 = list_BodyForce_1.popitem()[1]
 NetForce_center = list_NetForce.popitem()[1]
 
+# --- (0, 0): Amplitude u_x ---
+plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
+
+# --- (0, 1): Velocity [u_x] map ---
+plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
+
+# --- (1, 0): Amplitude u_y ---
+plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+
+# --- (1, 1): Velocity [u_y] map ---
+plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
+
+# --- (2, 0): ChemicalPotential distribution (Inamuro) ---
+if fc.ADD_SURFACE_TENSION_FORCE:
+    inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()
+
+    label=r'$\mu_\phi$'
+    label1=r'$Inamuro  \mu_\phi$'
+    plotter.phi_x_axis_plot_1(ax1[2, 0], inamuroChemicalPotential_center, yc, iteration, f"ChemicalPotential distribution y={yc}", label1)
+
+# --- (2, 1): phi 2D map (replaces density_profiles — both showed density; phi is more informative here) ---
+im_phi_fig1 = ax1[2, 1].imshow(_phi.T, origin='lower', cmap='RdBu',
+                                vmin=fc.phi_star_G, vmax=fc.phi_star_L)
+ax1[2, 1].set_xlabel('x-index')
+ax1[2, 1].set_ylabel('y-index')
+ax1[2, 1].set_title(r'Order parameter $\phi$ (final)')
+fig1.colorbar(im_phi_fig1, ax=ax1[2, 1], fraction=0.046, pad=0.04)
+
+# --- (3, 0): _phi + _phid distribution ---
 #phi: Phi, dPhix, dPhiy
 label1 = r'$\phi$'
 label2 = r'$\partial \phi_x$'
@@ -2839,13 +2837,11 @@ plotter.phi_x_axis_plot_3(
     title=f"_phi + _phid distribution y={yc}"
 )
 
-#chemical potential: Zhang & Inamuro
-if fc.ADD_SURFACE_TENSION_FORCE:
-    inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()   
-
-    label=r'$\mu_\phi$'
-    label1=r'$Inamuro  \mu_\phi$'
-    plotter.phi_x_axis_plot_1(ax1[3, 1], inamuroChemicalPotential_center, yc, iteration, f"ChemicalPotential distribution y={yc}", label1)
+# --- (3, 1): Density map ---
+title = "Density map"
+plotter.density_mapExt(ax1[3, 1], _rho_full_range, rho_min, rho_max, title, iteration)
+# overlay phi interface contour on density map
+ax1[3, 1].contour(_phi.T, levels=[phi_mid], colors='white', linewidths=0.8, linestyles='--')
 
 text = f"Run-time: {diff:.1f} s"
 fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
@@ -2872,7 +2868,6 @@ fig2, ax2 = plt.subplots(
 )
 
 ax2[0, 3].axis('off')   # unused cell
-ax2[2, 2].axis('off')   # unused cell
 
 if ADD_METRICS:
     plotter.plot_bounds_ext(GrowthMetric_uckl_x, "GrowthMetric_uckl_x", ax2[0, 0])
@@ -2908,6 +2903,9 @@ if ADD_METRICS:
 
     series_labels = ["c_first_derivative0(p)","laplacian_phi"]
     plotter.plot_bounds_ext(SpuriousFields, "SpuriousFields", ax2[2, 1], series_labels)
+
+    series_labels = ["Bond no. (non-dim.)", "Bond no. (lattice)"]
+    plotter.plot_bounds_ext(BondNumber, "Bond Number", ax2[2, 2], series_labels)
 
 
     if fc.ADD_SURFACE_TENSION_FORCE == 1 and fcBounds_left and fcBounds_right:
@@ -3013,9 +3011,13 @@ def _gi_y_terms_at(xi):
 gi_wall   = _gi_y_terms_at(x_w)
 gi_centre = _gi_y_terms_at(x_c)
 
+# Capillary (surface tension) force, y-component at the same wall location
+Fs_wall = _capillary_force[1, x_w, :]
+
+paneLabel = f"Diagnostics - fi_c/gi_c term breakdown"
 fig3, ax3 = plt.subplots(2, 2, figsize=(14, 12),
                           gridspec_kw={'hspace': 0.45, 'wspace': 0.35},
-                          num="fig3 - fi_c/gi_c term breakdown diagnostic")
+                          num=paneLabel)
 
 # ── Plot 1: phi near-wall profile (ghost + first 3 fluid columns) ────────────
 for xi, lbl in [(0, 'x=0 ghost'), (1, 'x=1 wall'), (2, 'x=2'), (3, 'x=3')]:
@@ -3039,6 +3041,7 @@ fi_labels = [
 ]
 for k, (term, lbl) in enumerate(zip(fi_wall, fi_labels)):
     ax3[0, 1].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[0, 1].plot(Fs_wall, y_ax, label='Fs', lw=2.0, color='k')
 ax3[0, 1].axvline(0, color='k', lw=0.5)
 ax3[0, 1].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
 ax3[0, 1].set_xlabel('term value')
@@ -3059,6 +3062,7 @@ gi_labels = [
 ]
 for k, (term, lbl) in enumerate(zip(gi_wall, gi_labels)):
     ax3[1, 0].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[1, 0].plot(Fs_wall, y_ax, label='Fs', lw=2.0, color='k')
 ax3[1, 0].axvline(0, color='k', lw=0.5)
 ax3[1, 0].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
 ax3[1, 0].set_xlabel('term value')

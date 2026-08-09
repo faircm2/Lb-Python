@@ -2102,7 +2102,7 @@ fig1, ax1 = plt.subplots(
 # In the fig1, ax1 section
 sectionPosition = int(Xn/2)
 
-# avg_velocities_x, avg_velocities_y
+# --- shared setup, not tied to a single grid cell ---
 filtered_u_ckl_dict_x = plotter.filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
 filtered_u_ckl_list_x = list(filtered_u_ckl_dict_x.values())
 
@@ -2110,22 +2110,35 @@ filtered_u_ckl_dict_y = plotter.filter_u_ckl_fullrange(list_avg_velocities_y, it
 filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
 
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
-plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
-plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+_iteration = fc.TOTAL_ITERATIONS
 
 # phi plots at centerline
 iteration, phi_on_plane = PhiOnPlaneCollector_1[-1]
 plotter.phi_profile(phi_on_plane, f"phi_profile_", iteration=iteration)
 
-_iteration = fc.TOTAL_ITERATIONS
+BodyForce_center_0 = list_BodyForce_0.popitem()[1]
+BodyForce_center_1 = list_BodyForce_1.popitem()[1]
+NetForce_center = list_NetForce.popitem()[1]
+
+# --- (0, 0): Amplitude u_x ---
+plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
+
+# --- (0, 1): Velocity [u_x] map ---
 plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
+
+# --- (1, 0): Amplitude u_y ---
+plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+
+# --- (1, 1): Velocity [u_y] map ---
 plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
+# --- (2, 0): Density profiles ---
 plotter.density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn, iteration)
 
+# --- (2, 1): Density map ---
 if PRESSURE_IN_DENSITY_MAP:
-    min_value = 0 
-    _pressure_full_range = (_rho_full_range - min_value) * Cs2 
+    min_value = 0
+    _pressure_full_range = (_rho_full_range - min_value) * Cs2
     _pressure_out = (rho_min - min_value) * Cs2
     _pressure_in = (rho_max - min_value) * Cs2
     title = "Pressure map"
@@ -2134,10 +2147,7 @@ else:
     title = "Density map"
     plotter.density_mapExt(ax1[2, 1], _rho_full_range, rho_min, rho_max, title, iteration)
 
-BodyForce_center_0 = list_BodyForce_0.popitem()[1]
-BodyForce_center_1 = list_BodyForce_1.popitem()[1]
-NetForce_center = list_NetForce.popitem()[1]
-
+# --- (3, 0): _phi + _phid distribution ---
 #phi: Phi, dPhix, dPhiy
 label1 = r'$\phi$'
 label2 = r'$\partial \phi_x$'
@@ -2155,7 +2165,7 @@ plotter.phi_x_axis_plot_3(
     title=f"_phi + _phid distribution y={yc}"
 )
 
-#chemical potential: Zhang
+# --- (3, 1): ChemicalPotential distribution (Zhang) ---
 if fc.ADD_SURFACE_TENSION_FORCE:
     zhangChemicalPotential_center = _chemical_potential_Zhang[:,yc].copy()
     label1=r'$Zhang  \mu_\phi$'

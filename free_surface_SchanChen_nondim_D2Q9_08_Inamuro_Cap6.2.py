@@ -2684,7 +2684,7 @@ fig1, ax1 = plt.subplots(
 # In the fig1, ax1 section
 sectionPosition = int(Xn/2)
 
-# avg_velocities_x, avg_velocities_y
+# --- shared setup, not tied to a single grid cell ---
 filtered_u_ckl_dict_x = plotter.filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
 filtered_u_ckl_list_x = list(filtered_u_ckl_dict_x.values())
 
@@ -2692,17 +2692,28 @@ filtered_u_ckl_dict_y = plotter.filter_u_ckl_fullrange(list_avg_velocities_y, it
 filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
 
 U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
-plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
-plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+_iteration = fc.TOTAL_ITERATIONS
 
 # phi plots at centerline
 plotter.phi_profile(phi_on_plane, f"phi_profile_", iteration=iteration)
 
-_iteration = fc.TOTAL_ITERATIONS
+BodyForce_center_0 = list_BodyForce_0.popitem()[1]
+BodyForce_center_1 = list_BodyForce_1.popitem()[1]
+NetForce_center = list_NetForce.popitem()[1]
+
+# --- (0, 0): Amplitude u_x ---
+plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
+
+# --- (0, 1): Velocity [u_x] map ---
 plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
+
+# --- (1, 0): Amplitude u_y ---
+plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+
+# --- (1, 1): Velocity [u_y] map ---
 plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
 
-# phi 2D map (replaces density_profiles — both showed density; phi is more informative here)
+# --- (2, 0): phi 2D map (replaces density_profiles — both showed density; phi is more informative here) ---
 im_phi_fig1 = ax1[2, 0].imshow(_phi.T, origin='lower', cmap='RdBu',
                                 vmin=fc.phi_star_G, vmax=fc.phi_star_L)
 ax1[2, 0].set_xlabel('x-index')
@@ -2710,6 +2721,7 @@ ax1[2, 0].set_ylabel('y-index')
 ax1[2, 0].set_title(r'Order parameter $\phi$ (final)')
 fig1.colorbar(im_phi_fig1, ax=ax1[2, 0], fraction=0.046, pad=0.04)
 
+# --- (2, 1): Density map ---
 if PRESSURE_IN_DENSITY_MAP:
     min_value = 0
     _pressure_full_range = (_rho_full_range - min_value) * Cs**2
@@ -2723,10 +2735,7 @@ else:
     # overlay phi interface contour on density map
     ax1[2, 1].contour(_phi.T, levels=[phi_mid], colors='white', linewidths=0.8, linestyles='--')
 
-BodyForce_center_0 = list_BodyForce_0.popitem()[1]
-BodyForce_center_1 = list_BodyForce_1.popitem()[1]
-NetForce_center = list_NetForce.popitem()[1]
-
+# --- (3, 0): _phi + _phid distribution ---
 #phi: Phi, dPhix, dPhiy
 label1 = r'$\phi$'
 label2 = r'$\partial \phi_x$'
@@ -2744,9 +2753,9 @@ plotter.phi_x_axis_plot_3(
     title=f"_phi + _phid distribution y={yc}"
 )
 
-#chemical potential: Zhang & Inamuro
+# --- (3, 1): ChemicalPotential distribution (Inamuro) ---
 if fc.ADD_SURFACE_TENSION_FORCE:
-    inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()   
+    inamuroChemicalPotential_center = _chemical_potential_Inamuro[:,yc].copy()
 
     label=r'$\mu_\phi$'
     label1=r'$Inamuro  \mu_\phi$'
@@ -2918,6 +2927,9 @@ def _gi_y_terms_at(xi):
 gi_wall   = _gi_y_terms_at(x_w)
 gi_centre = _gi_y_terms_at(x_c)
 
+# Capillary (surface tension) force, y-component at the same wall location
+Fs_wall = _capillary_force[1, x_w, :]
+
 fig3, ax3 = plt.subplots(2, 2, figsize=(14, 12),
                           gridspec_kw={'hspace': 0.45, 'wspace': 0.35},
                           num="fig3 - fi_c/gi_c term breakdown diagnostic")
@@ -2944,6 +2956,7 @@ fi_labels = [
 ]
 for k, (term, lbl) in enumerate(zip(fi_wall, fi_labels)):
     ax3[0, 1].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[0, 1].plot(Fs_wall, y_ax, label='Fs', lw=2.0, color='k')
 ax3[0, 1].axvline(0, color='k', lw=0.5)
 ax3[0, 1].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
 ax3[0, 1].set_xlabel('term value')
@@ -2964,6 +2977,7 @@ gi_labels = [
 ]
 for k, (term, lbl) in enumerate(zip(gi_wall, gi_labels)):
     ax3[1, 0].plot(term, y_ax, label=lbl, lw=1.2)
+ax3[1, 0].plot(Fs_wall, y_ax, label='Fs', lw=2.0, color='k')
 ax3[1, 0].axvline(0, color='k', lw=0.5)
 ax3[1, 0].axhline(yc, color='grey', ls=':', lw=0.8, label=f'yc={yc}')
 ax3[1, 0].set_xlabel('term value')
