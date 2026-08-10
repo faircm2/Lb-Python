@@ -43,7 +43,7 @@ if sys.platform.startswith('win'):
 # MPI configuration
 comm = MPI.COMM_WORLD
 dims = [2, 2, 2]
-cart = comm.Create_cart(dims, preiods=[False, False, False], reorder=True)
+cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
 rank_coords = cart.Get_coords(cart.Get_rank())
 
 rank = comm.Get_rank()

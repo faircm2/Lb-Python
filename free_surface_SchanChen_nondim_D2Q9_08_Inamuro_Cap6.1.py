@@ -2446,7 +2446,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     # (nothing reads it until the process exits), so writing it every
     # iteration was ~15 min of pure waste per 12001-iteration run.    
     #if iteration == fc.TOTAL_ITERATIONS - 1:
-    if (iteration == fc.TOTAL_ITERATIONS - 1):
+    if False and (iteration == fc.TOTAL_ITERATIONS - 1):
         filename = "phi_matrix_" + str(iteration)
         save_phi_results(phi_n_, phi_star_G_, phi_star_L_, filename)
 
