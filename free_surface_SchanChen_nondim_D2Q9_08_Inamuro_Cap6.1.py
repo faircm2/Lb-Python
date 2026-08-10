@@ -2446,7 +2446,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     # (nothing reads it until the process exits), so writing it every
     # iteration was ~15 min of pure waste per 12001-iteration run.    
     #if iteration == fc.TOTAL_ITERATIONS - 1:
-    if (iteration in iterationsOfInterest) or (iteration == fc.TOTAL_ITERATIONS - 1):
+    if (iteration == fc.TOTAL_ITERATIONS - 1):
         filename = "phi_matrix_" + str(iteration)
         save_phi_results(phi_n_, phi_star_G_, phi_star_L_, filename)
 
@@ -2540,21 +2540,22 @@ while iteration < fc.TOTAL_ITERATIONS:
         if iteration in iterationsOfInterest and fc.vf_theta > 90:
             print("phi at left wall (ghost + first fluid nodes):", _phi[0:3, yc])
 
-        zhang_surface_tension_force = calc_capillary_force(iteration, fc, _phi, _phi_n)
-        capillary_force_zhang_eq_53_n = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
-        assert capillary_force_zhang_eq_53_n.shape == (2, Xn+2, Yn+2), f"capillary_force_zhang_eq_53_n shape: {capillary_force_zhang_eq_53_n.shape}"
+        capillary_force_flag = "zhang_eq_53_n"
 
-        # Zhang eq(53): fc is the the capillary force for an element dl 
-        capillary_force_zhang_eq_53 = zhang_fc(fc, _phi)
-        assert capillary_force_zhang_eq_53.shape == (2, Xn+2, Yn+2), f"capillary_force_zhang_eq_53 shape: {capillary_force_zhang_eq_53.shape}"
-        # Zhang eq(5): Fs is the surface tension force, expressed in a potential form, using chemical potential from Inamuro eq(18)
-        capillary_force_inamuro_eq_53 = Fs_inamuro(fc, _phi, n_dx, n_dy)
-        assert capillary_force_inamuro_eq_53.shape == (2, Xn+2, Yn+2), f"capillary_force_inamuro_eq_53 shape: {capillary_force_inamuro_eq_53.shape}"
-        # Zhang eq(5): Fs is the surface tension force, expressed in a potential form, using chemical potential from Zhang eq(6)
-        capillary_force_zhang_eq_5 = Fs_zhang(fc, _phi, n_dx, n_dy)
-        assert capillary_force_zhang_eq_5.shape == (2, Xn+2, Yn+2), f"capillary_force_zhang_eq_5 shape: {capillary_force_zhang_eq_5.shape}"
-        
-        _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * capillary_force_zhang_eq_5
+        dispatch = {
+            "zhang_eq_53_n": lambda: calc_capillary_force(iteration, fc, _phi, _phi_n),
+            "zhang_eq_53":   lambda: zhang_fc(fc, _phi),
+            "inamuro_eq_53": lambda: Fs_inamuro(fc, _phi, n_dx, n_dy),
+            "zhang_eq_5":    lambda: Fs_zhang(fc, _phi, n_dx, n_dy),
+        }
+
+        try:
+            result = dispatch[capillary_force_flag]()
+        except KeyError:
+            raise ValueError(f"Unknown capillary_force_flag: {capillary_force_flag!r}")
+
+        assert result.shape == (2, Xn+2, Yn+2), f"{capillary_force_flag} shape: {result.shape}"
+        _capillary_force = A * fc.ADD_SURFACE_TENSION_FORCE * result
 
         if False:
             u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \

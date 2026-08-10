@@ -15,3 +15,4 @@ explosion/
 _old_outputs/
 *.png
 lb_results/
+phi_matrix_*
