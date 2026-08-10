@@ -40,20 +40,6 @@ if sys.platform.startswith('win'):
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
-# MPI configuration
-comm = MPI.COMM_WORLD
-dims = [2, 2, 2]
-cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
-rank_coords = cart.Get_coords(cart.Get_rank())
-
-rank = comm.Get_rank()
-size = comm.Get_size()
-print(f"[rank {rank}] alive, size={size}", flush=True)
-
-# neigbour ranks along each axis
-x_lo, x_hi = cart.Shift(0, 1)
-y_lo, y_hi = cart.Shift(1, 1)
-z_lo, z_hi = cart.Shift(2, 1)
 
 @dataclass
 class FlowConfig:
@@ -444,6 +430,35 @@ VELOCITY_SET_SIZE = E.shape[0]
 E_exp = E[:, np.newaxis, np.newaxis, np.newaxis]  # (15,1,1,1)
 c_exp = c[:, :, np.newaxis, np.newaxis, np.newaxis]  # (15,3,1,1)
 debug_log('INIT', 'c=%(c).2f', extra=dict(c=c))
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────────
+# MPI configuration
+# ──────────────────────────────────────────────────────────────────────────────────────────
+comm = MPI.COMM_WORLD
+dims = [2, 2, 2]
+cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
+rank_coords = cart.Get_coords(cart.Get_rank())
+
+rank = comm.Get_rank()
+size = comm.Get_size()
+print(f"[rank {rank}] alive, size={size}", flush=True)
+
+# neigbour ranks along each axis
+x_lo, x_hi = cart.Shift(0, 1)
+y_lo, y_hi = cart.Shift(1, 1)
+z_lo, z_hi = cart.Shift(2, 1)
+
+local_Xn = Xn // dims[0]
+local_Yn = Yn // dims[1]
+local_Zn = Zn // dims[2]
+
+x_offset = rank_coords[0] * local_Xn
+y_offset = rank_coords[1] * local_Yn
+z_offset = rank_coords[2] * local_Zn
+
+print(f"[rank {rank}] coords={rank_coords}  local=({local_Xn},{local_Yn},{local_Zn})  "
+      f"global_offset=({x_offset},{y_offset},{z_offset})", flush=True)
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
