@@ -483,12 +483,29 @@ def exchange_ghosts_y(_phi, y_lo, y_hi, cart):
     if y_hi != MPI.PROC_NULL:
         _phi[:, -1, :] = recv_from_hi        
 
-# ── TEMPORARY TEST: verify exchange_ghosts_y — remove once confirmed ──────────
+def exchange_ghosts_z(_phi, z_lo, z_hi, cart):
+    send_to_hi = np.ascontiguousarray(_phi[:, :, -2])   # last real z-layer -> goes to the +z neighbor
+    send_to_lo = np.ascontiguousarray(_phi[:, :, 1])    # first real z-layer -> goes to the -z neighbor
+    recv_from_lo = np.empty_like(send_to_lo)
+    recv_from_hi = np.empty_like(send_to_hi)
+
+    req1 = cart.Isend(send_to_hi, dest=z_hi)
+    req2 = cart.Irecv(recv_from_lo, source=z_lo)
+    req3 = cart.Isend(send_to_lo, dest=z_lo)
+    req4 = cart.Irecv(recv_from_hi, source=z_hi)
+    MPI.Request.Waitall([req1, req2, req3, req4])
+
+    if z_lo != MPI.PROC_NULL:
+        _phi[:, :, 0] = recv_from_lo
+    if z_hi != MPI.PROC_NULL:
+        _phi[:, :, -1] = recv_from_hi        
+
+# ── TEMPORARY TEST: verify exchange_ghosts_z — remove once confirmed ──────────
 test_phi = np.full((6, 6, 6), float(rank))
-print(f"[rank {rank}] BEFORE: y=0 ghost={test_phi[0,0,0]}  y=-1 ghost={test_phi[0,-1,0]}  "
-      f"(y_lo={y_lo}, y_hi={y_hi})", flush=True)
-exchange_ghosts_y(test_phi, y_lo, y_hi, cart)
-print(f"[rank {rank}] AFTER:  y=0 ghost={test_phi[0,0,0]}  y=-1 ghost={test_phi[0,-1,0]}", flush=True)
+print(f"[rank {rank}] BEFORE: z=0 ghost={test_phi[0,0,0]}  z=-1 ghost={test_phi[0,0,-1]}  "
+      f"(z_lo={z_lo}, z_hi={z_hi})", flush=True)
+exchange_ghosts_z(test_phi, z_lo, z_hi, cart)
+print(f"[rank {rank}] AFTER:  z=0 ghost={test_phi[0,0,0]}  z=-1 ghost={test_phi[0,0,-1]}", flush=True)
 sys.exit()
 # ── END TEMPORARY TEST ─────────────────────────────────────────────────────────
 
