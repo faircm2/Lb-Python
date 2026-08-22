@@ -1782,22 +1782,20 @@ def set_solid_nodes(iteration, fc, _phi):
     return __phi
 
 
-def calc_node_s_diff(iteration, _base, offset, y_slice, _phi_s, _phi):
-    _pos = _base + offset   # z-position near mid-height
+def calc_node_s_diff(iteration, _pos_global, offset, y_local, z_local, _phi_s, _phi):
+    _pos_0 = _phi_s[y_local, z_local]
+    _pos_1 = _phi[1, y_local, z_local]
+    _pos_2 = _phi[2, y_local, z_local]
+    _pos_3 = _phi[3, y_local, z_local]
+    _pos_4 = _phi[4, y_local, z_local]
+    _pos_5 = _phi[5, y_local, z_local]
+    _pos_6 = _phi[6, y_local, z_local]
 
-    _pos_0 = _phi_s[y_slice, _pos]
-    _pos_1 = _phi[1, y_slice, _pos]
-    _pos_2 = _phi[2, y_slice, _pos]
-    _pos_3 = _phi[3, y_slice, _pos]
-    _pos_4 = _phi[4, y_slice, _pos]
-    _pos_5 = _phi[5, y_slice, _pos]
-    _pos_6 = _phi[6, y_slice, _pos]
-
-    _diff_0 = _pos_0 - _phi[0, y_slice, _pos]
+    _diff_0 = _pos_0 - _phi[0, y_local, z_local]
 
     lstNodes = [_pos_0, _pos_1, _pos_2, _pos_3, _pos_4, _pos_5, _pos_6]
 
-    print(f"Node: {_pos}; {_pos_0}; [diff: {_diff_0}]; "
+    print(f"Node: {_pos_global}; {_pos_0}; [diff: {_diff_0}]; "
           f"{_pos_1}; {_pos_2}; {_pos_3}; {_pos_4}; {_pos_5}; {_pos_6}")
 
     return offset, lstNodes, _diff_0
