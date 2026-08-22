@@ -436,7 +436,8 @@ debug_log('INIT', 'c=%(c).2f', extra=dict(c=c))
 # MPI configuration
 # ──────────────────────────────────────────────────────────────────────────────────────────
 comm = MPI.COMM_WORLD
-dims = [2, 2, 2]
+#dims = [2, 2, 2]
+dims = [1, 1, 1]
 cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
 rank_coords = cart.Get_coords(cart.Get_rank())
 
@@ -500,14 +501,40 @@ def exchange_ghosts_z(_phi, z_lo, z_hi, cart):
     if z_hi != MPI.PROC_NULL:
         _phi[:, :, -1] = recv_from_hi        
 
-# ── TEMPORARY TEST: verify exchange_ghosts_z — remove once confirmed ──────────
-test_phi = np.full((6, 6, 6), float(rank))
-print(f"[rank {rank}] BEFORE: z=0 ghost={test_phi[0,0,0]}  z=-1 ghost={test_phi[0,0,-1]}  "
-      f"(z_lo={z_lo}, z_hi={z_hi})", flush=True)
-exchange_ghosts_z(test_phi, z_lo, z_hi, cart)
-print(f"[rank {rank}] AFTER:  z=0 ghost={test_phi[0,0,0]}  z=-1 ghost={test_phi[0,0,-1]}", flush=True)
-sys.exit()
-# ── END TEMPORARY TEST ─────────────────────────────────────────────────────────
+
+def gather_xy_dict(local_dict, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, is_owner):
+    payload = (x_offset, y_offset, local_dict) if is_owner else None
+    gathered = comm.gather(payload, root=0)
+    if rank != 0:
+        return {}
+    full_dict = {}
+    for item in gathered:
+        if item is None:
+            continue
+        x_off, y_off, rank_dict = item
+        for it, piece in rank_dict.items():
+            if it not in full_dict:
+                full_dict[it] = np.zeros((Xn, Yn))
+            full_dict[it][x_off:x_off+local_Xn, y_off:y_off+local_Yn] = piece
+    return full_dict        
+
+
+def gather_x_line_dict(local_dict, x_offset, local_Xn, Xn, is_owner):
+    payload = (x_offset, local_dict) if is_owner else None
+    gathered = comm.gather(payload, root=0)
+    if rank != 0:
+        return {}
+    full_dict = {}
+    for item in gathered:
+        if item is None:
+            continue
+        x_off, rank_dict = item
+        for it, piece in rank_dict.items():
+            if it not in full_dict:
+                full_dict[it] = np.zeros(Xn)
+            full_dict[it][x_off:x_off+local_Xn] = piece
+    return full_dict    
+
 
 local_Xn = Xn // dims[0]
 local_Yn = Yn // dims[1]
@@ -985,6 +1012,9 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     #]
     #z_fi[:] = np.stack(streamed, axis=0)
     for i in range(fc.velocitySetSize):
+        exchange_ghosts_x(_z_star_buf[i], x_lo, x_hi, cart)
+        exchange_ghosts_y(_z_star_buf[i], y_lo, y_hi, cart)
+        exchange_ghosts_z(_z_star_buf[i], z_lo, z_hi, cart)
         z_fi[i] = np.roll(_z_star_buf[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
 
 
@@ -1108,6 +1138,9 @@ def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
     _z_star_buf += n_dt * _Gi          # n_dt*_Gi is 1 new array; += is in-place
 
     for i in range(fc.velocitySetSize):
+        exchange_ghosts_x(_z_star_buf[i], x_lo, x_hi, cart)
+        exchange_ghosts_y(_z_star_buf[i], y_lo, y_hi, cart)
+        exchange_ghosts_z(_z_star_buf[i], z_lo, z_hi, cart)
         z_gi[i] = np.roll(_z_star_buf[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2))
 
     return z_gi
@@ -1174,21 +1207,23 @@ def bounceBackTopBottom_conservation(fc, iteration, __gi, __fi, nx, ny, nz):
 
     # bottom wall (y=1) - no-slip halfway bounce-back
     # straight vertical reflection
-    __gi[5, :, :, 1] = __gi[6, :, :, 0]                                 # 6-> 5, die GhostNodes spielen keine Rolle
-    # diagonal reflections with horizontal shift
-    __gi[ 7, 1:nx-1, 1:ny-1, 1] = __gi[ 8, 0:nx-2, 0:ny-2, 0]           # 8 -> 7
-    __gi[10, 1:nx-1, 1:ny-1, 1] = __gi[ 9,  2:nx,    2:ny, 0]           # 10 -> 9
-    __gi[11, 1:nx-1, 1:ny-1, 1] = __gi[12,  0:nx-2,  2:ny, 0]           # 11 -> 12
-    __gi[13, 1:nx-1, 1:ny-1, 1] = __gi[14,  2:nx,  0:ny-2, 0]           # 14 -> 13
+    if z_lo == MPI.PROC_NULL:
+        __gi[5, :, :, 1] = __gi[6, :, :, 0]                                 # 6-> 5, die GhostNodes spielen keine Rolle
+        # diagonal reflections with horizontal shift
+        __gi[ 7, 1:nx-1, 1:ny-1, 1] = __gi[ 8, 0:nx-2, 0:ny-2, 0]           # 8 -> 7
+        __gi[10, 1:nx-1, 1:ny-1, 1] = __gi[ 9,  2:nx,    2:ny, 0]           # 10 -> 9
+        __gi[11, 1:nx-1, 1:ny-1, 1] = __gi[12,  0:nx-2,  2:ny, 0]           # 11 -> 12
+        __gi[13, 1:nx-1, 1:ny-1, 1] = __gi[14,  2:nx,  0:ny-2, 0]           # 14 -> 13
 
     # top wall (y=ny) - no-slip halfway bounce-back
     # straight vertical reflection
-    __gi[6, :, :, nz-2] = __gi[5, :, :, nz-1]                           # 5-> 6, die GhostNodes spielen keine Rolle
-    # diagonal reflections with horizontal shift
-    __gi[ 8, 1:nx-1, 1:ny-1, nz-2] = __gi[7,  2:nx,    2:ny,  nz-1]     # 8 -> 7
-    __gi[ 9, 1:nx-1, 1:ny-1, nz-2] = __gi[10, 0:nx-2, 0:ny-2, nz-1]     # 10 -> 9
-    __gi[12, 1:nx-1, 1:ny-1, nz-2] = __gi[11, 2:nx,   0:ny-2, nz-1]     # 11 -> 12
-    __gi[14, 1:nx-1, 1:ny-1, nz-2] = __gi[13, 0:nx-2,   2:ny, nz-1]     # 14 -> 13
+    if z_hi == MPI.PROC_NULL:
+        __gi[6, :, :, nz-2] = __gi[5, :, :, nz-1]                           # 5-> 6, die GhostNodes spielen keine Rolle
+        # diagonal reflections with horizontal shift
+        __gi[ 8, 1:nx-1, 1:ny-1, nz-2] = __gi[7,  2:nx,    2:ny,  nz-1]     # 8 -> 7
+        __gi[ 9, 1:nx-1, 1:ny-1, nz-2] = __gi[10, 0:nx-2, 0:ny-2, nz-1]     # 10 -> 9
+        __gi[12, 1:nx-1, 1:ny-1, nz-2] = __gi[11, 2:nx,   0:ny-2, nz-1]     # 11 -> 12
+        __gi[14, 1:nx-1, 1:ny-1, nz-2] = __gi[13, 0:nx-2,   2:ny, nz-1]     # 14 -> 13
 
     if iteration in iterationsOfInterest:
         __phi = phi(fc, __gi)
@@ -1226,20 +1261,22 @@ def bounceBackTopBottom_conservation(fc, iteration, __gi, __fi, nx, ny, nz):
     # xf: y-index 1    
 
     # bottom wall (i=2, 5, 6 — directions pointing N into fluid):
-    __fi[5, :, :, 1] =  (2/3)*__fi[5, :, :, 2] + (1/3)*__fi[6, :, :, 0]                                 # 6-> 5, die GhostNodes spielen keine Rolle
-    # diagonal reflections with horizontal shift
-    __fi[7, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[7, 2:nx-1, 2:ny-1, 2] + (1/3)*__fi[8, 0:nx-3, 0:ny-3, 0]  # 8 -> 7
-    __fi[10, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[10, 0:nx-3, 0:ny-3, 2] + (1/3)*__fi[9, 2:nx-1, 2:ny-1, 0]  # 9 -> 10
-    __fi[11, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[11, 2:nx-1, 0:ny-3, 2] + (1/3)*__fi[12, 0:nx-3, 2:ny-1, 0]  # 12 -> 11
-    __fi[13, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[13, 0:nx-3, 2:ny-1, 2] + (1/3)*__fi[14, 2:nx-1, 0:ny-3, 0]    # 14 -> 13
+    if z_lo == MPI.PROC_NULL:
+        __fi[5, :, :, 1] =  (2/3)*__fi[5, :, :, 2] + (1/3)*__fi[6, :, :, 0]                                 # 6-> 5, die GhostNodes spielen keine Rolle
+        # diagonal reflections with horizontal shift
+        __fi[7, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[7, 2:nx-1, 2:ny-1, 2] + (1/3)*__fi[8, 0:nx-3, 0:ny-3, 0]  # 8 -> 7
+        __fi[10, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[10, 0:nx-3, 0:ny-3, 2] + (1/3)*__fi[9, 2:nx-1, 2:ny-1, 0]  # 9 -> 10
+        __fi[11, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[11, 2:nx-1, 0:ny-3, 2] + (1/3)*__fi[12, 0:nx-3, 2:ny-1, 0]  # 12 -> 11
+        __fi[13, 1:nx-2, 1:ny-2, 1] = (2/3)*__fi[13, 0:nx-3, 2:ny-1, 2] + (1/3)*__fi[14, 2:nx-1, 0:ny-3, 0]    # 14 -> 13
     
     # top wall (i pointing S into fluid, cz=-1): 6, 8, 9, 12, 14
-    __fi[6, :, :, nz-2] = (2/3)*__fi[6, :, :, nz-3] + (1/3)*__fi[5, :, :, nz-1]                              # 5 -> 6
-    # diagonal reflections with horizontal shift
-    __fi[8, 1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[8,  0:nx-3, 0:ny-3, nz-3] + (1/3)*__fi[7,  2:nx-1, 2:ny-1, nz-1]  # 7 -> 8
-    __fi[9, 1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[9,  2:nx-1, 2:ny-1, nz-3] + (1/3)*__fi[10, 0:nx-3, 0:ny-3, nz-1]  # 10 -> 9
-    __fi[12,1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[12, 0:nx-3, 2:ny-1, nz-3] + (1/3)*__fi[11, 2:nx-1, 0:ny-3, nz-1]  # 11 -> 12
-    __fi[14,1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[14, 2:nx-1, 0:ny-3, nz-3] + (1/3)*__fi[13, 0:nx-3, 2:ny-1, nz-1]  # 13 -> 14      
+    if z_hi == MPI.PROC_NULL:
+        __fi[6, :, :, nz-2] = (2/3)*__fi[6, :, :, nz-3] + (1/3)*__fi[5, :, :, nz-1]                              # 5 -> 6
+        # diagonal reflections with horizontal shift
+        __fi[8, 1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[8,  0:nx-3, 0:ny-3, nz-3] + (1/3)*__fi[7,  2:nx-1, 2:ny-1, nz-1]  # 7 -> 8
+        __fi[9, 1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[9,  2:nx-1, 2:ny-1, nz-3] + (1/3)*__fi[10, 0:nx-3, 0:ny-3, nz-1]  # 10 -> 9
+        __fi[12,1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[12, 0:nx-3, 2:ny-1, nz-3] + (1/3)*__fi[11, 2:nx-1, 0:ny-3, nz-1]  # 11 -> 12
+        __fi[14,1:nx-2, 1:ny-2, nz-2]  = (2/3)*__fi[14, 2:nx-1, 0:ny-3, nz-3] + (1/3)*__fi[13, 0:nx-3, 2:ny-1, nz-1]  # 13 -> 14      
 
     return __gi, __fi 
 
@@ -1247,32 +1284,36 @@ def bounceBackTopBottom_conservation(fc, iteration, __gi, __fi, nx, ny, nz):
 def bounceBackFrontBack_conservation(fc, iteration, __gi, __fi, nx, ny, nz):
 
     # front wall (y=1) - no-slip halfway bounce-back
-    __gi[3, :, 1, :]           = __gi[4, :, 0, :]                             # 4 -> 3 (axis, no shift)
-    __gi[7, 1:nx-1, 1, 1:nz-1] = __gi[8, 0:nx-2, 0, 0:nz-2]                    # 8 -> 7
-    __gi[9, 1:nx-1, 1, 1:nz-1] = __gi[10,0:nx-2, 0, 2:nz]                      # 10 -> 9
-    __gi[12,1:nx-1, 1, 1:nz-1] = __gi[11,2:nx,   0, 2:nz]                      # 11 -> 12
-    __gi[13,1:nx-1, 1, 1:nz-1] = __gi[14,2:nx,   0, 0:nz-2]                    # 14 -> 13
+    if y_lo == MPI.PROC_NULL:
+        __gi[3, :, 1, :]           = __gi[4, :, 0, :]                             # 4 -> 3 (axis, no shift)
+        __gi[7, 1:nx-1, 1, 1:nz-1] = __gi[8, 0:nx-2, 0, 0:nz-2]                    # 8 -> 7
+        __gi[9, 1:nx-1, 1, 1:nz-1] = __gi[10,0:nx-2, 0, 2:nz]                      # 10 -> 9
+        __gi[12,1:nx-1, 1, 1:nz-1] = __gi[11,2:nx,   0, 2:nz]                      # 11 -> 12
+        __gi[13,1:nx-1, 1, 1:nz-1] = __gi[14,2:nx,   0, 0:nz-2]                    # 14 -> 13
 
     # back wall (y=ny-2) - no-slip halfway bounce-back
-    __gi[4, :, ny-2, :]            = __gi[3, :, ny-1, :]                       # 3 -> 4 (axis, no shift)
-    __gi[8, 1:nx-1, ny-2, 1:nz-1]  = __gi[7, 2:nx,   ny-1, 2:nz]               # 7 -> 8
-    __gi[10,1:nx-1, ny-2, 1:nz-1]  = __gi[9, 2:nx,   ny-1, 0:nz-2]             # 9 -> 10
-    __gi[11,1:nx-1, ny-2, 1:nz-1]  = __gi[12,0:nx-2, ny-1, 0:nz-2]             # 12 -> 11
-    __gi[14,1:nx-1, ny-2, 1:nz-1]  = __gi[13,0:nx-2, ny-1, 2:nz]               # 13 -> 14
+    if y_hi == MPI.PROC_NULL:
+        __gi[4, :, ny-2, :]            = __gi[3, :, ny-1, :]                       # 3 -> 4 (axis, no shift)
+        __gi[8, 1:nx-1, ny-2, 1:nz-1]  = __gi[7, 2:nx,   ny-1, 2:nz]               # 7 -> 8
+        __gi[10,1:nx-1, ny-2, 1:nz-1]  = __gi[9, 2:nx,   ny-1, 0:nz-2]             # 9 -> 10
+        __gi[11,1:nx-1, ny-2, 1:nz-1]  = __gi[12,0:nx-2, ny-1, 0:nz-2]             # 12 -> 11
+        __gi[14,1:nx-1, ny-2, 1:nz-1]  = __gi[13,0:nx-2, ny-1, 2:nz]               # 13 -> 14
 
     # front wall (y=1) - Zhang eq(30)
-    __fi[3, :, 1, :] = (2/3)*__fi[3, :, 2, :] + (1/3)*__fi[4, :, 0, :]                                          # 4 -> 3
-    __fi[7, 1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[7, 2:nx-1, 2, 2:nz-1]  + (1/3)*__fi[8, 0:nx-3, 0, 0:nz-3]          # 8 -> 7
-    __fi[9, 1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[9, 2:nx-1, 2, 0:nz-3]  + (1/3)*__fi[10,0:nx-3, 0, 2:nz-1]          # 10 -> 9
-    __fi[12,1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[12,0:nx-3, 2, 0:nz-3]  + (1/3)*__fi[11,2:nx-1, 0, 2:nz-1]          # 11 -> 12
-    __fi[13,1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[13,0:nx-3, 2, 2:nz-1]  + (1/3)*__fi[14,2:nx-1, 0, 0:nz-3]          # 14 -> 13
+    if y_lo == MPI.PROC_NULL:
+        __fi[3, :, 1, :] = (2/3)*__fi[3, :, 2, :] + (1/3)*__fi[4, :, 0, :]                                          # 4 -> 3
+        __fi[7, 1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[7, 2:nx-1, 2, 2:nz-1]  + (1/3)*__fi[8, 0:nx-3, 0, 0:nz-3]          # 8 -> 7
+        __fi[9, 1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[9, 2:nx-1, 2, 0:nz-3]  + (1/3)*__fi[10,0:nx-3, 0, 2:nz-1]          # 10 -> 9
+        __fi[12,1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[12,0:nx-3, 2, 0:nz-3]  + (1/3)*__fi[11,2:nx-1, 0, 2:nz-1]          # 11 -> 12
+        __fi[13,1:nx-2, 1, 1:nz-2]  = (2/3)*__fi[13,0:nx-3, 2, 2:nz-1]  + (1/3)*__fi[14,2:nx-1, 0, 0:nz-3]          # 14 -> 13
 
     # back wall (y=ny-2) - Zhang eq(30)
-    __fi[4, :, ny-2, :] = (2/3)*__fi[4, :, ny-3, :] + (1/3)*__fi[3, :, ny-1, :]                                  # 3 -> 4
-    __fi[8, 1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[8, 0:nx-3, ny-3, 0:nz-3]  + (1/3)*__fi[7, 2:nx-1, ny-1, 2:nz-1]  # 7 -> 8
-    __fi[10,1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[10,0:nx-3, ny-3, 2:nz-1]  + (1/3)*__fi[9, 2:nx-1, ny-1, 0:nz-3]  # 9 -> 10
-    __fi[11,1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[11,2:nx-1, ny-3, 2:nz-1]  + (1/3)*__fi[12,0:nx-3, ny-1, 0:nz-3]  # 12 -> 11
-    __fi[14,1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[14,2:nx-1, ny-3, 0:nz-3]  + (1/3)*__fi[13,0:nx-3, ny-1, 2:nz-1]  # 13 -> 14
+    if y_hi == MPI.PROC_NULL:    
+        __fi[4, :, ny-2, :] = (2/3)*__fi[4, :, ny-3, :] + (1/3)*__fi[3, :, ny-1, :]                                  # 3 -> 4
+        __fi[8, 1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[8, 0:nx-3, ny-3, 0:nz-3]  + (1/3)*__fi[7, 2:nx-1, ny-1, 2:nz-1]  # 7 -> 8
+        __fi[10,1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[10,0:nx-3, ny-3, 2:nz-1]  + (1/3)*__fi[9, 2:nx-1, ny-1, 0:nz-3]  # 9 -> 10
+        __fi[11,1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[11,2:nx-1, ny-3, 2:nz-1]  + (1/3)*__fi[12,0:nx-3, ny-1, 0:nz-3]  # 12 -> 11
+        __fi[14,1:nx-2, ny-2, 1:nz-2]  = (2/3)*__fi[14,2:nx-1, ny-3, 0:nz-3]  + (1/3)*__fi[13,0:nx-3, ny-1, 2:nz-1]  # 13 -> 14
 
     return __gi, __fi    
 
@@ -1280,38 +1321,42 @@ def bounceBackFrontBack_conservation(fc, iteration, __gi, __fi, nx, ny, nz):
 def bounceBackLeftRight_conservation(fc, iteration, __gi, __fi, nx, ny, nz):
 
     # left wall (x=1) - no-slip halfway bounce-back
-    __gi[1, 1, :, :]            = __gi[2, 0, :, :]                                # 2 -> 1 (axis, no shift)
-    # diagonal reflections with horizontal shift
-    __gi[7, 1, 1:ny-1, 1:nz-1]  = __gi[8, 0, 0:ny-2, 0:nz-2]                       # 8 -> 7
-    __gi[9, 1, 1:ny-1, 1:nz-1]  = __gi[10,0, 0:ny-2, 2:nz]                        # 10 -> 9
-    __gi[11,1, 1:ny-1, 1:nz-1]  = __gi[12,0, 2:ny,   0:nz-2]                      # 12 -> 11
-    __gi[14,1, 1:ny-1, 1:nz-1]  = __gi[13,0, 2:ny,   2:nz]                        # 13 -> 14
+    if x_lo == MPI.PROC_NULL:
+        __gi[1, 1, :, :]            = __gi[2, 0, :, :]                                # 2 -> 1 (axis, no shift)
+        # diagonal reflections with horizontal shift
+        __gi[7, 1, 1:ny-1, 1:nz-1]  = __gi[8, 0, 0:ny-2, 0:nz-2]                       # 8 -> 7
+        __gi[9, 1, 1:ny-1, 1:nz-1]  = __gi[10,0, 0:ny-2, 2:nz]                        # 10 -> 9
+        __gi[11,1, 1:ny-1, 1:nz-1]  = __gi[12,0, 2:ny,   0:nz-2]                      # 12 -> 11
+        __gi[14,1, 1:ny-1, 1:nz-1]  = __gi[13,0, 2:ny,   2:nz]                        # 13 -> 14
 
     # right wall (x=nx-2) - no-slip halfway bounce-back
-    __gi[2, nx-2, :, :]            = __gi[1, nx-1, :, :]                          # 1 -> 2 (axis, no shift)
-    # diagonal reflections with horizontal shift
-    __gi[8, nx-2, 1:ny-1, 1:nz-1]  = __gi[7, nx-1, 2:ny,   2:nz]                  # 7 -> 8
-    __gi[10,nx-2, 1:ny-1, 1:nz-1]  = __gi[9, nx-1, 2:ny,   0:nz-2]                # 9 -> 10
-    __gi[12,nx-2, 1:ny-1, 1:nz-1]  = __gi[11,nx-1, 0:ny-2, 2:nz]                  # 11 -> 12
-    __gi[13,nx-2, 1:ny-1, 1:nz-1]  = __gi[14,nx-1, 0:ny-2, 0:nz-2]                # 14 -> 13
+    if x_hi == MPI.PROC_NULL:
+        __gi[2, nx-2, :, :]            = __gi[1, nx-1, :, :]                          # 1 -> 2 (axis, no shift)
+        # diagonal reflections with horizontal shift
+        __gi[8, nx-2, 1:ny-1, 1:nz-1]  = __gi[7, nx-1, 2:ny,   2:nz]                  # 7 -> 8
+        __gi[10,nx-2, 1:ny-1, 1:nz-1]  = __gi[9, nx-1, 2:ny,   0:nz-2]                # 9 -> 10
+        __gi[12,nx-2, 1:ny-1, 1:nz-1]  = __gi[11,nx-1, 0:ny-2, 2:nz]                  # 11 -> 12
+        __gi[13,nx-2, 1:ny-1, 1:nz-1]  = __gi[14,nx-1, 0:ny-2, 0:nz-2]                # 14 -> 13
 
 
     # Zhang eq(30) for fi: -> see explanation in bounceBackTopBottom_conservation
     # left wall (x=1) - Zhang eq(30)
-    __fi[1, 1, :, :] = (2/3)*__fi[1, 2, :, :] + (1/3)*__fi[2, 0, :, :]                                        # 2 -> 1
-    # diagonal reflections with horizontal shift
-    __fi[7, 1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[7, 2, 2:ny-1, 2:nz-1] + (1/3)*__fi[8, 0, 0:ny-3, 0:nz-3]          # 8 -> 7
-    __fi[9, 1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[9, 2, 2:ny-1, 0:nz-3] + (1/3)*__fi[10,0, 0:ny-3, 2:nz-1]          # 10 -> 9
-    __fi[11,1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[11,2, 0:ny-3, 2:nz-1] + (1/3)*__fi[12,0, 2:ny-1, 0:nz-3]          # 12 -> 11
-    __fi[14,1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[14,2, 0:ny-3, 0:nz-3] + (1/3)*__fi[13,0, 2:ny-1, 2:nz-1]          # 13 -> 14
+    if x_lo == MPI.PROC_NULL:
+        __fi[1, 1, :, :] = (2/3)*__fi[1, 2, :, :] + (1/3)*__fi[2, 0, :, :]                                        # 2 -> 1
+        # diagonal reflections with horizontal shift
+        __fi[7, 1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[7, 2, 2:ny-1, 2:nz-1] + (1/3)*__fi[8, 0, 0:ny-3, 0:nz-3]          # 8 -> 7
+        __fi[9, 1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[9, 2, 2:ny-1, 0:nz-3] + (1/3)*__fi[10,0, 0:ny-3, 2:nz-1]          # 10 -> 9
+        __fi[11,1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[11,2, 0:ny-3, 2:nz-1] + (1/3)*__fi[12,0, 2:ny-1, 0:nz-3]          # 12 -> 11
+        __fi[14,1, 1:ny-2, 1:nz-2]  = (2/3)*__fi[14,2, 0:ny-3, 0:nz-3] + (1/3)*__fi[13,0, 2:ny-1, 2:nz-1]          # 13 -> 14
 
     # right wall (x=nx-2) - Zhang eq(30)
-    __fi[2, nx-2, :, :] = (2/3)*__fi[2, nx-3, :, :] + (1/3)*__fi[1, nx-1, :, :]                                # 1 -> 2
-    # diagonal reflections with horizontal shift
-    __fi[8, nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[8, nx-3, 0:ny-3, 0:nz-3] + (1/3)*__fi[7, nx-1, 2:ny-1, 2:nz-1]  # 7 -> 8
-    __fi[10,nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[10,nx-3, 0:ny-3, 2:nz-1] + (1/3)*__fi[9, nx-1, 2:ny-1, 0:nz-3]  # 9 -> 10
-    __fi[12,nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[12,nx-3, 2:ny-1, 0:nz-3] + (1/3)*__fi[11,nx-1, 0:ny-3, 2:nz-1]  # 11 -> 12
-    __fi[13,nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[13,nx-3, 2:ny-1, 2:nz-1] + (1/3)*__fi[14,nx-1, 0:ny-3, 0:nz-3]  # 14 -> 13
+    if x_hi == MPI.PROC_NULL:
+        __fi[2, nx-2, :, :] = (2/3)*__fi[2, nx-3, :, :] + (1/3)*__fi[1, nx-1, :, :]                                # 1 -> 2
+        # diagonal reflections with horizontal shift
+        __fi[8, nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[8, nx-3, 0:ny-3, 0:nz-3] + (1/3)*__fi[7, nx-1, 2:ny-1, 2:nz-1]  # 7 -> 8
+        __fi[10,nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[10,nx-3, 0:ny-3, 2:nz-1] + (1/3)*__fi[9, nx-1, 2:ny-1, 0:nz-3]  # 9 -> 10
+        __fi[12,nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[12,nx-3, 2:ny-1, 0:nz-3] + (1/3)*__fi[11,nx-1, 0:ny-3, 2:nz-1]  # 11 -> 12
+        __fi[13,nx-2, 1:ny-2, 1:nz-2]  = (2/3)*__fi[13,nx-3, 2:ny-1, 2:nz-1] + (1/3)*__fi[14,nx-1, 0:ny-3, 0:nz-3]  # 14 -> 13
 
     return __gi, __fi
 
@@ -2100,6 +2145,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────   
     _t0 = time.perf_counter(); _phi = apply_mass_conservation(phi_old_total, _phi); _mark('apply_mass_conservation', _t0)
     # ──────────────────────────────  
+    exchange_ghosts_x(_phi, x_lo, x_hi, cart)
+    exchange_ghosts_y(_phi, y_lo, y_hi, cart)
+    exchange_ghosts_z(_phi, z_lo, z_hi, cart)
 
     if ADD_METRICS: 
         debug_log('ITER', 'Iter %d: fi_c min=%.3e, max=%.3e | fi min=%.3e, max=%.3e', 
@@ -2122,13 +2170,13 @@ while iteration < fc.TOTAL_ITERATIONS:
 
         # Store 2D data (existing)
         if zc_is_local:
-            list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :, zc_local].copy()
-            list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :, zc_local].copy()
-            list_avg_velocities_z[iteration] = u_ckl[2, 1:-1, :, zc_local].copy()
+            list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, 1:local_Yn+1, zc_local].copy()
+            list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, 1:local_Yn+1, zc_local].copy()
+            list_avg_velocities_z[iteration] = u_ckl[2, 1:-1, 1:local_Yn+1, zc_local].copy()
         if yc_is_local and zc_is_local:
-            list_phi[iteration] = _phi[:,yc_local,zc_local].copy()
-            list_dphi_0[iteration] = zhang_gradient(fc, _phi)[0][:, yc_local, zc_local].copy()
-            list_dphi_1[iteration] = zhang_gradient(fc, _phi)[1][:, yc_local, zc_local].copy()
+            list_phi[iteration] = _phi[1:-1,yc_local,zc_local].copy()
+            list_dphi_0[iteration] = zhang_gradient(fc, _phi)[0][1:-1, yc_local, zc_local].copy()
+            list_dphi_1[iteration] = zhang_gradient(fc, _phi)[1][1:-1, yc_local, zc_local].copy()
 
         # density mapping
         rho_min = np.min(rho)
@@ -2170,6 +2218,10 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     #Calculation of rho, mu
     _t0 = time.perf_counter(); rho, mu = density_and_viscosity(fc, _phi); _mark('density_and_viscosity', _t0)
+
+    exchange_ghosts_x(rho, x_lo, x_hi, cart)
+    exchange_ghosts_y(rho, y_lo, y_hi, cart)
+    exchange_ghosts_z(rho, z_lo, z_hi, cart)
 
     #if fc.ADD_SURFACE_TENSION_FORCE == 1:
     # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
@@ -2265,11 +2317,11 @@ while iteration < fc.TOTAL_ITERATIONS:
     if iteration in iterationsOfInterest:
        # Store 2D data (existing)
         if yc_is_local and zc_is_local:
-            list_BodyForce_0[iteration] = body_force[0][:, yc_local, zc_local].copy()
-            list_BodyForce_1[iteration] = body_force[1][:, yc_local, zc_local].copy()
-            list_BodyForce_2[iteration] = body_force[2][:, yc_local, zc_local].copy()
+            list_BodyForce_0[iteration] = body_force[0][1:-1, yc_local, zc_local].copy()
+            list_BodyForce_1[iteration] = body_force[1][1:-1, yc_local, zc_local].copy()
+            list_BodyForce_2[iteration] = body_force[2][1:-1, yc_local, zc_local].copy()
             netForce = fc.ADD_BODY_FORCE * body_force + fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
-            list_NetForce[iteration] = netForce[1][:, yc_local, zc_local].copy()
+            list_NetForce[iteration] = netForce[1][1:-1, yc_local, zc_local].copy()
 
         if fc.ADD_SURFACE_TENSION_FORCE:
             _chemical_potential_Zhang = chemical_potential(fc, _phi)
@@ -2335,6 +2387,14 @@ while iteration < fc.TOTAL_ITERATIONS:
     #if iteration == 0 or iteration==(fc.TOTAL_ITERATIONS - 1) or iteration % 100 == 0:
     #    if ADD_METRICS: 
     if ADD_METRICS and iteration in iterationsOfInterest:
+        for comp in range(3):
+            exchange_ghosts_x(u_ckl[comp], x_lo, x_hi, cart)
+            exchange_ghosts_y(u_ckl[comp], y_lo, y_hi, cart)
+            exchange_ghosts_z(u_ckl[comp], z_lo, z_hi, cart)
+        exchange_ghosts_x(p, x_lo, x_hi, cart)
+        exchange_ghosts_y(p, y_lo, y_hi, cart)
+        exchange_ghosts_z(p, z_lo, z_hi, cart)
+
         u_ckl_x_min = np.min(u_ckl[0])
         u_ckl_y_min = np.min(u_ckl[1])
         u_ckl_z_min = np.min(u_ckl[2])
@@ -2410,9 +2470,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     _rho_full_range = rho
     if iteration in iterationsOfInterest:
         if zc_is_local:
-            list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, :, zc_local]
-            list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, :, zc_local]
-            list_avg_velocities_z[iteration] = u_ckl[2, 1:-1, :, zc_local]
+            list_avg_velocities_x[iteration] = u_ckl[0, 1:-1, 1:local_Yn+1, zc_local]
+            list_avg_velocities_y[iteration] = u_ckl[1, 1:-1, 1:local_Yn+1, zc_local]
+            list_avg_velocities_z[iteration] = u_ckl[2, 1:-1, 1:local_Yn+1, zc_local]
   
     if iteration == 0 or iteration==(fc.TOTAL_ITERATIONS - 1) or iteration % 100 == 0:
         if midpoint_is_local:
@@ -2477,9 +2537,16 @@ end = time.perf_counter()
 #iterationsOfInterest = [0, 10, 50, 100, 200, 500, 1000, 5000, 10000, 12000]
 diff = end - start
 
-rho_in, rho_out = _rho_full_range[1, Yn//2, Zn//2], _rho_full_range[Xn, Yn//2, Zn//2]
-rho_min = np.min(_rho_full_range)
-rho_max = np.max(_rho_full_range)
+rho_in_local = rho[1, y_mid_local, z_mid_local] if (x_lo == MPI.PROC_NULL and y_mid_is_local and z_mid_is_local) else None
+rho_out_local = rho[local_Xn, y_mid_local, z_mid_local] if (x_hi == MPI.PROC_NULL and y_mid_is_local and z_mid_is_local) else None
+rho_in_gathered = comm.gather(rho_in_local, root=0)
+rho_out_gathered = comm.gather(rho_out_local, root=0)
+if rank == 0:
+    rho_in = next(v for v in rho_in_gathered if v is not None)
+    rho_out = next(v for v in rho_out_gathered if v is not None)
+
+rho_min = comm.allreduce(np.min(rho[1:-1, 1:-1, 1:-1]), op=MPI.MIN)
+rho_max = comm.allreduce(np.max(rho[1:-1, 1:-1, 1:-1]), op=MPI.MAX)
 debug_log('FIELD', '_rho_full_range min = %(min).6f, max = %(max).6f', extra=dict(min=rho_min, max=rho_max))
 
 # height ratios based on lattice dimensions
@@ -2512,6 +2579,12 @@ fig1, ax1 = plt.subplots(
 
 # In the fig1, ax1 section
 sectionPosition = int(Xn/2)
+
+
+list_avg_velocities_x = gather_xy_dict(list_avg_velocities_x, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+list_avg_velocities_y = gather_xy_dict(list_avg_velocities_y, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+list_avg_velocities_z = gather_xy_dict(list_avg_velocities_z, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+
 
 # avg_velocities_x, avg_velocities_y
 filtered_u_ckl_dict_x = plotter.filter_u_ckl_fullrange(list_avg_velocities_x, iterationsOfInterest)
@@ -2548,128 +2621,163 @@ if PRESSURE_IN_DENSITY_MAP:
     plotter.density_mapExt(ax1[2, 1], _pressure_full_range[:, :, zc], _pressure_out, _pressure_in, title, iteration)
 else:
     title = "Density map"
-    plotter.density_mapExt(ax1[2, 1], _rho_full_range[:, :, zc], rho_min, rho_max, title, iteration)
 
-BodyForce_center_0 = list_BodyForce_0.popitem()[1]
-BodyForce_center_1 = list_BodyForce_1.popitem()[1]
-BodyForce_center_2 = list_BodyForce_2.popitem()[1]
-NetForce_center = list_NetForce.popitem()[1]
+    if zc_is_local:
+        local_rho_plane_piece = rho[1:-1, 1:-1, zc_local]
+        rho_plane_payload = (x_offset, y_offset, local_rho_plane_piece)
+    else:
+        rho_plane_payload = None
+    rho_plane_gathered = comm.gather(rho_plane_payload, root=0)
+    if rank == 0:
+        _rho_full_range_plane = np.zeros((Xn, Yn))
+        for item in rho_plane_gathered:
+            if item is not None:
+                x_off, y_off, piece = item
+                _rho_full_range_plane[x_off:x_off+local_Xn, y_off:y_off+local_Yn] = piece
 
-#phi: Phi, dPhix, dPhiy
-label1 = r'$\phi$'
-label2 = r'$\partial \phi_x$'
-label3 = r'$\partial \phi_y$'
-phi_center    = list_phi.popitem()[1]
-dPhi_center0  = list_dphi_0.popitem()[1]
-dPhi_center1  = list_dphi_1.popitem()[1]
-plotter.phi_x_axis_plot_3(
-    ax1[3, 0],
-    phi_center, dPhi_center0, dPhi_center1,
-    label1, label2, label3,
-    axis1=0, axis2=1, axis3=1,  # numeric axes
-    yc=yc,
-    iteration=iteration,
-    title=f"_phi + _phid distribution y={yc}"
-)
+    plotter.density_mapExt(ax1[2, 1], _rho_full_range_plane, rho_min, rho_max, title, iteration)
+
+list_BodyForce_0 = gather_x_line_dict(list_BodyForce_0, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
+list_BodyForce_1 = gather_x_line_dict(list_BodyForce_1, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
+list_BodyForce_2 = gather_x_line_dict(list_BodyForce_2, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
+list_NetForce = gather_x_line_dict(list_NetForce, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
+list_phi = gather_x_line_dict(list_phi, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
+list_dphi_0 = gather_x_line_dict(list_dphi_0, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
+list_dphi_1 = gather_x_line_dict(list_dphi_1, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)    
+
+if rank == 0:
+    BodyForce_center_0 = list_BodyForce_0.popitem()[1]
+    BodyForce_center_1 = list_BodyForce_1.popitem()[1]
+    BodyForce_center_2 = list_BodyForce_2.popitem()[1]
+    NetForce_center = list_NetForce.popitem()[1]
+
+    #phi: Phi, dPhix, dPhiy
+    label1 = r'$\phi$'
+    label2 = r'$\partial \phi_x$'
+    label3 = r'$\partial \phi_y$'
+    phi_center    = list_phi.popitem()[1]
+    dPhi_center0  = list_dphi_0.popitem()[1]
+    dPhi_center1  = list_dphi_1.popitem()[1]
+    plotter.phi_x_axis_plot_3(
+        ax1[3, 0],
+        phi_center, dPhi_center0, dPhi_center1,
+        label1, label2, label3,
+        axis1=0, axis2=1, axis3=1,  # numeric axes
+        yc=yc,
+        iteration=iteration,
+        title=f"_phi + _phid distribution y={yc}"
+    )
 
 #chemical potential: Zhang
 if fc.ADD_SURFACE_TENSION_FORCE:
-    zhangChemicalPotential_center = _chemical_potential_Zhang[:, yc, zc].copy()
-    label1=r'$Zhang  \mu_\phi$'
-    plotter.phi_x_axis_plot_1(ax1[3, 1], zhangChemicalPotential_center, yc, iteration, f"ChemicalPotential distribution y={yc}", label1)
+    if yc_is_local and zc_is_local:
+        local_chempot_piece = _chemical_potential_Zhang[1:-1, yc_local, zc_local]
+        chempot_payload = (x_offset, local_chempot_piece)
+    else:
+        chempot_payload = None
+    chempot_gathered = comm.gather(chempot_payload, root=0)
+    if rank == 0:
+        zhangChemicalPotential_center = np.zeros(Xn)
+        for item in chempot_gathered:
+            if item is not None:
+                x_off, piece = item
+                zhangChemicalPotential_center[x_off:x_off+local_Xn] = piece
+        label1=r'$Zhang  \mu_\phi$'
+        plotter.phi_x_axis_plot_1(ax1[3, 1], zhangChemicalPotential_center, yc, iteration, f"ChemicalPotential distribution y={yc}", label1)
 
-text = f"Run-time: {diff:.1f} s"
-fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
-fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
-save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_channel_parameters.png")
-fig1.savefig(save_path, dpi=300, bbox_inches='tight')
-debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
-plt.close(fig1)
-
-
-# 3 rows, 3 columns
-paneLabel = f"Metrics - D2Q9 LB method for incompressible two-phase ﬂows Zhang et al 2020 Lattice [{Xn} {Yn}] Single processor"
-fig2, ax2 = plt.subplots(
-    3, 3,
-    figsize=(18, 10),
-    gridspec_kw={
-        'width_ratios': [1, 1, 1],
-        'height_ratios': height_ratios1,
-        'left': 0.1, 'right': 0.9, 'top': 0.9, 'bottom': 0.1,
-        'wspace': 0.3, 'hspace': 0.4
-    },
-    sharey=False,
-    num=paneLabel
-)
-
-if ADD_METRICS: 
-    plotter.plot_bounds_ext(GrowthMetric_uckl_x, "GrowthMetric_uckl_x", ax2[0, 0])
-    plotter.plot_bounds_ext(GrowthMetric_uckl_y, "GrowthMetric_uckl_y", ax2[0, 1])
-    plotter.plot_bounds_ext(GrowthMetric_uckl_star_y, "GrowthMetric_uckl_star_y", ax2[0, 2])
-    
-    plotter.plot_bounds_ext(epsilon_u_ckl_list, "epsilon_u_ckl growth", ax2[1, 0])
-    plotter.plot_bounds_ext(Invariants, "Invariants", ax2[1, 1])
-    series_labels = ["ei ⋅ u/cs2", "wiϕ(1 + ei ⋅ u/cs2)"]
-    plotter.plot_bounds_ext(PhiTerms, "PhiTerms", ax2[1, 2], series_labels)
-
-    series_labels = ["sufﬁcient stability condition","optimal stability condition"]
-    plotter.plot_bounds_ext(StabilityConditions, "stability conditions", ax2[2, 0], series_labels)
-
-    series_labels = ["c_first_derivative0(p)","laplacian_phi"]
-    plotter.plot_bounds_ext(SpuriousFields, "SpuriousFields", ax2[2, 1], series_labels)
+if rank == 0:
+    text = f"Run-time: {diff:.1f} s"
+    fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
+    fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
+    save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_channel_parameters.png")
+    fig1.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved 3x2 grid: %s', save_path)
+    plt.close(fig1)
 
 
-    if fc.ADD_SURFACE_TENSION_FORCE == 1:
-        plotter.phi_boundary_forces_vertical(
-                    left_x, left_y,
-                    label_left_x="Left wall Fx",
-                    label_left_y="Left wall Fy",
-                    yc=yc,
-                    iteration=iteration,
-                    title="Capillary forces on vertical boundary left",
-                    figsize=(7, 5)
-                )
+    # 3 rows, 3 columns
+    paneLabel = f"Metrics - D2Q9 LB method for incompressible two-phase ﬂows Zhang et al 2020 Lattice [{Xn} {Yn}] Single processor"
+    fig2, ax2 = plt.subplots(
+        3, 3,
+        figsize=(18, 10),
+        gridspec_kw={
+            'width_ratios': [1, 1, 1],
+            'height_ratios': height_ratios1,
+            'left': 0.1, 'right': 0.9, 'top': 0.9, 'bottom': 0.1,
+            'wspace': 0.3, 'hspace': 0.4
+        },
+        sharey=False,
+        num=paneLabel
+    )
 
-        plotter.phi_boundary_forces_vertical(
-                    right_x, right_y,
-                    label_left_x="Right wall Fx",
-                    label_left_y="Right wall Fy",
-                    yc=yc,
-                    iteration=iteration,
-                    title="Capillary forces on vertical boundary right",
-                    figsize=(7, 5)
-                )
+    if ADD_METRICS: 
+        plotter.plot_bounds_ext(GrowthMetric_uckl_x, "GrowthMetric_uckl_x", ax2[0, 0])
+        plotter.plot_bounds_ext(GrowthMetric_uckl_y, "GrowthMetric_uckl_y", ax2[0, 1])
+        plotter.plot_bounds_ext(GrowthMetric_uckl_star_y, "GrowthMetric_uckl_star_y", ax2[0, 2])
+        
+        plotter.plot_bounds_ext(epsilon_u_ckl_list, "epsilon_u_ckl growth", ax2[1, 0])
+        plotter.plot_bounds_ext(Invariants, "Invariants", ax2[1, 1])
+        series_labels = ["ei ⋅ u/cs2", "wiϕ(1 + ei ⋅ u/cs2)"]
+        plotter.plot_bounds_ext(PhiTerms, "PhiTerms", ax2[1, 2], series_labels)
 
-    plotter.plot_bounds_ext(PhiCollector, "Mass Conservation (Intg. _phi)", ax2[2, 2])
+        series_labels = ["sufﬁcient stability condition","optimal stability condition"]
+        plotter.plot_bounds_ext(StabilityConditions, "stability conditions", ax2[2, 0], series_labels)
 
-fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
-save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{fc.TOTAL_ITERATIONS:0{fc.FILENAME_PADDING_WIDTH}d}.png")
-fig2.savefig(save_path, dpi=300, bbox_inches='tight')
-debug_log('INIT', 'Saved 3x3 grid: %s', save_path)
-plt.close(fig2)
+        series_labels = ["c_first_derivative0(p)","laplacian_phi"]
+        plotter.plot_bounds_ext(SpuriousFields, "SpuriousFields", ax2[2, 1], series_labels)
 
 
-########### upload this file and results to GitHub repo
-uploader = GitHubUploader(
-    debug_log=debug_log,
-    timeout=60,
-    script_filename=SCRIPT_FILENAME,
-    script_full_path=SCRIPT_FULL_PATH,
-    scripts_path=SCRIPTS_PATH,
-    plots_path=PLOTS_PATH,
-    #images_subdir=IMAGES_SUBDIR,
-    images_subdir=images_dir,
-    log_file=LOG_FILE,
-    token_file='github-repo-token.txt'
-)
-try:
-    if fc.WRITE_TO_GITHUB:
-        uploader.upload_results(upload_log=True)
-        debug_log('INIT', f'Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/{uploader.results_folder}')
-except Exception as e:
-    debug_log('ERROR', f'Upload failed: {e}')
+        if fc.ADD_SURFACE_TENSION_FORCE == 1:
+            plotter.phi_boundary_forces_vertical(
+                        left_x, left_y,
+                        label_left_x="Left wall Fx",
+                        label_left_y="Left wall Fy",
+                        yc=yc,
+                        iteration=iteration,
+                        title="Capillary forces on vertical boundary left",
+                        figsize=(7, 5)
+                    )
 
-# Example usage at the end of your script:
-# Assuming SCRIPT_FILENAME = 'your_script.py'
-# uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
-# uploader.upload_results()
+            plotter.phi_boundary_forces_vertical(
+                        right_x, right_y,
+                        label_left_x="Right wall Fx",
+                        label_left_y="Right wall Fy",
+                        yc=yc,
+                        iteration=iteration,
+                        title="Capillary forces on vertical boundary right",
+                        figsize=(7, 5)
+                    )
+
+        plotter.plot_bounds_ext(PhiCollector, "Mass Conservation (Intg. _phi)", ax2[2, 2])
+
+    fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
+    save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{fc.TOTAL_ITERATIONS:0{fc.FILENAME_PADDING_WIDTH}d}.png")
+    fig2.savefig(save_path, dpi=300, bbox_inches='tight')
+    debug_log('INIT', 'Saved 3x3 grid: %s', save_path)
+    plt.close(fig2)
+
+
+    ########### upload this file and results to GitHub repo
+    uploader = GitHubUploader(
+        debug_log=debug_log,
+        timeout=60,
+        script_filename=SCRIPT_FILENAME,
+        script_full_path=SCRIPT_FULL_PATH,
+        scripts_path=SCRIPTS_PATH,
+        plots_path=PLOTS_PATH,
+        #images_subdir=IMAGES_SUBDIR,
+        images_subdir=images_dir,
+        log_file=LOG_FILE,
+        token_file='github-repo-token.txt'
+    )
+    try:
+        if fc.WRITE_TO_GITHUB:
+            uploader.upload_results(upload_log=True)
+            debug_log('INIT', f'Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/{uploader.results_folder}')
+    except Exception as e:
+        debug_log('ERROR', f'Upload failed: {e}')
+
+    # Example usage at the end of your script:
+    # Assuming SCRIPT_FILENAME = 'your_script.py'
+    # uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
+    # uploader.upload_results()
