@@ -536,6 +536,17 @@ def gather_x_line_dict(local_dict, x_offset, local_Xn, Xn, is_owner):
     return full_dict    
 
 
+def gather_full_volume(local_field, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn):
+    payload = (x_offset, y_offset, z_offset, local_field[1:-1, 1:-1, 1:-1])
+    gathered = comm.gather(payload, root=0)
+    if rank != 0:
+        return None
+    full_field = np.zeros((Xn, Yn, Zn))
+    for x_off, y_off, z_off, piece in gathered:
+        full_field[x_off:x_off+local_Xn, y_off:y_off+local_Yn, z_off:z_off+local_Zn] = piece
+    return full_field    
+
+
 local_Xn = Xn // dims[0]
 local_Yn = Yn // dims[1]
 local_Zn = Zn // dims[2]
@@ -2009,9 +2020,11 @@ title = "Density map"
 if zc_is_local:
     plotter.save_phi_snapshot(_phi[:, :, zc_local], iteration, fc.phi_star_G, fc.phi_star_L)
 u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
-plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
-plotter.plot_field_layers(u_mag, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
-
+_phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+u_mag_full = gather_full_volume(u_mag, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+if rank == 0:
+    plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
+    plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
 if midpoint_is_local:
     u_ckl_midpoint0 = u_ckl[0, x_mid_local, y_mid_local, z_mid_local]
 epsilon_u_ckl = 0
@@ -2150,8 +2163,11 @@ while iteration < fc.TOTAL_ITERATIONS:
 
         u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
         u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
-        plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
-        plotter.plot_field_layers(u_mag, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
+        _phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+        u_mag_full = gather_full_volume(u_mag, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+        if rank == 0:
+            plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
+            plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
 
         # Store 2D data (existing)
         if zc_is_local:
