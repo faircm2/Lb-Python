@@ -2536,12 +2536,17 @@ while iteration < fc.TOTAL_ITERATIONS:
     if iteration in iterationsOfInterest:
         lam_n = Cs2 * z_lambda(fc, _phi) * n(fc, _phi)
         dphi_u = _phi[np.newaxis] * u_ckl - __phi_old[np.newaxis] * _u_ckl_old
-        print("cs2_lambda_n max:", np.max(np.abs(lam_n)))
-        print("dphi_u_dt    max:", np.max(np.abs(dphi_u)))
-        print("phi at x=150 (the midcolumn):", _phi[150, :, :])      
+        cs2_lambda_n_max = comm.allreduce(np.max(np.abs(lam_n)), op=MPI.MAX)
+        dphi_u_dt_max = comm.allreduce(np.max(np.abs(dphi_u)), op=MPI.MAX)
+        print("cs2_lambda_n max:", cs2_lambda_n_max)
+        print("dphi_u_dt    max:", dphi_u_dt_max)
 
-        zhang_interfacial_tension_check(fc, _phi, iteration, check_every=10)    
+        x150_is_local = (x_offset < 150 <= x_offset + local_Xn)
+        if x150_is_local:
+            x150_local = 150 - x_offset
+            print("phi at x=150 (the midcolumn):", _phi[x150_local, :, :])
 
+        zhang_interfacial_tension_check(fc, _phi, iteration, check_every=10)        
 
 
 end = time.perf_counter()
