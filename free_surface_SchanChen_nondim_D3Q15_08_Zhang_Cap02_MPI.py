@@ -541,9 +541,9 @@ def gather_full_volume(local_field, x_offset, y_offset, z_offset, local_Xn, loca
     gathered = comm.gather(payload, root=0)
     if rank != 0:
         return None
-    full_field = np.zeros((Xn, Yn, Zn))
+    full_field = np.zeros((Xn+2, Yn+2, Zn+2))
     for x_off, y_off, z_off, piece in gathered:
-        full_field[x_off:x_off+local_Xn, y_off:y_off+local_Yn, z_off:z_off+local_Zn] = piece
+        full_field[x_off+1:x_off+1+local_Xn, y_off+1:y_off+1+local_Yn, z_off+1:z_off+1+local_Zn] = piece
     return full_field    
 
 
