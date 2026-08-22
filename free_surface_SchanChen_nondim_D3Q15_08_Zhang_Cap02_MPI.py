@@ -2546,7 +2546,7 @@ while iteration < fc.TOTAL_ITERATIONS:
             x150_local = 150 - x_offset
             print("phi at x=150 (the midcolumn):", _phi[x150_local, :, :])
 
-        zhang_interfacial_tension_check(fc, _phi, iteration, check_every=10)        
+        zhang_interfacial_tension_check(fc, _phi, iteration, check_every=10)           
 
 
 end = time.perf_counter()
