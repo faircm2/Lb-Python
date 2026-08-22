@@ -994,6 +994,8 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     """
     Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
     """
+    global _z_star_buf
+
     # Zhang eq(20)/(21): forcing term Fi, shape (9, nx, ny)
     _Fi = Fi(fc, Fs, G, u_ckl, rho,  out=_Fi_buf)
 
@@ -1095,25 +1097,6 @@ def Fi(fc, Fs, G, u_ckl, rho, out):
 
 
 # Zhang eq(18): equilibrium function for pressure disrtibution function
-def zfi_c_old(fc, u, rho, p):
-    """
-    Zhang eq(18): fi equilibrium distribution for D2Q15.
-    fi^eq = wi[p + rho(ei·u + (ei·u)²/(2cs²) - u²/2)]
-    """
-    u_dot_u = np.sum(u**2, axis=0)                          # (nx, ny, nz)
-    c_dot_u = np.einsum('ia,axyz->ixyz', c, u)                # (15, nx, ny, nz)
-
-    term0 = E_exp * rho
-    term1 = E_exp * p                                       # wi * p
-    term2 = term0 * c_dot_u                           # wi * rho * (ei·u)
-    term3 = term0 * (3.0/2.0) * c_dot_u**2            # wi * rho * (ei·u)²/(2cs²)
-    term4 = term0 * 0.5 * u_dot_u                     # wi * rho * u²/2
-
-    z_fi_c = term1 + term2 + term3 - term4
-
-    return z_fi_c
-
-
 def zfi_c(fc, u, rho, p, out):
     u_dot_u = np.sum(u**2, axis=0)  # (X,Y,Z) - once
 
@@ -1128,6 +1111,8 @@ def zfi_c(fc, u, rho, p, out):
 
 # Zhang eq(12): collision function of order parameter distribution function 
 def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
+    global _z_star_buf
+
     omega_g = 1.0 / fc.tau_g
     _Gi = Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out=_Fi_buf)
 
