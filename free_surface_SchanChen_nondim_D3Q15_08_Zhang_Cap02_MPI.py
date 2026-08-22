@@ -1743,13 +1743,25 @@ def set_solid_nodes(iteration, fc, _phi):
         _base = (Zn + 2) // 2      # mid-height (z), was mid-Yn in the old 2D scheme
         y_slice = (Yn + 2) // 2    # fixed mid-depth - left wall is a face now, need one line through it
 
-        node_data = []
+        y_slice_is_local = (y_offset < y_slice <= y_offset + local_Yn)
+        y_slice_local = y_slice - y_offset
 
-        for _offset in [4,3,2,1,0,-1,-2,-3,-4]:
-            result = calc_node_s_diff(iteration, _base, _offset, y_slice, _phi_s_left, _phi)
-            node_data.append(result)
+        local_node_data = {}
+        if x_lo == MPI.PROC_NULL and y_slice_is_local:
+            for _offset in [4,3,2,1,0,-1,-2,-3,-4]:
+                _pos_global = _base + _offset
+                if z_offset < _pos_global <= z_offset + local_Zn:
+                    _pos_local = _pos_global - z_offset
+                    result = calc_node_s_diff(iteration, _pos_global, _offset, y_slice_local, _pos_local, _phi_s_left, _phi)
+                    local_node_data[_offset] = result
 
-        plotter.plot_left_wall_all_nodes(iteration, node_data)
+        gathered_node_data = comm.gather(local_node_data, root=0)
+        if rank == 0:
+            merged = {}
+            for d in gathered_node_data:
+                merged.update(d)
+            node_data = [merged[_offset] for _offset in [4,3,2,1,0,-1,-2,-3,-4]]
+            plotter.plot_left_wall_all_nodes(iteration, node_data)
 
 
     # Step 3: Assign to solid wall nodes only
