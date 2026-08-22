@@ -436,8 +436,8 @@ debug_log('INIT', 'c=%(c).2f', extra=dict(c=c))
 # MPI configuration
 # ──────────────────────────────────────────────────────────────────────────────────────────
 comm = MPI.COMM_WORLD
-#dims = [2, 2, 2]
-dims = [1, 1, 1]
+dims = [2, 2, 2]
+#dims = [1, 1, 1]
 cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
 rank_coords = cart.Get_coords(cart.Get_rank())
 
