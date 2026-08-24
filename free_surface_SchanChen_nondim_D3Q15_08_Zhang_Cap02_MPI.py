@@ -547,6 +547,19 @@ def gather_full_volume(local_field, x_offset, y_offset, z_offset, local_Xn, loca
     return full_field    
 
 
+def gather_xy_plane(local_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, is_owner):
+    payload = (x_offset, y_offset, local_plane) if is_owner else None
+    gathered = comm.gather(payload, root=0)
+    if rank != 0:
+        return None
+    full_plane = np.zeros((Xn, Yn))
+    for item in gathered:
+        if item is not None:
+            x_off, y_off, piece = item
+            full_plane[x_off:x_off+local_Xn, y_off:y_off+local_Yn] = piece
+    return full_plane    
+
+
 local_Xn = Xn // dims[0]
 local_Yn = Yn // dims[1]
 local_Zn = Zn // dims[2]
@@ -1887,6 +1900,19 @@ def save_phi_results(_phi_n_ext, _phi_min_ext, _phi_max_ext, filename="phi_resul
         np.savetxt(f, phi_slice[:, ::-1].T, fmt="%.6f")
 
 
+def gather_line(local_line, offset, local_N, N, is_owner):
+    payload = (offset, local_line) if is_owner else None
+    gathered = comm.gather(payload, root=0)
+    if rank != 0:
+        return None
+    full_line = np.zeros(N)
+    for item in gathered:
+        if item is not None:
+            off, piece = item
+            full_line[off:off+local_N] = piece
+    return full_line        
+
+
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # Initial conditions
 # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -1966,9 +1992,10 @@ zc_local = zc - z_offset    # only meaningful if zc_is_local is True
 x_mid = Xn // 2
 y_mid = Yn // 2
 z_mid = Zn // 2
-midpoint_is_local = (x_offset < x_mid <= x_offset + local_Xn) and \
-                     (y_offset < y_mid <= y_offset + local_Yn) and \
-                     (z_offset < z_mid <= z_offset + local_Zn)
+x_mid_is_local = (x_offset < x_mid <= x_offset + local_Xn)
+y_mid_is_local = (y_offset < y_mid <= y_offset + local_Yn)
+z_mid_is_local = (z_offset < z_mid <= z_offset + local_Zn)
+midpoint_is_local = x_mid_is_local and y_mid_is_local and z_mid_is_local
 x_mid_local = x_mid - x_offset
 y_mid_local = y_mid - y_offset
 z_mid_local = z_mid - z_offset
@@ -1984,7 +2011,10 @@ z_gi_c = np.zeros((15, local_Xn+2, local_Yn+2, local_Zn+2),dtype=np.float64)
 z_gi = np.zeros((15, local_Xn+2, local_Yn+2, local_Zn+2),dtype=np.float64)
 # Before the main loop
 z_gi, _max_abs_c_dot_u = zgi_c(fc, np.zeros_like(u_ckl), _phi, iteration, track_diag=True, out=z_gi)
-PhiTerms.append((iteration, -_max_abs_c_dot_u, np.max(np.abs(z_gi))))
+_max_abs_c_dot_u = comm.allreduce(_max_abs_c_dot_u, op=MPI.MAX)
+_z_gi_max = comm.allreduce(np.max(np.abs(z_gi)), op=MPI.MAX)
+PhiTerms.append((iteration, -_max_abs_c_dot_u, _z_gi_max))
+
 z_fi_c = np.zeros((15, local_Xn+2, local_Yn+2, local_Zn+2),dtype=np.float64)
 z_fi = np.zeros((15, local_Xn+2, local_Yn+2, local_Zn+2),dtype=np.float64)
 
@@ -2027,8 +2057,10 @@ rho_min = np.min(rho)
 rho_max = np.max(rho)
 title = "Density map"
 #plotter.density_map_standalone(rho[:, :, zc], rho_min, rho_max, title, iteration)
-if zc_is_local:
-    plotter.save_phi_snapshot(_phi[:, :, zc_local], iteration, fc.phi_star_G, fc.phi_star_L)
+phi_plane = _phi[1:-1, 1:-1, zc_local] if zc_is_local else None
+phi_plane_full = gather_xy_plane(phi_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+if rank == 0:
+    plotter.save_phi_snapshot(phi_plane_full, iteration, fc.phi_star_G, fc.phi_star_L)
 u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
 _phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
 u_mag_full = gather_full_volume(u_mag, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
@@ -2081,7 +2113,10 @@ while iteration < fc.TOTAL_ITERATIONS:
     _track_diag = iteration in iterationsOfInterest
     _t0 = time.perf_counter(); z_gi_c, _max_abs_c_dot_u = zgi_c(fc, u_ckl, _phi, iteration, track_diag=_track_diag, out=z_gi_c); _mark('zgi_c', _t0)
     if _track_diag:
-        PhiTerms.append((iteration, -_max_abs_c_dot_u, np.max(np.abs(z_gi_c))))
+        _max_abs_c_dot_u = comm.allreduce(_max_abs_c_dot_u, op=MPI.MAX)
+        _z_gi_c_max = comm.allreduce(np.max(np.abs(z_gi_c)), op=MPI.MAX)
+        PhiTerms.append((iteration, -_max_abs_c_dot_u, _z_gi_c_max))
+
     # Zhang eq(18):  equilibrium distribution function for pressure distribution function
     _t0 = time.perf_counter(); zfi_c(fc, u_ckl, rho, p, out=z_fi_c); _mark('zfi_c', _t0)
 
@@ -2168,8 +2203,10 @@ while iteration < fc.TOTAL_ITERATIONS:
        
     if iteration in iterationsOfInterest:
         #phi mapping
-        if zc_is_local:
-            plotter.save_phi_snapshot(_phi[:, :, zc_local], iteration, fc.phi_star_G, fc.phi_star_L)
+        phi_plane = _phi[1:-1, 1:-1, zc_local] if zc_is_local else None
+        phi_plane_full = gather_xy_plane(phi_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+        if rank == 0:
+            plotter.save_phi_snapshot(phi_plane_full, iteration, fc.phi_star_G, fc.phi_star_L)
 
         u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
         u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
@@ -2311,15 +2348,25 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"  interior max |u_y| loc=({_xi},{_yi},{_zi})  u_y={_u_test[1,_xi,_yi,_zi]:.6e}")
         print(f"    fi_term={_fi_term[1,_xi,_yi,_zi]:.4e}  bf={_bf_term[1,_xi,_yi,_zi]:.4e}  cap={_cap_term[1,_xi,_yi,_zi]:.4e}  rho={rho[_xi,_yi,_zi]:.4e}")
 
-    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force); _mark('zu_ckl', _t0)
     if iteration in iterationsOfInterest:
         _u_ckl_abs = np.abs(u_ckl)
-        print(f"iter {iteration}: u_ckl max |value| = {np.max(_u_ckl_abs):.6e}")
-        _loc = np.unravel_index(np.argmax(_u_ckl_abs), u_ckl.shape)
-        print(f"iter {iteration}: u_ckl max loc={_loc}  phi there={_phi[_loc[1],_loc[2],_loc[3]]:.4f}")
+        _local_max = np.max(_u_ckl_abs)
+        _global_max = comm.allreduce(_local_max, op=MPI.MAX)
+        if _local_max == _global_max:
+            _loc = np.unravel_index(np.argmax(_u_ckl_abs), u_ckl.shape)
+            _global_loc = (_loc[0], _loc[1]+x_offset, _loc[2]+y_offset, _loc[3]+z_offset)
+            print(f"iter {iteration}: u_ckl max |value| = {_global_max:.6e}")
+            print(f"iter {iteration}: u_ckl max loc={_global_loc}  phi there={_phi[_loc[1],_loc[2],_loc[3]]:.4f}")
 
     if iteration in iterationsOfInterest:
-        print(f"Iter {iteration:5d} | u_max = {np.max(np.abs(u_ckl)):.6e} | u_loc = {np.unravel_index(np.argmax(np.abs(u_ckl[1])), u_ckl[1].shape)}")
+        _local_max_uy = np.max(np.abs(u_ckl[1]))
+        _global_max_uy = comm.allreduce(_local_max_uy, op=MPI.MAX)
+        if _local_max_uy == _global_max_uy:
+            _loc_uy = np.unravel_index(np.argmax(np.abs(u_ckl[1])), u_ckl[1].shape)
+            _global_loc_uy = (_loc_uy[0]+x_offset, _loc_uy[1]+y_offset, _loc_uy[2]+z_offset)
+            print(f"Iter {iteration:5d} | u_max = {_global_max_uy:.6e} | u_loc = {_global_loc_uy}")
+
+        
 
     if iteration % 100 == 0:
         assert u_ckl.shape == (3, local_Xn+2, local_Yn+2, local_Zn+2), f"u_ckl shape: {u_ckl.shape}"
@@ -2340,28 +2387,52 @@ while iteration < fc.TOTAL_ITERATIONS:
             label=r'$\mu_\phi$'
             label_Zhang=r'$Zhang  \mu_\phi$'
             title_Zhang = "chem_pot_zhang"
-            if zc_is_local:
-                plotter.chemical_potential_map(None, _chemical_potential_Zhang[:, :, zc_local], iteration, title_Zhang, label_Zhang)
+            chem_pot_plane = _chemical_potential_Zhang[1:-1, 1:-1, zc_local] if zc_is_local else None
+            chem_pot_plane_full = gather_xy_plane(chem_pot_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+
+            force_x_plane = zhang_surface_tension_force[0, 1:-1, 1:-1, zc_local] if zc_is_local else None
+            force_y_plane = zhang_surface_tension_force[1, 1:-1, 1:-1, zc_local] if zc_is_local else None
+            force_x_plane_full = gather_xy_plane(force_x_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+            force_y_plane_full = gather_xy_plane(force_y_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
+
+            if rank == 0:
+                plotter.chemical_potential_map(None, chem_pot_plane_full, iteration, title_Zhang, label_Zhang)
 
                 plotter.plot_capillary_forces(
-                    zhang_surface_tension_force[0:2, :, :, zc_local],
+                    np.stack([force_x_plane_full, force_y_plane_full]),
                     yc=None,
                     iteration=iteration,
                     title="zhang_surface_tension_force"
                 )
 
-            np.savez_compressed(
-                os.path.join(images_dir, f"fields_iter_{iteration:0{fc.FILENAME_PADDING_WIDTH}d}.npz"),
-                phi=_phi,
-                u_ckl=u_ckl,
-                chemical_potential=_chemical_potential_Zhang,
-                zhang_surface_tension_force=zhang_surface_tension_force,
-            )          
+            phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+            chemical_potential_full = gather_full_volume(_chemical_potential_Zhang, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+
+            u_ckl_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
+            zhang_surface_tension_force_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
+            for k in range(3):
+                u_ckl_comp = gather_full_volume(u_ckl[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+                force_comp = gather_full_volume(zhang_surface_tension_force[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+                if rank == 0:
+                    u_ckl_full[k] = u_ckl_comp
+                    zhang_surface_tension_force_full[k] = force_comp
+
+            if rank == 0:
+                np.savez_compressed(
+                    os.path.join(images_dir, f"fields_iter_{iteration:0{fc.FILENAME_PADDING_WIDTH}d}.npz"),
+                    phi=phi_full,
+                    u_ckl=u_ckl_full,
+                    chemical_potential=chemical_potential_full,
+                    zhang_surface_tension_force=zhang_surface_tension_force_full,
+                )                   
 
     if ADD_METRICS and iteration in iterationsOfInterest:
-        if x_lo == MPI.PROC_NULL and yc_is_local:
-            left_x = zhang_surface_tension_force[0,1,yc_local,:].copy() # left-x
-            left_y = zhang_surface_tension_force[1,1,yc_local,:].copy() # left-y
+        is_left_owner = (x_lo == MPI.PROC_NULL and yc_is_local)
+        left_x_local = zhang_surface_tension_force[0,1,yc_local,1:-1].copy() if is_left_owner else None
+        left_y_local = zhang_surface_tension_force[1,1,yc_local,1:-1].copy() if is_left_owner else None
+        left_x = gather_line(left_x_local, z_offset, local_Zn, Zn, is_left_owner)
+        left_y = gather_line(left_y_local, z_offset, local_Zn, Zn, is_left_owner)
+        if rank == 0:
             plotter.phi_boundary_forces_vertical(
                         left_x, left_y,
                         label_left_x="Left wall Fx",
@@ -2372,9 +2443,12 @@ while iteration < fc.TOTAL_ITERATIONS:
                         figsize=(7, 5)
                     )
 
-        if x_hi == MPI.PROC_NULL and yc_is_local:
-            right_x = zhang_surface_tension_force[0,local_Xn,yc_local,:].copy() # right-x
-            right_y = zhang_surface_tension_force[1,local_Xn,yc_local,:].copy() # right-y
+        is_right_owner = (x_hi == MPI.PROC_NULL and yc_is_local)
+        right_x_local = zhang_surface_tension_force[0,local_Xn,yc_local,1:-1].copy() if is_right_owner else None
+        right_y_local = zhang_surface_tension_force[1,local_Xn,yc_local,1:-1].copy() if is_right_owner else None
+        right_x = gather_line(right_x_local, z_offset, local_Zn, Zn, is_right_owner)
+        right_y = gather_line(right_y_local, z_offset, local_Zn, Zn, is_right_owner)
+        if rank == 0:
             plotter.phi_boundary_forces_vertical(
                         right_x, right_y,
                         label_left_x="Right wall Fx",
@@ -2514,12 +2588,21 @@ while iteration < fc.TOTAL_ITERATIONS:
         
 
     if ADD_METRICS and iteration in iterationsOfInterest:
-        print(f"iter {iteration}: u_max={np.max(np.abs(u_ckl)):.4e}, phi_min={np.min(_phi):.4e}, phi_max={np.max(_phi):.4e}")        
-        if len(list_phi.keys()) > 0:
-            phi_center    = list_phi.popitem()[1]
-            dPhi_center0  = list_dphi_0.popitem()[1]
-            dPhi_center1  = list_dphi_1.popitem()[1]
+        u_max = comm.allreduce(np.max(np.abs(u_ckl[:, 1:-1, 1:-1, 1:-1])), op=MPI.MAX)
+        phi_min = comm.allreduce(np.min(_phi[1:-1, 1:-1, 1:-1]), op=MPI.MIN)
+        phi_max = comm.allreduce(np.max(_phi[1:-1, 1:-1, 1:-1]), op=MPI.MAX)
+        print(f"iter {iteration}: u_max={u_max:.4e}, phi_min={phi_min:.4e}, phi_max={phi_max:.4e}")
 
+        is_phi_owner = (yc_is_local and zc_is_local) and (len(list_phi.keys()) > 0)
+        phi_center_local = list_phi.popitem()[1] if is_phi_owner else None
+        dPhi_center0_local = list_dphi_0.popitem()[1] if is_phi_owner else None
+        dPhi_center1_local = list_dphi_1.popitem()[1] if is_phi_owner else None
+
+        phi_center = gather_line(phi_center_local, x_offset, local_Xn, Xn, is_phi_owner)
+        dPhi_center0 = gather_line(dPhi_center0_local, x_offset, local_Xn, Xn, is_phi_owner)
+        dPhi_center1 = gather_line(dPhi_center1_local, x_offset, local_Xn, Xn, is_phi_owner)
+
+        if rank == 0:
             label1 = r'$\phi$'
             label2 = r'$\partial \phi_x$'
             label3 = r'$\partial \phi_y$'
