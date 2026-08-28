@@ -514,9 +514,9 @@ def gather_xy_dict(local_dict, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, i
         x_off, y_off, rank_dict = item
         for it, piece in rank_dict.items():
             if it not in full_dict:
-                full_dict[it] = np.zeros((Xn, Yn))
-            full_dict[it][x_off:x_off+local_Xn, y_off:y_off+local_Yn] = piece
-    return full_dict        
+                full_dict[it] = np.zeros((Xn+2, Yn+2))
+            full_dict[it][x_off+1:x_off+1+local_Xn, y_off+1:y_off+1+local_Yn] = piece
+    return full_dict         
 
 
 def gather_x_line_dict(local_dict, x_offset, local_Xn, Xn, is_owner):
@@ -747,6 +747,7 @@ CAPILLARY_PROOF = FlowConfig(
     vf_theta = 120.0, #60
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
+    CORE_TOTAL_ITERATIONS=11,
     ENFORCE_MASS_CONSERVATION = True,
     ADD_SURFACE_TENSION_FORCE = 1,
     ADD_BODY_FORCE = 1
@@ -2695,17 +2696,23 @@ filtered_u_ckl_list_y = list(filtered_u_ckl_dict_y.values())
 filtered_u_ckl_dict_z = plotter.filter_u_ckl_fullrange(list_avg_velocities_z, iterationsOfInterest)
 filtered_u_ckl_list_z = list(filtered_u_ckl_dict_z.values())
 
-U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
-plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
-plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
+
+
+if rank == 0:
+    U_max_x = np.max(filtered_u_ckl_list_x[-1][sectionPosition, 1:Yn+1])
+    plotter.amplitude_plot(ax1[0, 0], filtered_u_ckl_dict_x, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_x$", f"Amplitude u$_x$ at x={Xn}", sectionPosition, Yn)
+    plotter.amplitude_plot(ax1[1, 0], filtered_u_ckl_dict_y, iterationsOfInterest, np.arange(1, Yn + 1), "y-axis", "Amplitude u$_y$", f"Amplitude u$_y$ at x={Xn}", sectionPosition, Yn)
 
 # phi plots at centerline
 if rank == 0:
     plotter.phi_profile(phi_on_plane, f"phi_profile_", iteration=iteration)
 
 _iteration = fc.TOTAL_ITERATIONS
-plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
-plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
+if rank == 0:
+    plotter.velocity_map(ax1[0, 1], filtered_u_ckl_list_x[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_x$] map")
+    plotter.velocity_map(ax1[1, 1], filtered_u_ckl_list_y[-1][1:-1, 1:Yn+1], _iteration, "Velocity [u$_y$] map")
+
+
 
 #plotter.density_profiles(ax1[2, 0], density_slices, density_profile_x_position, Xn, Yn, iteration)
 bond_series_labels = ["Bond no. (non-dim.)", "Bond no. (lattice)"]
