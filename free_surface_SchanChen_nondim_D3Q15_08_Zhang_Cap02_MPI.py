@@ -2741,7 +2741,7 @@ else:
                 x_off, y_off, piece = item
                 _rho_full_range_plane[x_off:x_off+local_Xn, y_off:y_off+local_Yn] = piece
 
-    plotter.density_mapExt(ax1[2, 1], _rho_full_range_plane, rho_min, rho_max, title, iteration)
+        plotter.density_mapExt(ax1[2, 1], _rho_full_range_plane, rho_min, rho_max, title, iteration)
 
 list_BodyForce_0 = gather_x_line_dict(list_BodyForce_0, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
 list_BodyForce_1 = gather_x_line_dict(list_BodyForce_1, x_offset, local_Xn, Xn, yc_is_local and zc_is_local)
