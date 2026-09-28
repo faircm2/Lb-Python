@@ -16,3 +16,19 @@ _old_outputs/
 *.png
 lb_results/
 phi_matrix_*
+# simulation output
+*.npz
+*.npy
+*.out
+*.h5
+*.vtk
+# compiled C files
+c_files/*.o
+c_files/*.s
+c_files/*.a
+c_files/hello1
+c_files/iter
+c_files/measurement
+c_files/output
+c_files/server
+c_files/todo
