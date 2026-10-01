@@ -130,6 +130,69 @@ def render_vector_glyphs(vec_field, field_name, out_path, stride=6, factor=2.0):
     pl.close()
 
 
+def render_streamlines(vec_field, out_path, n_seeds_y=10, n_seeds_z=10,
+                        seed_x_frac=0.02, max_length=None, tube_radius=0.5):
+    """
+    Trace actual flow paths through a periodic-x channel, not just arrows
+    at sample points (that's render_vector_glyphs). Seeds a grid of points
+    across a YZ cross-section near the inlet end and integrates forward
+    along the velocity field - this is what actually shows the flow
+    pattern (e.g. shear profile against the walls) for a driven channel.
+
+    vec_field shape: (3, X, Y, Z), as loaded from the .npz 'u_ckl' array.
+    """
+    Xn, Yn, Zn = vec_field.shape[1:]
+    grid = make_grid((Xn, Yn, Zn))
+    vectors = np.stack([
+        vec_field[0].flatten(order="F"),
+        vec_field[1].flatten(order="F"),
+        vec_field[2].flatten(order="F"),
+    ], axis=-1)
+    grid.point_data["u_ckl"] = vectors
+    grid.set_active_vectors("u_ckl")
+
+    # seed plane just inside the domain (avoid the ghost-padding edge cells)
+    seed_x = max(1.0, (Xn - 1) * seed_x_frac)
+    ys = np.linspace(1, Yn - 2, n_seeds_y)
+    zs = np.linspace(1, Zn - 2, n_seeds_z)
+    YY, ZZ = np.meshgrid(ys, zs, indexing="ij")
+    seed_points = np.stack([
+        np.full(YY.size, seed_x),
+        YY.ravel(),
+        ZZ.ravel(),
+    ], axis=-1)
+    seeds = pv.PolyData(seed_points)
+
+    # let a streamline travel the full channel length by default (the grid
+    # is a plain box to pyvista - it doesn't know x is periodic, so a
+    # streamline just stops at x=Xn rather than wrapping around)
+    if max_length is None:
+        max_length = float(Xn) * 1.5
+
+    streams = grid.streamlines_from_source(
+        seeds, vectors="u_ckl",
+        integration_direction="forward",
+        max_length=max_length,
+    )
+
+    pl = pv.Plotter(off_screen=True)
+    if streams.n_points > 0:
+        tubes = streams.tube(radius=tube_radius)
+        if tubes.n_points == 0:
+            # zero-length (e.g. zero-velocity) streamlines tube into nothing -
+            # nothing meaningful to draw, skip rather than crash
+            pass
+        elif "u_ckl" in tubes.point_data:
+            pl.add_mesh(tubes, cmap="viridis", scalars="u_ckl", show_scalar_bar=True)
+        else:
+            pl.add_mesh(tubes, color="steelblue")
+    pl.add_axes()
+    pl.camera_position = "iso"
+    pl.screenshot(out_path)
+    pl.close()
+    return streams.n_points
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("npz_path", help="path to a single fields_iter_NNNNN.npz file")

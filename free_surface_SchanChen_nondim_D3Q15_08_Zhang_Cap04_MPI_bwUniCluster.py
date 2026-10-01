@@ -297,7 +297,7 @@ D=1e-3 #m
 L=1 #m
 
 Yn=int(DEFAULT_D_ND) #+1
-Xn=int(DEFAULT_D_ND) #200 #int(Yn*L/D)
+Xn=int(DEFAULT_D_ND) * 2 #200 #int(Yn*L/D)
 Zn=int(DEFAULT_D_ND) #200 #int(Zn*L/D)
 
 dx=D/DEFAULT_D_ND  #old->5*10**(-5)
@@ -421,10 +421,11 @@ debug_log('INIT', 'c=%(c).2f', extra=dict(c=c))
 # MPI configuration
 # ──────────────────────────────────────────────────────────────────────────────────────────
 comm = MPI.COMM_WORLD
-assert comm.Get_size() == 512, f"need 512 ranks, got {comm.Get_size()}"
-dims = [8, 8, 8]
+assert comm.Get_size() == 1024, f"need 1024 ranks, got {comm.Get_size()}"
+dims = [16, 8, 8]
 #dims = [1, 1, 1]
-cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
+#cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
+cart = comm.Create_cart(dims, periods=[True, False, False], reorder=True)
 rank_coords = cart.Get_coords(cart.Get_rank())
 
 rank = comm.Get_rank()
@@ -591,7 +592,7 @@ BENCHMARK_INCLINED = FlowConfig(
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the diffuse interface, reducing sharp edges.
     vf_W = 4, #was 6
     vf_sigma = 0.01, #0.072
-    vf_theta = 60.0, #60
+    vf_theta = 40.0, #60
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
     #CORE_TOTAL_ITERATIONS=11,
@@ -1417,8 +1418,9 @@ def set_solid_nodes(iteration, fc, _phi):
             merged = {}
             for d in gathered_node_data:
                 merged.update(d)
-            node_data = [merged[_offset] for _offset in [4,3,2,1,0,-1,-2,-3,-4]]
-            plotter.plot_left_wall_all_nodes(iteration, node_data)
+            if merged:
+                node_data = [merged[_offset] for _offset in [4,3,2,1,0,-1,-2,-3,-4]]
+                plotter.plot_left_wall_all_nodes(iteration, node_data)
 
 
     # Step 3: Assign to solid wall nodes only
@@ -1684,7 +1686,8 @@ if PHI_DISTRIBUTION == "STEP":
     density_profile_z_position = int(2/3*Zn)   
 if PHI_DISTRIBUTION == "HORIZONTAL":
     # Replace the original _phi initialization with a call to the method
-    _phi = init_horizontal_phi(local_Xn+2, local_Yn+2, local_Zn+2, fc.phi_star_G, fc.phi_star_L, height=(Zn+1)/2 - z_offset, W=fc.vf_W)
+    #_phi = init_horizontal_phi(local_Xn+2, local_Yn+2, local_Zn+2, fc.phi_star_G, fc.phi_star_L, height=(Zn+1)/2 - z_offset, W=fc.vf_W)
+    _phi = init_horizontal_phi(local_Xn+2, local_Yn+2, local_Zn+2, fc.phi_star_G, fc.phi_star_L, height=(Zn+1)/10 - z_offset, W=fc.vf_W)
     density_profile_x_position = Xn//2
     density_profile_y_position = Yn//2
     density_profile_z_position = Zn//2
@@ -1766,6 +1769,7 @@ zhang_surface_tension_force = np.zeros((3, local_Xn+2, local_Yn+2, local_Zn+2))
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
 Z_LAYER_INDICES = np.linspace(1, Zn, 3, dtype=int).tolist()
 Y_LAYER_INDICES = np.linspace(1, Yn, 3, dtype=int).tolist()
+X_LAYER_INDICES = np.linspace(1, Xn, 3, dtype=int).tolist()
 
 plotter = Plotter2D(
     script_dir=script_dir,
@@ -1792,6 +1796,8 @@ u_mag_full = gather_full_volume(u_mag, x_offset, y_offset, z_offset, local_Xn, l
 if rank == 0:
     plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
     plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
+    plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu_r')
+    plotter.plot_field_layers(u_mag_full, "u_mag_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x')
 if midpoint_is_local:
     u_ckl_midpoint0 = u_ckl[0, x_mid_local, y_mid_local, z_mid_local]
 epsilon_u_ckl = 0
@@ -1938,6 +1944,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         if rank == 0:
             plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
             plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
+            plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu_r')
+            plotter.plot_field_layers(u_mag_full, "u_mag_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x')
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Surface Tension
@@ -2020,7 +2028,7 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ── END DIAGNOSTIC ────────────────────────────────────────────────────────
 
     # --> Zhang eq(28) - fluid velocity
-    if iteration == 0:
+    if iteration == 0 and rank == 0:
         _fi_term  = np.einsum('ia,ijkl->ajkl', c, z_fi) / (Cs2 * rho)
         _bf_term  = (1.0 / (2.0 * rho)) * fc.ADD_BODY_FORCE * body_force
         _cap_term = (1.0 / (2.0 * rho)) * fc.ADD_SURFACE_TENSION_FORCE * _capillary_force
@@ -2041,6 +2049,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         _xi, _yi, _zi = _loc_int[0]+1, _loc_int[1]+1, _loc_int[2]+1
         print(f"  interior max |u_y| loc=({_xi},{_yi},{_zi})  u_y={_u_test[1,_xi,_yi,_zi]:.6e}")
         print(f"    fi_term={_fi_term[1,_xi,_yi,_zi]:.4e}  bf={_bf_term[1,_xi,_yi,_zi]:.4e}  cap={_cap_term[1,_xi,_yi,_zi]:.4e}  rho={rho[_xi,_yi,_zi]:.4e}")
+
+    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force); _mark('zu_ckl', _t0)
 
     if ADD_METRICS and iteration in iterationsOfInterest: 
         _u_ckl_abs = np.abs(u_ckl)
@@ -2117,7 +2127,7 @@ while iteration < fc.TOTAL_ITERATIONS:
             u_ckl=u_ckl_full,
             chemical_potential=chemical_potential_full,
             zhang_surface_tension_force=zhang_surface_tension_force_full,
-            )              
+            )                                 
 
     if ADD_METRICS and iteration in iterationsOfInterest:
         is_left_owner = (x_lo == MPI.PROC_NULL and yc_is_local)
@@ -2314,8 +2324,8 @@ rho_out_local = rho[local_Xn, y_mid_local, z_mid_local] if (x_hi == MPI.PROC_NUL
 rho_in_gathered = comm.gather(rho_in_local, root=0)
 rho_out_gathered = comm.gather(rho_out_local, root=0)
 if rank == 0:
-    rho_in = next(v for v in rho_in_gathered if v is not None)
-    rho_out = next(v for v in rho_out_gathered if v is not None)
+    rho_in = next((v for v in rho_in_gathered if v is not None), None)
+    rho_out = next((v for v in rho_out_gathered if v is not None), None)
 
 rho_min = comm.allreduce(np.min(rho[1:-1, 1:-1, 1:-1]), op=MPI.MIN)
 rho_max = comm.allreduce(np.max(rho[1:-1, 1:-1, 1:-1]), op=MPI.MAX)

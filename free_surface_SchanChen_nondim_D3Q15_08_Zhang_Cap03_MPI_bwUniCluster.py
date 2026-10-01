@@ -1768,6 +1768,7 @@ zhang_surface_tension_force = np.zeros((3, local_Xn+2, local_Yn+2, local_Zn+2))
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
 Z_LAYER_INDICES = np.linspace(1, Zn, 3, dtype=int).tolist()
 Y_LAYER_INDICES = np.linspace(1, Yn, 3, dtype=int).tolist()
+X_LAYER_INDICES = np.linspace(1, Xn, 3, dtype=int).tolist()
 
 plotter = Plotter2D(
     script_dir=script_dir,
@@ -1794,6 +1795,8 @@ u_mag_full = gather_full_volume(u_mag, x_offset, y_offset, z_offset, local_Xn, l
 if rank == 0:
     plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
     plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
+    plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu_r')
+    plotter.plot_field_layers(u_mag_full, "u_mag_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x')
 if midpoint_is_local:
     u_ckl_midpoint0 = u_ckl[0, x_mid_local, y_mid_local, z_mid_local]
 epsilon_u_ckl = 0
@@ -1940,6 +1943,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         if rank == 0:
             plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
             plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
+            plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu_r')
+            plotter.plot_field_layers(u_mag_full, "u_mag_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x')
 
     # ──────────────────────────────────────────────────────────────
     #          Forces: Surface Tension
@@ -2044,6 +2049,8 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"  interior max |u_y| loc=({_xi},{_yi},{_zi})  u_y={_u_test[1,_xi,_yi,_zi]:.6e}")
         print(f"    fi_term={_fi_term[1,_xi,_yi,_zi]:.4e}  bf={_bf_term[1,_xi,_yi,_zi]:.4e}  cap={_cap_term[1,_xi,_yi,_zi]:.4e}  rho={rho[_xi,_yi,_zi]:.4e}")
 
+    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force); _mark('zu_ckl', _t0)
+
     if ADD_METRICS and iteration in iterationsOfInterest: 
         _u_ckl_abs = np.abs(u_ckl)
         _local_max = np.max(_u_ckl_abs)
@@ -2091,6 +2098,18 @@ while iteration < fc.TOTAL_ITERATIONS:
         force_y_plane_full = gather_xy_plane(force_y_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
 
 
+    phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+    chemical_potential_full = gather_full_volume(_chemical_potential_Zhang, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+
+    u_ckl_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
+    zhang_surface_tension_force_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
+    for k in range(3):
+        u_ckl_comp = gather_full_volume(u_ckl[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+        force_comp = gather_full_volume(zhang_surface_tension_force[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+        if rank == 0:
+            u_ckl_full[k] = u_ckl_comp
+            zhang_surface_tension_force_full[k] = force_comp
+
     if DUMP_FIELDS and rank == 0:
         plotter.chemical_potential_map(None, chem_pot_plane_full, iteration, title_Zhang, label_Zhang)
 
@@ -2101,26 +2120,13 @@ while iteration < fc.TOTAL_ITERATIONS:
             title="zhang_surface_tension_force"
         )
 
-        phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
-        chemical_potential_full = gather_full_volume(_chemical_potential_Zhang, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
-
-        u_ckl_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
-        zhang_surface_tension_force_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
-        for k in range(3):
-            u_ckl_comp = gather_full_volume(u_ckl[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
-            force_comp = gather_full_volume(zhang_surface_tension_force[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
-            if rank == 0:
-                u_ckl_full[k] = u_ckl_comp
-                zhang_surface_tension_force_full[k] = force_comp
-
-        if rank == 0:
-            np.savez_compressed(
-                os.path.join(images_dir, f"fields_iter_{iteration:0{fc.FILENAME_PADDING_WIDTH}d}.npz"),
-                phi=phi_full,
-                u_ckl=u_ckl_full,
-                chemical_potential=chemical_potential_full,
-                zhang_surface_tension_force=zhang_surface_tension_force_full,
-                )                   
+        np.savez_compressed(
+            os.path.join(images_dir, f"fields_iter_{iteration:0{fc.FILENAME_PADDING_WIDTH}d}.npz"),
+            phi=phi_full,
+            u_ckl=u_ckl_full,
+            chemical_potential=chemical_potential_full,
+            zhang_surface_tension_force=zhang_surface_tension_force_full,
+            )                                 
 
     if ADD_METRICS and iteration in iterationsOfInterest:
         is_left_owner = (x_lo == MPI.PROC_NULL and yc_is_local)
