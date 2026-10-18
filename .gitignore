@@ -22,6 +22,18 @@ phi_matrix_*
 *.out
 *.h5
 *.vtk
+# archives (GitHub rejects files > 100 MB)
+*.tar
+*.tgz
+*.tar.gz
+# downloaded run folders
+a45_*/
+big_run_*/
+cap0[56]_*/
+smoke_test/
+study*/
+free_surface_*_MPI_bwUniCluster/
+free_surface_*_alpha45/
 # compiled C files
 c_files/*.o
 c_files/*.s

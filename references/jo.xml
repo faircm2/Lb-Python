@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="\IEEE2006OfficeOnline.xsl" StyleName="IEEE" Version="2006"
+    xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography"
+    xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+    <b:Source>
+        <b:Tag>Ju23</b:Tag>
+        <b:SourceType>JournalArticle</b:SourceType>
+        <b:LCID>1033</b:LCID>
+        <b:Author>
+            <b:Author>
+                <b:NameList>
+                    <b:Person>
+                        <b:Last>Ju</b:Last>
+                        <b:First>L.</b:First>
+                    </b:Person>
+                    <b:Person>
+                        <b:Last>Guo</b:Last>
+                        <b:First>Z.</b:First>
+                    </b:Person>
+                    <b:Person>
+                        <b:Last>Yan</b:Last>
+                        <b:First>B.</b:First>
+                    </b:Person>
+                    <b:Person>
+                        <b:Last>Sun</b:Last>
+                        <b:First>S.</b:First>
+                    </b:Person>
+                </b:NameList>
+            </b:Author>
+        </b:Author>
+        <b:Title>A new approach for the implementation of contact line motion based on the
+            phase-field lattice Boltzmann method</b:Title>
+        <b:JournalName>arXiv preprint arXiv:2312.00369 [math-ph]</b:JournalName>
+        <b:Year>2023</b:Year>
+        <b:URL>https://arxiv.org/abs/2312.00369</b:URL>
+    </b:Source>
+</b:Sources>

@@ -421,8 +421,8 @@ debug_log('INIT', 'c=%(c).2f', extra=dict(c=c))
 # MPI configuration
 # ──────────────────────────────────────────────────────────────────────────────────────────
 comm = MPI.COMM_WORLD
-assert comm.Get_size() == 1024, f"need 1024 ranks, got {comm.Get_size()}"
-dims = [16, 8, 8]
+assert comm.Get_size() in (512, 1024), f"need 512 or 1024 ranks, got {comm.Get_size()}"
+dims = [16, 8, 8] if comm.Get_size() == 1024 else [8, 8, 8]
 #dims = [1, 1, 1]
 #cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
 cart = comm.Create_cart(dims, periods=[True, False, False], reorder=True)
@@ -523,15 +523,18 @@ def gather_x_line_dict(local_dict, x_offset, local_Xn, Xn, is_owner):
     return full_dict    
 
 
-def gather_full_volume(local_field, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn):
-    payload = (x_offset, y_offset, z_offset, local_field[1:-1, 1:-1, 1:-1])
+def gather_full_volume(local_field, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn, dtype=None):
+    piece = local_field[1:-1, 1:-1, 1:-1]
+    if dtype is not None:
+        piece = piece.astype(dtype)
+    payload = (x_offset, y_offset, z_offset, piece)
     gathered = comm.gather(payload, root=0)
     if rank != 0:
         return None
-    full_field = np.zeros((Xn+2, Yn+2, Zn+2))
+    full_field = np.zeros((Xn+2, Yn+2, Zn+2), dtype=dtype if dtype is not None else np.float64)
     for x_off, y_off, z_off, piece in gathered:
         full_field[x_off+1:x_off+1+local_Xn, y_off+1:y_off+1+local_Yn, z_off+1:z_off+1+local_Zn] = piece
-    return full_field    
+    return full_field   
 
 
 def gather_xy_plane(local_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, is_owner):
@@ -699,6 +702,8 @@ _arg_parser = argparse.ArgumentParser()
 _arg_parser.add_argument('--tau_g', type=float, default=None)
 _arg_parser.add_argument('--tau_f', type=float, default=None)
 _arg_parser.add_argument('--vf_theta', type=float, default=None)
+_arg_parser.add_argument('--alpha', type=float, default=None)
+_arg_parser.add_argument('--multiples', type=int, default=None)
 _arg_parser.add_argument('--phi_results_file', type=str, default='phi_results.txt')
 _args, _ = _arg_parser.parse_known_args()
 if _args.tau_g is not None:
@@ -707,6 +712,10 @@ if _args.tau_f is not None:
     fc.tau_f = _args.tau_f
 if _args.vf_theta is not None:
     fc.vf_theta = _args.vf_theta
+if _args.alpha is not None:
+    fc.alpha = _args.alpha    
+if _args.multiples is not None:
+    fc.MULTIPLES = _args.multiples
 PHI_RESULTS_FILENAME = _args.phi_results_file
 
 
@@ -1669,7 +1678,9 @@ y0 = (Yn-1)/2
 z0 = (Zn-1)/2
 x,y,z = np.meshgrid(np.arange(Xn+2), np.arange(Yn+2), np.arange(Zn+2), indexing='ij')
 
-PARAMETER_STUB = "__" + ACTIVE_CASE + "__nodes_" + str(DEFAULT_D_ND) + "__tau_f_" + str(fc.tau_f) + "__tau_g_" + str(fc.tau_g) + "__Kf_" + str(fc.Kf) + "__Theta_" + str(fc.vf_theta)
+PARAMETER_STUB = "__" + ACTIVE_CASE + "__nodes_" + str(DEFAULT_D_ND) + "__tau_f_" + str(fc.tau_f) + "__tau_g_" + str(fc.tau_g) \
+    + "__Kf_" + str(fc.Kf) + "__Theta_" + str(fc.vf_theta) + "_alpha" + f"{fc.alpha:g}" \
+    + ("_x" + str(fc.MULTIPLES) if fc.MULTIPLES != 1 else "")
 images_dir = os.path.join(images_subdir, SCRIPT_FILENAME + PARAMETER_STUB)
 os.makedirs(images_dir, exist_ok=True)
 
@@ -1703,6 +1714,7 @@ GrowthMetric_uckl_z = []
 GrowthMetric_uckl_star_y = []
 SpuriousFields = []
 PhiCollector = []
+SurfaceHeight = []
 
 iteration = 0
 
@@ -2099,35 +2111,36 @@ while iteration < fc.TOTAL_ITERATIONS:
         force_y_plane_full = gather_xy_plane(force_y_plane, x_offset, y_offset, local_Xn, local_Yn, Xn, Yn, zc_is_local)
 
 
-    phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
-    chemical_potential_full = gather_full_volume(_chemical_potential_Zhang, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+    if iteration in iterationsOfInterest and (DUMP_FIELDS or iteration == fc.TOTAL_ITERATIONS - 1):
+        phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn, dtype=np.float32)
+        chemical_potential_full = gather_full_volume(_chemical_potential_Zhang, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn, dtype=np.float32)
 
-    u_ckl_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
-    zhang_surface_tension_force_full = np.zeros((3, Xn+2, Yn+2, Zn+2)) if rank == 0 else None
-    for k in range(3):
-        u_ckl_comp = gather_full_volume(u_ckl[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
-        force_comp = gather_full_volume(zhang_surface_tension_force[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
+        u_ckl_full = np.zeros((3, Xn+2, Yn+2, Zn+2), dtype=np.float32) if rank == 0 else None
+        zhang_surface_tension_force_full = np.zeros((3, Xn+2, Yn+2, Zn+2), dtype=np.float32) if rank == 0 else None
+        for k in range(3):
+            u_ckl_comp = gather_full_volume(u_ckl[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn, dtype=np.float32)
+            force_comp = gather_full_volume(zhang_surface_tension_force[k], x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn, dtype=np.float32)
+            if rank == 0:
+                u_ckl_full[k] = u_ckl_comp
+                zhang_surface_tension_force_full[k] = force_comp
+
         if rank == 0:
-            u_ckl_full[k] = u_ckl_comp
-            zhang_surface_tension_force_full[k] = force_comp
+            plotter.chemical_potential_map(None, chem_pot_plane_full, iteration, title_Zhang, label_Zhang)
 
-    if DUMP_FIELDS and rank == 0:
-        plotter.chemical_potential_map(None, chem_pot_plane_full, iteration, title_Zhang, label_Zhang)
+            plotter.plot_capillary_forces(
+                np.stack([force_x_plane_full, force_y_plane_full]),
+                yc=None,
+                iteration=iteration,
+                title="zhang_surface_tension_force"
+            )
 
-        plotter.plot_capillary_forces(
-            np.stack([force_x_plane_full, force_y_plane_full]),
-            yc=None,
-            iteration=iteration,
-            title="zhang_surface_tension_force"
-        )
-
-        np.savez_compressed(
-            os.path.join(images_dir, f"fields_iter_{iteration:0{fc.FILENAME_PADDING_WIDTH}d}.npz"),
-            phi=phi_full,
-            u_ckl=u_ckl_full,
-            chemical_potential=chemical_potential_full,
-            zhang_surface_tension_force=zhang_surface_tension_force_full,
-            )                                 
+            np.savez_compressed(
+                os.path.join(images_dir, f"fields_iter_{iteration:0{fc.FILENAME_PADDING_WIDTH}d}.npz"),
+                phi=phi_full,
+                u_ckl=u_ckl_full,
+                chemical_potential=chemical_potential_full,
+                zhang_surface_tension_force=zhang_surface_tension_force_full,
+                )                      
 
     if ADD_METRICS and iteration in iterationsOfInterest:
         is_left_owner = (x_lo == MPI.PROC_NULL and yc_is_local)
@@ -2246,6 +2259,14 @@ while iteration < fc.TOTAL_ITERATIONS:
                 if item is not None:
                     y_off, z_off, piece = item
                     phi_on_plane[y_off:y_off+local_Yn, z_off:z_off+local_Zn] = piece
+            _mask = phi_on_plane > 0.5
+            _k = Zn - 1 - np.argmax(_mask[:, ::-1], axis=1)
+            _i = np.arange(Yn)
+            _p0 = phi_on_plane[_i, _k]
+            _p1 = phi_on_plane[_i, np.minimum(_k + 1, Zn - 1)]
+            _h = _k + (_p0 - 0.5) / np.where(_p0 == _p1, 1.0, _p0 - _p1)
+            SurfaceHeight.append(np.concatenate(([iteration], _h)))
+            np.savez_compressed(os.path.join(images_dir, "surface_height.npz"), SurfaceHeight=np.array(SurfaceHeight))                   
 
     #streaming has commenced
    

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>Sch24</b:Tag>
+    <b:SourceType>Report</b:SourceType>
+    <b:Guid>{6F1C2A9E-4B7D-4E21-9C3A-5D8E7F0A1B24}</b:Guid>
+    <b:LCID>1031</b:LCID>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person>
+            <b:Last>Schmid</b:Last>
+            <b:First>Friederike</b:First>
+          </b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Statistical Mechanics II: Advanced Statistical Physics</b:Title>
+    <b:ThesisType>Vorlesungsskript, Version WS 2024/2025</b:ThesisType>
+    <b:Institution>Johannes Gutenberg-Universität Mainz, Institut für Physik</b:Institution>
+    <b:City>Mainz</b:City>
+    <b:Year>2024</b:Year>
+    <b:Month>Dezember</b:Month>
+    <b:Day>16</b:Day>
+    <b:URL>https://www.staff.uni-mainz.de/schmidfr/Lehre/Skripte/Statistical_Mechanics_II.pdf</b:URL>
+    <b:YearAccessed>2026</b:YearAccessed>
+    <b:MonthAccessed>Oktober</b:MonthAccessed>
+    <b:DayAccessed>14</b:DayAccessed>
+    <b:Medium>PDF</b:Medium>
+  </b:Source>
+</b:Sources>

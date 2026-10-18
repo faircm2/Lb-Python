@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="\IEEE2006OfficeOnline.xsl" StyleName="IEEE" Version="2006"
+    xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography"
+    xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+    <b:Source>
+        <b:Tag>Row02</b:Tag>
+        <b:SourceType>Book</b:SourceType>
+        <b:LCID>1033</b:LCID>
+        <b:Author>
+            <b:Author>
+                <b:NameList>
+                    <b:Person>
+                        <b:Last>Rowlinson</b:Last>
+                        <b:First>J.</b:First>
+                        <b:Middle>S.</b:Middle>
+                    </b:Person>
+                    <b:Person>
+                        <b:Last>Widom</b:Last>
+                        <b:First>B.</b:First>
+                    </b:Person>
+                </b:NameList>
+            </b:Author>
+        </b:Author>
+        <b:Title>Molecular Theory of Capillarity</b:Title>
+        <b:Edition>Dover</b:Edition>
+        <b:City>Mineola, NY</b:City>
+        <b:Publisher>Dover Publications</b:Publisher>
+        <b:Year>2002</b:Year>
+    </b:Source>
+</b:Sources>

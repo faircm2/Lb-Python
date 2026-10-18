@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --threads-per-core=1
 #SBATCH --mem-per-cpu=4000
-#SBATCH --time=06:00:00
+#SBATCH --time=24:00:00
 #SBATCH --output=lbm_%j.out
 #SBATCH --error=lbm_%j.err
 

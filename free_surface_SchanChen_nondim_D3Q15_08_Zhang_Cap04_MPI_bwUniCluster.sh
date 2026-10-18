@@ -4,8 +4,8 @@
 #SBATCH --ntasks=1024
 #SBATCH --cpus-per-task=1
 #SBATCH --threads-per-core=1
-#SBATCH --mem-per-cpu=4000
-#SBATCH --time=06:00:00
+#SBATCH --mem-per-cpu=6000
+#SBATCH --time=30:00:00
 #SBATCH --output=lbm_%j.out
 #SBATCH --error=lbm_%j.err
 
@@ -41,6 +41,6 @@ echo "Running with ${SLURM_NTASKS} ranks on ${SLURM_JOB_NUM_NODES} node(s)"
 echo "Node list: $(scontrol show hostnames $SLURM_JOB_NODELIST)"
 
 "$MPIRUN" -n ${SLURM_NTASKS} --bind-to core --map-by core \
-    "$PY" free_surface_SchanChen_nondim_D3Q15_08_Zhang_Cap04_MPI_bwUniCluster.py
+    "$PY" free_surface_SchanChen_nondim_D3Q15_08_Zhang_Cap04_MPI_bwUniCluster.py --alpha ${ALPHA:-45} --multiples ${MULT:-1}  
 
 echo "Job finished."
