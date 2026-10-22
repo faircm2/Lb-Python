@@ -19,14 +19,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import ndimage as ndi
 
 CS = np.sqrt(1 / 3)
 CS2 = 1 / 3
 D_PHYS, N_CELLS, NU_PHYS = 1e-3, 384, 2.9e-6          # same constants as the simulation
 DX = D_PHYS / N_CELLS
 ZCROP = 100                                            # height of the y-z maps shown (--zcrop overrides)
-C_LIQ, C_GAS, C_L, C_R = "tab:blue", "tab:red", "tab:blue", "tab:red"
+C_LIQ, C_GAS, C_L, C_R = "tab:red", "tab:blue", "black", "darkgreen"   # same as the phi map: red = liquid (phi 1), blue = gas (phi 0); left/right use neutral colours
 
 
 def run_parameters(folder):
@@ -67,7 +66,7 @@ def main(folder, out, overrides=None, zcrop=None):
     Y, Z = phis[0].shape
 
     # ---- time series from the plane dumps -------------------------------------------------
-    wall, well, centre, mach_liq, mach_gas, corner_l, corner_r, pocket, speed_liq, speed_all = ([] for _ in range(10))
+    wall, well, centre, mach_liq, mach_gas, corner_l, corner_r, speed_liq, speed_all = ([] for _ in range(9))
     for phi, u in zip(phis, us):
         h = phi.sum(axis=1)                                  # liquid height per y (cells)
         wall.append(0.5 * (h[0] + h[-1]))
@@ -78,11 +77,8 @@ def main(folder, out, overrides=None, zcrop=None):
         speed_all.append(speed[phi < 0.5].max() if (phi < 0.5).any() else 0.0)   # gas
         mach_liq.append(speed[phi > 0.5].max() / CS if (phi > 0.5).any() else 0.0)
         mach_gas.append(speed[phi < 0.5].max() / CS if (phi < 0.5).any() else 0.0)
-        corner_l.append(phi[:40, :30].min())
-        corner_r.append(phi[Y - 40:, :30].min())
-        lab, n = ndi.label(phi < 0.5)
-        main_gas = set(np.unique(lab[:, -1])) - {0}
-        pocket.append(sum(int((lab == k).sum()) for k in range(1, n + 1) if k not in main_gas))
+        corner_l.append(int((phi[:40, :30] < 0.5).sum()))        # gas cells in the left floor corner box
+        corner_r.append(int((phi[Y - 40:, :30] < 0.5).sum()))
 
     phi, u = phis[-1], us[-1]
     speed = np.sqrt((u ** 2).sum(axis=0))
@@ -93,12 +89,12 @@ def main(folder, out, overrides=None, zcrop=None):
     fig.suptitle("Dashboard: " + title, fontsize=12)
 
     def yz_map(a, f, name, cbar, cmap="viridis", sym=False):
-        v = np.percentile(np.abs(f), 99)
+        v = np.abs(f).max()                                  # colour scale = true range, no clipping
         im = a.imshow(f[:, :ZCROP].T, origin="lower", aspect="equal", cmap=cmap,
                       vmin=-v if sym else 0, vmax=v, extent=(0, Y, 0, ZCROP))
         a.contour(np.arange(Y) + 0.5, np.arange(ZCROP) + 0.5, phi[:, :ZCROP].T, levels=[0.5],
                   colors="cyan", linewidths=1.4)
-        a.set_title(f"{name}  (clipped at 99th pct; max {np.abs(f).max():.2e})\nz shown: 0-{ZCROP} of {Z} cells", fontsize=10)
+        a.set_title(f"{name}  (max {np.abs(f).max():.2e})\nz shown: 0-{ZCROP} of {Z} cells", fontsize=10)
         a.set_xlabel("y"); a.set_ylabel("z")
         fig.colorbar(im, ax=a, label=cbar, fraction=0.04, pad=0.02)
 
@@ -123,14 +119,12 @@ def main(folder, out, overrides=None, zcrop=None):
     a.legend(); a.grid(alpha=.3)
 
     a = ax[2, 0]
-    a.plot(t, corner_l, color=C_L, lw=2, label="lowest phi, left corner (y<40, z<30)")
-    a.plot(t, corner_r, color=C_R, lw=2, label="lowest phi, right corner (y>343, z<30)")
-    a.axhline(0.5, color="k", ls="--", lw=1)
-    a.set_xlabel("t [ms]"); a.set_ylabel("phi")
-    a2 = a.twinx(); a2.plot(t, pocket, color="gray", lw=1.5, ls=":", label="isolated gas area"); a2.set_ylabel("pocket area [cells]")
-    a.set_title("Gas pockets", fontsize=10)
-    h1, l1 = a.get_legend_handles_labels(); h2, l2 = a2.get_legend_handles_labels()
-    a.legend(h1 + h2, l1 + l2, fontsize=8, loc="center right"); a.grid(alpha=.3)
+    a.plot(t, corner_l, color=C_L, lw=2, label="left corner")
+    a.plot(t, corner_r, color=C_R, lw=2, ls="--", label="right corner")
+    a.set_xlabel("t [ms]"); a.set_ylabel("gas cells (phi < 0.5)")
+    a.set_ylim(bottom=0, top=max(1, max(corner_l + corner_r) * 1.1))
+    a.set_title("Gas in the floor corners\n(boxes of 40 x 30 cells at y=0 and y=383, z=0)", fontsize=10)
+    a.legend(fontsize=9, loc="upper left"); a.grid(alpha=.3)
 
     # row 3: mass, viscosity profile, parameters --------------------------------------------------
     a = ax[2, 1]
@@ -159,8 +153,9 @@ def main(folder, out, overrides=None, zcrop=None):
     g_lat = 9.81 * dt**2 / DX                                   # lattice gravity
     g_z = g_lat * np.cos(np.radians(p["alpha"]))                # component normal to the surface
     d_rho = p["rho_L"] - p["rho_G"]
-    l_c = np.sqrt(p["sigma"] / (d_rho * g_z)) if p["sigma"] > 0 else float("nan")
-    bond = d_rho * g_z * Y**2 / p["sigma"] if p["sigma"] > 0 else float("nan")
+    no_gz = abs(g_z) < 1e-9 * g_lat                             # alpha = 90: no gravity normal to the surface
+    l_c = np.sqrt(p["sigma"] / (d_rho * g_z)) if (p["sigma"] > 0 and not no_gz) else float("nan")
+    bond = d_rho * g_z * Y**2 / p["sigma"] if (p["sigma"] > 0 and not no_gz) else float("nan")
     L0 = 37.5                                                   # initial liquid depth (10 % fill)
     L_gas = Z - L0                                              # gas depth above the initial liquid level
     re_liq, re_gas = max(speed_liq) * L0 / nu, max(speed_all) * L_gas / nu          # max over all dumps
@@ -169,14 +164,23 @@ def main(folder, out, overrides=None, zcrop=None):
            f"tau_g = {p['tau_g']:g}   ->  mobility M_phi = {mobility:.4f}\n"
            f"eta_L = {eta_L:.4g},  eta_G = {eta_G:.4g}   (ratio {eta_L / eta_G:.0f})\n"
            f"dt = {dt:.4e} s,   dx = {DX:.4e} m\n"
-           f"sigma = {p['sigma']:g},  theta = {p['theta']:g} deg,  alpha = {p['alpha']:g} deg\n"
+           f"sigma = {p['sigma']:g}\n"
+           f"theta = {p['theta']:g} deg\n"
+           f"alpha = {p['alpha']:g} deg\n"
            f"rho_L = {p['rho_L']:g},  rho_G = {p['rho_G']:g}\n"
-           f"Bond number Bo = drho g_z W^2 / sigma = {bond:.3g}   (W = {Y} cells)\n"
-           f"capillary length l_c = {l_c:.0f} cells = {l_c * DX * 1e3:.2f} mm   (W/l_c = {Y / l_c:.2f})\n"
+           f"W = {Y} cells ({Y * DX * 1e3:.2f} mm)\n"
+           + ("Bond number Bo = 0  (g_z = 0 at alpha 90)\n"
+              "capillary length l_c = infinite  (g_z = 0)\n"
+              "W/l_c = 0\n" if no_gz else
+              f"Bond number Bo = drho g_z W^2 / sigma = {bond:.3g}\n"
+              f"capillary length l_c = {l_c:.0f} cells = {l_c * DX * 1e3:.2f} mm\n"
+              f"W/l_c = {Y / l_c:.2f}\n") +
            f"Re (fluid) max = {re_liq:.3g}   (|u|max in liquid x L_liq {L0} / nu)\n"
            f"Re (gas)   max = {re_gas:.3g}, last dump {re_gas_last:.3g}   (L_gas {L_gas:g})\n"
-           f"dumps: {len(its)},  last iter {its[-1]}  ({t[-1]:.2f} ms)")
-    a.text(0.0, 0.95, txt, va="top", family="monospace", fontsize=10, transform=a.transAxes)
+           f"dumps: {len(its)}\n"
+           f"final iter: {its[-1]}\n"
+           f"simulated time: {t[-1]:.2f} ms")
+    a.text(0.0, 0.98, txt, va="top", family="monospace", fontsize=8.5, transform=a.transAxes)
     a.set_title("Parameters", fontsize=10)
 
     fig.tight_layout(rect=(0, 0, 1, 0.97))

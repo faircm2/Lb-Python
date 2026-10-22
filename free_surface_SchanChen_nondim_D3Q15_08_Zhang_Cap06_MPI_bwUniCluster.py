@@ -299,6 +299,8 @@ tau_f = _pre_parser.parse_known_args()[0].tau_f
 
 _pre_parser.add_argument('--periodic_x', type=int, default=1)
 PERIODIC_X = bool(_pre_parser.parse_known_args()[0].periodic_x)   # 1: x periodic (channel), 0: closed x walls
+_pre_parser.add_argument('--rho_L', type=float, default=10.0)   # lattice density of the liquid, same --rho_L as read again below
+rho_L_lat = _pre_parser.parse_known_args()[0].rho_L
 
 rho_0=1e3 #kg/m^3
 
@@ -320,7 +322,7 @@ n_dy = n_dx
 n_dz = n_dx
 
 #2. Conversion factor Crho for density
-Crho = rho_0
+Crho = rho_0 / rho_L_lat   # kg/m^3 per lattice density unit (lattice liquid density rho_L_lat <-> rho_0)
 rho_nd = rho_0/Crho #-> rho_nd=1
 
 #3. Conversion factor Ct for time
@@ -610,6 +612,9 @@ def dump_parameters(fc, args, path):
     Crho = rho_0 / rho_L
     rho_nd = rho_0 / Crho                  # lattice density of the liquid (= rho_L)
     CF = Crho * Cl / Ct**2                 # force-density conversion for the lattice density actually used
+    C_nu = Cl**2 / Ct                      # lattice kinematic viscosity or mobility -> m^2/s
+    C_eta = Crho * Cl**2 / Ct              # lattice dynamic viscosity -> Pa s
+    C_sigma = Crho * Cl**3 / Ct**2         # lattice surface tension -> N/m    
 
     rows += [
         ("--- derived ---", ""),
@@ -640,6 +645,22 @@ def dump_parameters(fc, args, path):
         ("x periodic (PERIODIC_X)", PERIODIC_X),
         ("total iterations", fc.TOTAL_ITERATIONS),
         ("physical time total [ms]", fc.TOTAL_ITERATIONS * fc.dt * 1e3),
+        ("--- PHYSICAL VALUES (lattice -> SI) ---", ""),
+        ("conversion Cl [m], Ct [s], Crho [kg/m^3]", (Cl, Ct, Crho)),
+        ("domain X, Y, Z [mm]", (Xn * Cl * 1e3, Yn * Cl * 1e3, Zn * Cl * 1e3)),
+        ("interface width W [um]", fc.vf_W * Cl * 1e6),
+        ("initial liquid depth [um]", L_fluid * Cl * 1e6),
+        ("rho_L, rho_G [kg/m^3]", (rho_L * Crho, rho_G * Crho)),
+        ("eta_L, eta_G effective (eq.25) [Pa s]", (float(eta_L) * C_eta, float(eta_G) * C_eta)),
+        ("eta_L, eta_G reference (Zhang mu) [Pa s]", (mu_L * C_eta, mu_G * C_eta)),
+        ("nu_L, nu_G effective [m^2/s]", (nu_lat * C_nu, nu_lat * C_nu)),
+        ("surface tension sigma [N/m]", fc.vf_sigma * C_sigma),
+        ("gravity g [m/s^2]", fc.g_lattice * Cl / Ct**2),
+        ("interface mobility M_phi [m^2/s]", mobility(fc) * C_nu),
+        ("film surface speed U [m/s]", float(U_surf) * Cl / Ct),
+        ("capillary speed sigma/eta_L: lattice | [m/s]", (fc.vf_sigma / float(eta_L), fc.vf_sigma / float(eta_L) * Cl / Ct)),
+        ("reference water 20C: rho, eta, sigma", "998 kg/m^3, 1.0e-3 Pa s, 0.072 N/m"),
+        ("reference air 20C: rho, eta", "1.2 kg/m^3, 1.8e-5 Pa s"),        
         ("Non-dim. parameters:", ""),
         ("Cl length [m]", Cl),
         ("Crho density [kg/m^3]", Crho),
@@ -1363,9 +1384,9 @@ def set_solid_nodes(fc, _phi):
 
 def bodyForce(fc, rho):
     # subtract fc.rho_G from rho in order to model the pressure gradient acting on the air
-    _force = fc.F_body[:, None, None, None] * (rho - fc.rho_G)
+    _bodyForce = fc.F_body[:, None, None, None] * (rho - fc.rho_G)
 
-    return _force
+    return _bodyForce
 
 
 def apply_mass_conservation(phi_old_total, __phi):
@@ -1496,6 +1517,10 @@ plane_x = (Xn+1)//2
 plane_x_is_local = (x_offset < plane_x <= x_offset + local_Xn)
 plane_x_local = plane_x - x_offset
 
+plane_y = (Yn+1)//2
+plane_y_is_local = (y_offset < plane_y <= y_offset + local_Yn)
+plane_y_local = plane_y - y_offset
+
 # rolling crash buffer: last RING_N iterations of the mid-x yz-plane, overwritten in place
 RING_N = 1500
 if plane_x_is_local:
@@ -1504,6 +1529,16 @@ if plane_x_is_local:
         os.path.join(images_dir, "ring", f"ring_y{y_offset}_z{z_offset}.npy"),
         mode="w+", dtype=np.float32, shape=(RING_N, 5, local_Yn, local_Zn))
     ring[:, 4, 0, 0] = -1   # channel 4 holds the iteration number of each slot
+
+# rolling crash buffer of the closed-x corner (high-x wall, front wall y=0, floor z=0): whole local blocks of the ranks touching it
+CORNER_N = 1000
+corner_is_local = (x_offset + local_Xn == Xn) and (y_offset < 2*local_Yn) and (z_offset == 0)
+if corner_is_local:
+    os.makedirs(os.path.join(images_dir, "ring"), exist_ok=True)
+    corner_ring = np.lib.format.open_memmap(
+        os.path.join(images_dir, "ring", f"corner_y{y_offset}.npy"),
+        mode="w+", dtype=np.float32, shape=(CORNER_N, 5, local_Xn, local_Yn, local_Zn))
+    corner_ring[:, 4, 0, 0, 0] = -1   # channel 4 holds the iteration number of each slot    
 
 u_ckl = np.zeros((3, local_Xn+2, local_Yn+2, local_Zn+2),dtype=np.float64)
 p = np.zeros((local_Xn+2, local_Yn+2, local_Zn+2),dtype=np.float64)
@@ -1527,6 +1562,8 @@ zhang_surface_tension_force = np.zeros((3, local_Xn+2, local_Yn+2, local_Zn+2))
 
 # --- Compact Iteration Snapshots (Directly Using TOTAL_ITERATIONS) ---
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
+_ioi = sorted(iterationsOfInterest)
+snapshot_iterations = set(_ioi[int(k)] for k in np.linspace(0, len(_ioi) - 1, 10))   # 10 evenly spaced 3D phi snapshots
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # simulation
@@ -1541,14 +1578,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────────────────────────────────────
     #          Forces: Body and Surface Tension
     # ──────────────────────────────────────────────────────────────
-    #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
-    #Kürger et al, p. 241 eq. (6.29) & Table 6.1
-    #1. Shan-Chen - A=tau*n_dt
-    A = n_dt * n_dt
-
     # 1. Body mass force
     # variable G in eq(20)
-    body_force = A * bodyForce(fc, rho) * n_dt
+    body_force = bodyForce(fc, rho) * n_dt
     assert body_force.shape == (3, local_Xn+2, local_Yn+2, local_Zn+2), f"body_force shape: {body_force.shape}"
 
     # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -1556,10 +1588,14 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # === 1. Compute equilibrium distributions (fi_c, gi_c) ===
     # Zhang eq(17):  equilibrium distribution function for order parameter
-    _t0 = time.perf_counter(); z_gi_c, _ = zgi_c(fc, u_ckl, _phi, track_diag=False, out=z_gi_c); _mark('zgi_c', _t0)
+    _t0 = time.perf_counter(); 
+    z_gi_c, _ = zgi_c(fc, u_ckl, _phi, track_diag=False, out=z_gi_c); 
+    _mark('zgi_c', _t0)
 
     # Zhang eq(18):  equilibrium distribution function for pressure distribution function
-    _t0 = time.perf_counter(); zfi_c(fc, u_ckl, rho, p, out=z_fi_c); _mark('zfi_c', _t0)
+    _t0 = time.perf_counter(); 
+    zfi_c(fc, u_ckl, rho, p, out=z_fi_c); 
+    _mark('zfi_c', _t0)
 
     if iteration % 1000 == 0:
         validate_field(z_gi_c, 'z_gi_c', iter=iteration, allow_neg=True)
@@ -1570,17 +1606,23 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # === 3. COLLISION + STREAMING (inside fi and gi) ===    
     # Zhang eq(2): calculation of the order parameter which distiguishes the two phases
-    _t0 = time.perf_counter(); z_gi  = zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, _phi, u_ckl); _mark('zgi', _t0)
+    _t0 = time.perf_counter(); 
+    z_gi  = zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, _phi, u_ckl); 
+    _mark('zgi', _t0)
     if iteration % 100 == 0:
         validate_field(z_gi, 'z_gi (post collision+stream)', iter=iteration, allow_neg=True)
 
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_1', _t0)
+    _t0 = time.perf_counter(); 
+    _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); 
+    _mark('Fs_1', _t0)
     if iteration % 100 == 0:
         validate_field(_Fs, 'Fs', iter=iteration, allow_neg=True)
         assert _Fs.shape == (3, local_Xn+2, local_Yn+2, local_Zn+2), f"_Fs shape: {_Fs.shape}"
         assert _Fs.shape == body_force.shape, f"_Fs {_Fs.shape} != body_force {body_force.shape}"
     # Zhang eq(2): calculation of the pressure distribution function
-    _t0 = time.perf_counter(); z_fi = zfi(fc, z_fi, z_fi_c, u_ckl, rho, _Fs, body_force); _mark('zfi', _t0)
+    _t0 = time.perf_counter(); 
+    z_fi = zfi(fc, z_fi, z_fi_c, u_ckl, rho, _Fs, body_force); 
+    _mark('zfi', _t0)
     if iteration % 100 == 0:
         validate_field(z_fi, 'z_fi (post collision+stream)', iter=iteration, allow_neg=True)
 
@@ -1591,13 +1633,19 @@ while iteration < fc.TOTAL_ITERATIONS:
     # Use _fi_c and _gi_c (post-collision, pre-streaming)
 
     # 4. top/bottom conservative bounceback
-    _t0 = time.perf_counter(); z_gi, z_fi = bounceBackTopBottom_conservation(z_gi, z_fi, local_Xn+2, local_Yn+2, local_Zn+2); _mark('bounceTB', _t0)
+    _t0 = time.perf_counter(); 
+    z_gi, z_fi = bounceBackTopBottom_conservation(z_gi, z_fi, local_Xn+2, local_Yn+2, local_Zn+2); 
+    _mark('bounceTB', _t0)
 
     #4.1b. left/right conservative bounceback
-    _t0 = time.perf_counter(); z_gi, z_fi = bounceBackLeftRight_conservation(z_gi, z_fi, local_Xn+2, local_Yn+2, local_Zn+2); _mark('bounceLR', _t0)
+    _t0 = time.perf_counter(); 
+    z_gi, z_fi = bounceBackLeftRight_conservation(z_gi, z_fi, local_Xn+2, local_Yn+2, local_Zn+2); 
+    _mark('bounceLR', _t0)
 
     #4.1c. front/back conservative bounceback
-    _t0 = time.perf_counter(); z_gi, z_fi = bounceBackFrontBack_conservation(z_gi, z_fi, local_Xn+2, local_Yn+2, local_Zn+2); _mark('bounceFB', _t0)
+    _t0 = time.perf_counter(); 
+    z_gi, z_fi = bounceBackFrontBack_conservation(z_gi, z_fi, local_Xn+2, local_Yn+2, local_Zn+2); 
+    _mark('bounceFB', _t0)
 
 
     # ──────────────────────────────
@@ -1612,7 +1660,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     # 1. Moment update
     # ──────────────────────────────────────────────────────────────────────────────────────────
     # Zhang eq(26): zeroth-order moment, calculation of order parameter to distiguish the 2 phases
-    _t0 = time.perf_counter(); _phi = phi(fc, z_gi); _mark('phi_moment', _t0)
+    _t0 = time.perf_counter(); 
+    _phi = phi(fc, z_gi); 
+    _mark('phi_moment', _t0)
     # === LIGHT INTERFACE SMOOTHING TO REDUCE GRID PINNING ===
     # Apply very light Gaussian filter — smooth meniscus and reduce sharp corners
     #_phi = gaussian_filter(_phi, sigma=0.15)   # sigma=0.5–1.0 is usually enough
@@ -1620,7 +1670,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     # ──────────────────────────────
     # Mass conservation diagnostoics
     # ──────────────────────────────   
-    _t0 = time.perf_counter(); _phi = apply_mass_conservation(phi_old_total, _phi); _mark('apply_mass_conservation', _t0)
+    _t0 = time.perf_counter(); 
+    _phi = apply_mass_conservation(phi_old_total, _phi); 
+    _mark('apply_mass_conservation', _t0)
     # ──────────────────────────────  
     exchange_ghosts_x(_phi, x_lo, x_hi, cart)
     exchange_ghosts_y(_phi, y_lo, y_hi, cart)
@@ -1633,24 +1685,32 @@ while iteration < fc.TOTAL_ITERATIONS:
     # Zhang  eq(20): Compute u(x,t+n_dt)
     # Kürger et al, p. 241 eq. (6.29) & Table 6.1
 
-    _t0 = time.perf_counter(); _phi  = set_solid_nodes(fc, _phi); _mark('set_solid_nodes', _t0)
+    _t0 = time.perf_counter(); 
+    _phi  = set_solid_nodes(fc, _phi); 
+    _mark('set_solid_nodes', _t0)
 
     #Calculation of rho, mu
-    _t0 = time.perf_counter(); rho, _ = density_and_viscosity(fc, _phi); _mark('density_and_viscosity', _t0)
+    _t0 = time.perf_counter(); 
+    rho, _ = density_and_viscosity(fc, _phi); 
+    _mark('density_and_viscosity', _t0)
 
     exchange_ghosts_x(rho, x_lo, x_hi, cart)
     exchange_ghosts_y(rho, y_lo, y_hi, cart)
     exchange_ghosts_z(rho, z_lo, z_hi, cart)
 
     # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
-    _t0 = time.perf_counter(); _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); _mark('Fs_2', _t0)
+    _t0 = time.perf_counter(); 
+    _Fs = Fs(fc, _phi, n_dx, n_dy, n_dz, out=_Fs_buf); 
+    _mark('Fs_2', _t0)
     zhang_surface_tension_force = _Fs
     assert zhang_surface_tension_force.shape == (3, local_Xn+2, local_Yn+2, local_Zn+2), f"zhang_surface_tension_force shape: {zhang_surface_tension_force.shape}"
     _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
 
 
     # --> Zhang eq(28) - fluid velocity
-    _t0 = time.perf_counter(); u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force); _mark('zu_ckl', _t0)
+    _t0 = time.perf_counter(); 
+    u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force); 
+    _mark('zu_ckl', _t0)
 
     if ADD_METRICS and iteration in iterationsOfInterest: 
         assert u_ckl.shape == (3, local_Xn+2, local_Yn+2, local_Zn+2), f"u_ckl shape: {u_ckl.shape}"
@@ -1659,7 +1719,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     #Step2a. calculate h, p
     # Zhang eq(27) - hydrostatic pressure
     ############################ 2. Add Successive Over-Relaxation (SOR) with Residual Monitoring (Accelerate/Damp) #################
-    _t0 = time.perf_counter(); zp(fc, z_fi, rho, u_ckl, out=p); _mark('zp', _t0)  # Use damped div_u if added above
+    _t0 = time.perf_counter(); 
+    zp(fc, z_fi, rho, u_ckl, out=p); 
+    _mark('zp', _t0)  # Use damped div_u if added above
     # Use damped div_u if added above
     #################################################################################################################################
 
@@ -1725,7 +1787,32 @@ while iteration < fc.TOTAL_ITERATIONS:
                     Fs_on_plane[:, y_off:y_off+local_Yn, z_off:z_off+local_Zn] = Fs_piece
             np.savez_compressed(os.path.join(images_dir, f"plane_yz_iter_{iteration:06d}.npz"),
                                 phi=phi_on_plane.astype(np.float32), u=u_on_plane,
-                                mu=mu_on_plane, Fs=Fs_on_plane)          
+                                mu=mu_on_plane, Fs=Fs_on_plane)
+        if plane_y_is_local:
+            payload_xz = (x_offset, z_offset,
+                          _phi[1:local_Xn+1, plane_y_local, 1:local_Zn+1].copy(),
+                          u_ckl[:, 1:local_Xn+1, plane_y_local, 1:local_Zn+1].copy())
+        else:
+            payload_xz = None
+        gathered_xz = comm.gather(payload_xz, root=0)
+
+        if rank == 0:
+            phi_xz = np.zeros((Xn, Zn), dtype=np.float32)
+            u_xz = np.zeros((3, Xn, Zn), dtype=np.float32)
+            for item in gathered_xz:
+                if item is not None:
+                    x_off, z_off, phi_piece, u_piece = item
+                    phi_xz[x_off:x_off+local_Xn, z_off:z_off+local_Zn] = phi_piece
+                    u_xz[:, x_off:x_off+local_Xn, z_off:z_off+local_Zn] = u_piece
+            np.savez_compressed(os.path.join(images_dir, f"plane_xz_iter_{iteration:06d}.npz"), phi=phi_xz, u=u_xz)
+
+        if iteration in snapshot_iterations:
+            phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset,
+                                          local_Xn, local_Yn, local_Zn, Xn, Yn, Zn, dtype=np.float32)
+            if rank == 0:
+                np.savez_compressed(os.path.join(images_dir, f"phi3d_iter_{iteration:06d}.npz"),
+                                    phi=phi_full[1:Xn+1:2, 1:Yn+1:2, 1:Zn+1:2].astype(np.float16))
+                del phi_full            
 
     #streaming has commenced
 
@@ -1734,6 +1821,12 @@ while iteration < fc.TOTAL_ITERATIONS:
         ring[_slot, 0] = _phi[plane_x_local, 1:local_Yn+1, 1:local_Zn+1]
         ring[_slot, 1:4] = u_ckl[:, plane_x_local, 1:local_Yn+1, 1:local_Zn+1]
         ring[_slot, 4, 0, 0] = iteration
+
+    if corner_is_local:
+        _cslot = iteration % CORNER_N
+        corner_ring[_cslot, 0] = _phi[1:local_Xn+1, 1:local_Yn+1, 1:local_Zn+1]
+        corner_ring[_cslot, 1:4] = u_ckl[:, 1:local_Xn+1, 1:local_Yn+1, 1:local_Zn+1]
+        corner_ring[_cslot, 4, 0, 0, 0] = iteration        
 
     #Step 4: re-iterate
     iteration += 1
