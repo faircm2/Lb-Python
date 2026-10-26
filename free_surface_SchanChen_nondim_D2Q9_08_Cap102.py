@@ -6,8 +6,6 @@ from __future__ import annotations
 
 import matplotlib
 
-matplotlib.use('TkAgg')  # or 'Qt5Agg' if you have PyQt installed
-#matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -25,7 +23,6 @@ from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 
-from github_uploader import GitHubUploader
 from plotter_2d import Plotter2D
 
 import sys
@@ -86,9 +83,8 @@ class FlowConfig:
     CORE_TOTAL_ITERATIONS: int = 12001
     ADD_BODY_FORCE: int = 1
     ADD_SURFACE_TENSION_FORCE: int = 0
-    WRITE_TO_GITHUB: bool = False
     ENFORCE_MASS_CONSERVATION: bool = True
-    ENABLE_PHI_CLIPPING: bool = True
+    ENABLE_PHI_CLIPPING: bool = False
     INTERFACE_BAND_FACTOR: float  = 0.1 
     # --- Per-config init & BC control ---
     PHI_DISTRIBUTION: str = "HORIZONTAL_PERTURBED"
@@ -173,7 +169,6 @@ class FlowConfig:
 
 #flags
 PRESSURE_IN_DENSITY_MAP = False
-PLOTREALTIME = False  
 ADD_METRICS = True
 DIAGNOSTICS = False
 
@@ -181,8 +176,6 @@ DIAGNOSTICS = False
 DEFAULT_D_ND = 400
 SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
 SCRIPT_FULL_PATH = os.path.abspath(__file__) 
-SCRIPTS_PATH = "scripts/freesurface/"
-PLOTS_PATH = "results/freesurface/"  # GitHub path prefix
 IMAGES_SUBDIR = "FreesurfaceImages"  # Local subdir
 script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
 images_subdir = os.path.join(script_dir, IMAGES_SUBDIR)
@@ -416,83 +409,6 @@ debug_log('INIT', 'c=%(c).2f', extra=dict(c=c))
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # Configurations
 # ──────────────────────────────────────────────────────────────────────────────────────────
-# 0.1 Proof of Principle (POP) - STEP
-PROOF_STEP1 = FlowConfig(
-    name="Proof: Step1",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=2.5, tau_g=1.0,
-    Kf = 1e-6 * n_dx**2, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=1,
-    vf_capillaryForceMultiplier=1.0,
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0    
-)
-
-PROOF_STEP2 = FlowConfig(
-    name="Proof: Step2",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=1.5, tau_g=1.0,
-    #Kf=0.008, Kg=1e-6 * n_dx**2,
-    Kf=0.0008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
-PROOF_STEP3 = FlowConfig(
-    name="Proof: Step3",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=2.5, tau_g=1.0,
-    Kf=0.008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
-PROOF_STEP4 = FlowConfig(
-    name="Proof: Step4",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=1.0, tau_g=1.0,
-    Kf=0.008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=8,
-    vf_capillaryForceMultiplier=1.0,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
-PROOF_STEP5 = FlowConfig(
-    name="Proof: Step5",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=0.9, tau_g=1.0,
-    Kf=0.008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=8,
-    vf_capillaryForceMultiplier=1.0,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
 PROOF_STEP6 = FlowConfig(
     name="Proof: Step6",
     PHI_DISTRIBUTION = "STEP",
@@ -507,51 +423,6 @@ PROOF_STEP6 = FlowConfig(
     vf_xi=6,
     vf_sigma = 0.001,
     vf_theta = 0.0
-)
-
-PROOF_STEP7 = FlowConfig(
-    name="Proof: Step7",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=2.5, tau_g=1.0,
-    Kf=0.05, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
-PROOF_STEP8 = FlowConfig(
-    name="Proof: Step8",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=2., tau_g=1.0,
-    Kf=0.05, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
-PROOF_STEP9 = FlowConfig(
-    name="Proof: Step9",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=1.8, tau_g=1.0,
-    Kf=0.05, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
-    MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
 )
 
 # 0.2 Proof of Principle (POP) - inclined channel
@@ -580,8 +451,8 @@ CAPILLARY_PROOF = FlowConfig(
     n_dx=n_dx, alpha=0, CF=CF,
     a=1.0, b=6.7, T=3.5e-2,
     tau_g=1.0,
-    tau_f=2.0,   # was 1 — restore proven stable value
-    Kf=0.002,    # was 0.5 — restore proven stable value
+    tau_f=1.0,
+    Kf=0.5,
     Kg = 0.001125, #was 0.0005 -> (300/400)² * 0,002
     omega_sor=1.7, #1.2,
     epsilon_cutoff=1e-4,
@@ -596,54 +467,6 @@ CAPILLARY_PROOF = FlowConfig(
     body_force_warmup_iters = 500,
     INTERFACE_BAND_FACTOR = 0.1,
     CORE_TOTAL_ITERATIONS = 5000
-)
-
-# §3.1 Capillary wave
-CAPILLARY_WAVE = FlowConfig(
-    name="Capillary wave",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=1.0, tau_g=1.0,
-    Kf=0.5 * n_dx**2, Kg=0.0,
-    epsilon_cutoff=1e-4,
-    vf_capillaryForceMultiplier=1,
-    MULTIPLES=1,    
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
-# §3.2 Droplet collision
-DROPLET_COLLISION = FlowConfig(
-    name="Droplet collision",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=6.7, T=3.5e-2,
-    tau_f=1.0, tau_g=1.0,
-    Kf=0.5 * n_dx**2, Kg=20.0,
-    epsilon_cutoff=1e-4,
-    vf_capillaryForceMultiplier=1,
-    MULTIPLES=1,        
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
-)
-
-# §3.3 Bubble flow
-BUBBLE_FLOW = FlowConfig(
-    name="Bubble flow",
-    dx=dx, dt=dt,
-    n_dx=n_dx, CF=CF,
-    a=1.0, b=1.0, T=2.93e-1,
-    tau_f=1.0, tau_g=1.0,
-    Kf=0.08 * n_dx**2, Kg=1e-7 * n_dx**2,
-    epsilon_cutoff=1e-5,
-    vf_capillaryForceMultiplier=1,
-    MULTIPLES=1,        
-    vf_xi=6,
-    vf_sigma = 0.001,
-    vf_theta = 60.0
 )
 
 
@@ -764,8 +587,8 @@ def gradient_p(p):
 
 #Inamuro eq(12): first derivatives - partial dphi/dx_a, du_b/dx_a, drho/dx_a
 def c_first_derivative0(lamda, n_dx=1.0, n_dy=1.0):
-    scale_x = (8/14) / (10 * n_dx)
-    scale_y = (8/14) / (10 * n_dy)
+    scale_x = 1 / (6 * n_dx)
+    scale_y = 1 / (6 * n_dy)
 
     neigh_c_x = c[1:9, 0]
     neigh_c_y = c[1:9, 1]
@@ -773,7 +596,7 @@ def c_first_derivative0(lamda, n_dx=1.0, n_dy=1.0):
     roll_axes = (0, 1)
 
     shifted_neighbors = [
-        np.roll(lamda, shift=(c[k+1, 0], c[k+1, 1]), axis=roll_axes) for k in range(8) 
+        np.roll(lamda, shift=(-c[k+1, 0], -c[k+1, 1]), axis=roll_axes) for k in range(8) 
     ]
     neighbors_stack = np.stack(shifted_neighbors, axis=0)
 
@@ -824,7 +647,7 @@ def c_laplacian(lamda, n_dx=1.0, n_dy=1.0):
     Compute ∇²λ = ∂²λ/∂x² + ∂²λ/∂y² using Eq. (13) for each direction
     """
     d2lamda_dx2, d2lamda_dy2 = c_second_derivative(lamda, n_dx, n_dy)
-    laplacian = d2lamda_dx2 + d2lamda_dy2
+    laplacian = d2lamda_dx2
 
     if DIAGNOSTICS:
         d2lamda_dx2_old, d2lamda_dy2_old = c_second_derivative(lamda, n_dx, n_dy)
@@ -851,10 +674,10 @@ def Gab(_lambda):
     # |grad phi|^2
     mag2 = dphi_x**2 + dphi_y**2
 
-    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (3/2) * mag2 #G_xx
+    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (9/4) * mag2 #G_xx
     G[:, :, 0, 1] = (9/2) * dphi_x * dphi_y #G_xy
     G[:, :, 1, 0] = (9/2) * dphi_y * dphi_x #G_yx
-    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (3/2) * mag2 #G_yy
+    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (9/4) * mag2 #G_yy
 
     return G
 
@@ -1218,7 +1041,7 @@ def gi_c(fc, u, rho, iteration):
     #GrowthMetric_gi_c_term6_Gab.append((iteration, abs_term6))
     
     # term7: (2/3) * F[i] * (Kg/rho) * grad_rho_x**2
-    term7 = (2.0 / 3.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
+    term7 = (1.0 / 2.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
 
     # Assemble: exact match to loop addition
     _gi_c = term1 + term2 - term3 + term4 + term5 + term6 - term7  # (9,nx_pad,ny_pad)
@@ -1278,7 +1101,7 @@ def fi_c(fc, u, F, _phi):
     term3 = - F_exp * fc.Kf * _phi * laplacian_phi
     
     # term4: F[i] * Kf/6 * (dphi_dxa**2 + dphi_dya**2)
-    term4 = - F_exp * (fc.Kf / 6.0) * (dphi_dxa**2 + dphi_dya**2)
+    term4 = - F_exp * (fc.Kf *0 / 6.0) * (dphi_dxa**2 + dphi_dya**2)
     
     # term5: 3 * E[i] * _phi * c_dot_u
     c_dot_u = np.einsum('ia,axy->ixy', c, u)  # (9,nx,ny) - c_i . u
@@ -1340,11 +1163,11 @@ def bounceBackTopBottom_conservation(fc, iteration, __fi, __gi, nx, ny):
     __gi[2, 1:nx+1, 1] = __gi[4, 1:nx+1, 0]
 
     # diagonal reflections with horizontal shift
-    __fi[5, 1:nx+1, 1] = np.roll(__fi[7, 1:nx+1, 0], 1)   # NE ← SW, shift right
-    __gi[5, 1:nx+1, 1] = np.roll(__gi[7, 1:nx+1, 0], 1)
+    __fi[5, 1:nx+1, 1] = np.roll(__fi[7, :, 0], 1)[1:nx+1]   # NE ← SW, shift right
+    __gi[5, 1:nx+1, 1] = np.roll(__gi[7, :, 0], 1)[1:nx+1]
 
-    __fi[6, 1:nx+1, 1] = np.roll(__fi[8, 1:nx+1, 0], -1)  # NW ← SE, shift left    
-    __gi[6, 1:nx+1, 1] = np.roll(__gi[8, 1:nx+1, 0], -1)
+    __fi[6, 1:nx+1, 1] = np.roll(__fi[8, :, 0], -1)[1:nx+1]  # NW ← SE, shift left    
+    __gi[6, 1:nx+1, 1] = np.roll(__gi[8, :, 0], -1)[1:nx+1]
 
 
     # upper wall (y=ny) - no-slip halfway bounce-back
@@ -1353,11 +1176,11 @@ def bounceBackTopBottom_conservation(fc, iteration, __fi, __gi, nx, ny):
     __gi[4, 1 : nx + 1, ny] = __gi[2, 1 : nx + 1, ny + 1]
 
     # diagonal reflections with horizontal shift
-    __fi[7, 1 : nx + 1, ny] = np.roll(__fi[5, 1 : nx + 1, ny + 1], -1)  # SW ← NE, shift left
-    __gi[7, 1 : nx + 1, ny] = np.roll(__gi[5, 1 : nx + 1, ny + 1], -1)
+    __fi[7, 1 : nx + 1, ny] = np.roll(__fi[5, :, ny+1], -1)[1:nx+1]  # SW ← NE, shift left
+    __gi[7, 1 : nx + 1, ny] = np.roll(__gi[5, :, ny+1], -1)[1:nx+1]
 
-    __fi[8, 1 : nx + 1, ny] = np.roll(__fi[6, 1 : nx + 1, ny + 1], 1)   # SE ← NW, shift right
-    __gi[8, 1 : nx + 1, ny] = np.roll(__gi[6, 1 : nx + 1, ny + 1], 1)
+    __fi[8, 1 : nx + 1, ny] = np.roll(__fi[6, :, ny+1], 1)[1:nx+1]   # SE ← NW, shift right
+    __gi[8, 1 : nx + 1, ny] = np.roll(__gi[6, :, ny+1], 1)[1:nx+1]
 
     if iteration in iterationsOfInterest:
         __phi = phi(fc, __fi)
@@ -1373,12 +1196,12 @@ def bounceBackLeftRight_conservation(fc, iteration, __fi, __gi, nx, ny):
     __gi[1, 1, 1:ny+1] = __gi[3, 0, 1:ny+1]
 
     #f[1 : nx + 1, 1, 5] = np.roll(f[1 : nx + 1, 0, 7], 1)
-    __fi[5, 1, 1:ny+1] = np.roll(__fi[7, 0, 1:ny+1], 1)      # NE ← SW
-    __gi[5, 1, 1:ny+1] = np.roll(__gi[7, 0, 1:ny+1], 1)    
+    __fi[5, 1, 1:ny+1] = np.roll(__fi[7, 0, :], 1)[1:ny+1]      # NE ← SW
+    __gi[5, 1, 1:ny+1] = np.roll(__gi[7, 0, :], 1)[1:ny+1]    
 
     #f[1 : nx + 1, 1, 6] = np.roll(f[1 : nx + 1, 0, 8], -1)
-    __fi[8, 1, 1:ny+1] = np.roll(__fi[6, 0, 1:ny+1], -1)      # SE ← NW
-    __gi[8, 1, 1:ny+1] = np.roll(__gi[6, 0, 1:ny+1], -1)    
+    __fi[8, 1, 1:ny+1] = np.roll(__fi[6, 0, :], -1)[1:ny+1]      # SE ← NW
+    __gi[8, 1, 1:ny+1] = np.roll(__gi[6, 0, :], -1)[1:ny+1]    
 
 
     # Right wall (x=nx) - no-slip halfway bounce-back
@@ -1386,11 +1209,11 @@ def bounceBackLeftRight_conservation(fc, iteration, __fi, __gi, nx, ny):
     __gi[3, nx, 1:ny+1] = __gi[1, nx+1, 1:ny+1]
 
     # Diagonal reflections with vertical shift
-    __fi[7, nx, 1:ny+1] = np.roll(__fi[5, nx+1, 1:ny+1], -1)  # SW ← NE, shift down
-    __gi[7, nx, 1:ny+1] = np.roll(__gi[5, nx+1, 1:ny+1], -1)
+    __fi[7, nx, 1:ny+1] = np.roll(__fi[5, nx+1, :], -1)[1:ny+1]  # SW ← NE, shift down
+    __gi[7, nx, 1:ny+1] = np.roll(__gi[5, nx+1, :], -1)[1:ny+1]
 
-    __fi[6, nx, 1:ny+1] = np.roll(__fi[8, nx+1, 1:ny+1], 1)   # NW ← SE, shift up
-    __gi[6, nx, 1:ny+1] = np.roll(__gi[8, nx+1, 1:ny+1], 1)
+    __fi[6, nx, 1:ny+1] = np.roll(__fi[8, nx+1, :], 1)[1:ny+1]   # NW ← SE, shift up
+    __gi[6, nx, 1:ny+1] = np.roll(__gi[8, nx+1, :], 1)[1:ny+1]
 
     return __fi, __gi
 
@@ -1950,8 +1773,7 @@ plotter = Plotter2D(
     images_subdir=IMAGES_DIR,
     total_iterations=fc.TOTAL_ITERATIONS,
     filename_padding_width=fc.FILENAME_PADDING_WIDTH,
-    debug_log=debug_log,
-    PLOTREALTIME=True
+    debug_log=debug_log
 )
 
 rho_min = np.min(rho)
@@ -1977,17 +1799,6 @@ _capillary_force = np.zeros_like(surface_tension_force)
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # simulation
 # ──────────────────────────────────────────────────────────────────────────────────────────
-
-# Realtime plotting
-if PLOTREALTIME:
-    #fig_rt, ax = plt.subplots(figsize=(6,6), dpi=80)  # create one figure
-    #fig_rt, axes = plt.subplots(3, 1, figsize=(8, 12))  # 3 stacked plots
-    #ax_phi, ax_rho, ax_vort = axes
-    im_phi = None
-    im_rho = None
-    im_vort = None
-    plt.ion()  # turn on interactive mode
-
 
 while iteration < fc.TOTAL_ITERATIONS:
     if iteration % 100 == 0:
@@ -2284,14 +2095,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         epsilon_u_ckl_list.append((iteration, epsilon_u_ckl))    
         u_ckl_midpoint0 = u_ckl[0,int(Xn/2),int(Yn/2)]
 
-
-    # plot in real time - color 1/2 particles blue, other half red
-    if (PLOTREALTIME and (iteration % 10) == 0):
-        plotter.update(iteration, _phi, rho, u_ckl)
-
-    if (PLOTREALTIME and (iteration == fc.TOTAL_ITERATIONS - 1)):
-        plotter.update(iteration, _phi, rho, u_ckl)        
-
     #Step 4: re-iterate
     iteration += 1
     if iteration % 100 == 0:
@@ -2481,28 +2284,3 @@ save_path = os.path.join(IMAGES_DIR, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
-
-
-########### upload this file and results to GitHub repo
-uploader = GitHubUploader(
-    debug_log=debug_log,
-    timeout=60,
-    script_filename=SCRIPT_FILENAME,
-    script_full_path=SCRIPT_FULL_PATH,
-    scripts_path=SCRIPTS_PATH,
-    plots_path=PLOTS_PATH,
-    images_subdir=IMAGES_DIR,
-    log_file=LOG_FILE,
-    token_file='github-repo-token.txt'
-)
-try:
-    if fc.WRITE_TO_GITHUB:
-        uploader.upload_results(upload_log=True)
-        debug_log('INIT', f'Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/{uploader.results_folder}')
-except Exception as e:
-    debug_log('ERROR', f'Upload failed: {e}')
-
-# Example usage at the end of your script:
-# Assuming SCRIPT_FILENAME = 'your_script.py'
-# uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
-# uploader.upload_results()

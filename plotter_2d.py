@@ -21,7 +21,7 @@ class Plotter2D:
     """
     def __init__(self, script_dir, script_filename, images_subdir,
                  total_iterations, filename_padding_width, debug_log,
-                 PLOTREALTIME=True, save_frames=False):
+                 PLOTREALTIME=False, save_frames=False):
         self.PLOTREALTIME = PLOTREALTIME
         self.save_frames = save_frames
 
