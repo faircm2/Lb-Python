@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="\IEEE2006OfficeOnline.xsl" StyleName="IEEE" Version="2006"
+    xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography"
+    xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+    <b:Source>
+        <b:Tag>Gri18</b:Tag>
+        <b:SourceType>Book</b:SourceType>
+        <b:LCID>1033</b:LCID>
+        <b:Author>
+            <b:Author>
+                <b:NameList>
+                    <b:Person>
+                        <b:Last>Griffiths</b:Last>
+                        <b:First>D.</b:First>
+                        <b:Middle>J.</b:Middle>
+                    </b:Person>
+                    <b:Person>
+                        <b:Last>Schroeter</b:Last>
+                        <b:First>D.</b:First>
+                        <b:Middle>F.</b:Middle>
+                    </b:Person>
+                </b:NameList>
+            </b:Author>
+        </b:Author>
+        <b:Title>Introduction to Quantum Mechanics</b:Title>
+        <b:Edition>3</b:Edition>
+        <b:City>Cambridge</b:City>
+        <b:Publisher>Cambridge University Press</b:Publisher>
+        <b:Year>2018</b:Year>
+        <b:StandardNumber>ISBN 978-1-107-18963-8</b:StandardNumber>
+        <b:DOI>10.1017/9781316995433</b:DOI>
+    </b:Source>
+</b:Sources>

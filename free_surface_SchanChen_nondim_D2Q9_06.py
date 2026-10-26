@@ -31,6 +31,8 @@ from plotter_2d import Plotter2D
 #flags
 RAISE_LESS_THAN_ZERO_ERROR = False
 RAISE_NaN_ERROR = False
+ENABLE_PHI_CLIPPING = False  # True = original behaviour (loses about 17% of total phi in 48,000 iterations)
+ENABLE_PHI_FILTER = False     # Gaussian smoothing of phi each iteration (original behaviour)
 PRESSURE_IN_DENSITY_MAP = False
 ADD_FORCING_TERM = 1
 TOTAL_ITERATIONS = 12001 * 4
@@ -57,7 +59,7 @@ SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0]
 SCRIPT_FULL_PATH = os.path.abspath(__file__) 
 SCRIPTS_PATH = "scripts/freesurface/"
 PLOTS_PATH = "results/freesurface/"  # GitHub path prefix
-IMAGES_SUBDIR = "FreesurfaceImages"  # Local subdir
+IMAGES_SUBDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages", SCRIPT_FILENAME)  # Local output folder of this script
 script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
 images_dir = os.path.join(script_dir, IMAGES_SUBDIR)
 os.makedirs(images_dir, exist_ok=True)  # create folder if it doesn't exist  
@@ -97,7 +99,7 @@ console_handler.addFilter(DebugLevelFilter())
 logger.addHandler(console_handler)
 
 # File handler (optional, for full debug logs if needed)
-file_handler = logging.FileHandler('lbm_debug.log')
+file_handler = logging.FileHandler(os.path.join(IMAGES_SUBDIR, LOG_FILE))
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
 logger.addHandler(file_handler)  # No filter, logs everything to file
@@ -365,8 +367,8 @@ def c_second_derivative(lamda, n_dx=1.0, n_dy=1.0):
         raise ValueError(f"Expected lamda shape (nx, ny) like (202,52), got {lamda.shape}")
 
     # Precompute scaling factors (cache globally if called often)
-    scale_x = (8.0/14.0) / (5.0 * n_dx)
-    scale_y = (8.0/14.0) / (5.0 * n_dy)
+    scale_x = (1.0/3.0) / (n_dx**2)
+    scale_y = (1.0/3.0) / (n_dy**2)
 
     # Roll axes for 2D: (0=x, 1=y)
     roll_axes = (0, 1)
@@ -396,7 +398,7 @@ def c_laplacian(lamda, n_dx=1.0, n_dy=1.0):
     Compute ∇²λ = ∂²λ/∂x² + ∂²λ/∂y² using Eq. (13) for each direction
     """
     d2lamda_dx2, d2lamda_dy2 = c_second_derivative(lamda, n_dx, n_dy)
-    laplacian = d2lamda_dx2 + d2lamda_dy2
+    laplacian = d2lamda_dx2  
     return laplacian
 
 
@@ -410,10 +412,12 @@ def Gab(_phi):
     # |grad phi|^2
     mag2 = dphi_x**2 + dphi_y**2
 
-    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (3/2) * mag2 #G_xx
+    #G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (3/2) * mag2 #G_xx
+    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (9/4) * mag2 #G_xx
     G[:, :, 0, 1] = (9/2) * dphi_x * dphi_y #G_xy
     G[:, :, 1, 0] = (9/2) * dphi_y * dphi_x #G_yx
-    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (3/2) * mag2 #G_yy
+    #G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (3/2) * mag2 #G_yy
+    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (9/4) * mag2 #G_yy
 
     return G
 
@@ -562,12 +566,12 @@ def gi(_gi, _gi_c, u_ckl, rho, mu, iteration):
     sigma_yx = sigma_xy
 
     # Divergence via central differences (use n_dy for y-derivs)
-    d_sigma_xx_dx = (np.roll(sigma_xx, -1, axis=1) - np.roll(sigma_xx, 1, axis=1)) / (2 * n_dx)
-    d_sigma_xy_dy = (np.roll(sigma_xy, -1, axis=0) - np.roll(sigma_xy, 1, axis=0)) / (2 * n_dy)
+    d_sigma_xx_dx = (np.roll(sigma_xx, -1, axis=0) - np.roll(sigma_xx, 1, axis=0)) / (2 * n_dx)
+    d_sigma_xy_dy = (np.roll(sigma_xy, -1, axis=1) - np.roll(sigma_xy, 1, axis=1)) / (2 * n_dy)
     div_sigma_x = d_sigma_xx_dx + d_sigma_xy_dy
 
-    d_sigma_yx_dx = (np.roll(sigma_yx, -1, axis=1) - np.roll(sigma_yx, 1, axis=1)) / (2 * n_dx)
-    d_sigma_yy_dy = (np.roll(sigma_yy, -1, axis=0) - np.roll(sigma_yy, 1, axis=0)) / (2 * n_dy)
+    d_sigma_yx_dx = (np.roll(sigma_yx, -1, axis=0) - np.roll(sigma_yx, 1, axis=0)) / (2 * n_dx)
+    d_sigma_yy_dy = (np.roll(sigma_yy, -1, axis=1) - np.roll(sigma_yy, 1, axis=1)) / (2 * n_dy)
     div_sigma_y = d_sigma_yx_dx + d_sigma_yy_dy
 
     # Expand for viscous term broadcasting over i=0..8
@@ -622,7 +626,7 @@ def gi_c(u, rho, tau_g, Kg, iteration):
     du_b_dx, du_b_dy = c_first_derivative(u[1], n_dx, n_dy)
     
     # Gab on full
-    Gab_phi = Gab(_phi)  # (nx_pad, ny_pad, 2, 2)
+    Gab_rho = Gab(rho)  # (nx_pad, ny_pad, 2, 2)
     
     # Expansions for i-broadcast
     ones = np.ones((nx_pad, ny_pad))
@@ -657,14 +661,15 @@ def gi_c(u, rho, tau_g, Kg, iteration):
     term5 = E_exp * (3.0 / 2.0) * (tau_g - 0.5) * n_dx * velocity_gradient_term
     
     # term6: E[i] * (Kg/rho) * (c_i . Gab . c_i)
-    _Gab = np.einsum('ia,ib,xyab->ixy', c, c, Gab_phi)  # (9,nx,ny)
+    _Gab = np.einsum('ia,ib,xyab->ixy', c, c, Gab_rho)  # (9,nx,ny)
     term6 = E_exp * (Kg / rho) * _Gab
     abs_term6 = np.max(np.abs(term6))
     #GrowthMetric_gi_c_term6_Gab.append((iteration, abs_term6))
     
     # term7: (2/3) * F[i] * (Kg/rho) * grad_rho_x**2
     F_exp = F[:, np.newaxis, np.newaxis]  # (9,1,1)
-    term7 = (2.0 / 3.0) * F_exp * (Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
+    #term7 = (2.0 / 3.0) * F_exp * (Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
+    term7 = (1.0 / 2.0) * F_exp * (Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
 
     # Assemble: exact match to loop addition
     _gi_c = term1 + term2 - term3 + term4 + term5 + term6 - term7  # (9,nx_pad,ny_pad)
@@ -751,7 +756,8 @@ def fi_c(u, Kf, F, _phi):
     
     # term4: F[i] * Kf/6 * (dphi_dxa**2 + dphi_dya**2)
     grad_phi_sq = dphi_dxa**2 + dphi_dya**2
-    term4 = F_exp * (Kf / 6.0) * grad_phi_sq
+    #term4 = F_exp * (Kf / 6.0) * grad_phi_sq
+    term4 = F_exp * (Kf * 0.0) * grad_phi_sq
     
     # term5: 3 * E[i] * _phi * c_dot_u
     c_dot_u = np.einsum('ia,axy->ixy', c, u)  # (9,nx,ny) - c_i . u
@@ -992,17 +998,17 @@ list_avg_velocities_y = {}
 
 start = time.perf_counter()
 epsilon_cutoff = 10e-5
-tau_f = 2.5 #1.5
+#tau_f = 2.5
+tau_f = 1.
 tau_g = 1.
 a=1
 b=6.7
 T=3.5e-2
 
-#Kf = 0.5 * n_dx**2
-#Kf = 0.0001 * n_dx**2  # Reduce by 5x from current value
-Kf = 1e-6 * n_dx**2  # Reduce by 5x from current value
-#Kg = 2.5e-4 * n_dx**2
+Kf = 0.5 * n_dx**2
+#Kf = 1e-6 * n_dx**2  # Reduce by 5x from current value
 Kg = 2.5e-5 * n_dx**2
+
 
 Sh = U_nd/Cs
 #used in Inamuro as scaling factor
@@ -1098,12 +1104,11 @@ density_slices = []
 plotter = Plotter2D(
     script_dir=script_dir,
     script_filename=SCRIPT_FILENAME,
-    use_case_tag=USE_CASE_TAG,
     images_subdir=IMAGES_SUBDIR,
     total_iterations=TOTAL_ITERATIONS,
     filename_padding_width=FILENAME_PADDING_WIDTH,
     debug_log=debug_log,
-    PLOTREALTIME=True, TOTAL_ITERATIONS=1000
+    PLOTREALTIME=False
 )
 
 rho_min = np.min(rho)
@@ -1182,10 +1187,12 @@ while iteration < TOTAL_ITERATIONS:
     ################### 3. Clip and Smooth Rho/Mu/Phi #####################################################
     rho = np.clip(rho, 0.5, 75)  # Limit ratio effective 1:150, avoid tau_h extremes
     mu = np.clip(mu, mu_G*0.5, mu_L*2)
-    _phi = np.clip(_phi, phi_star_G*1.1, phi_star_L*0.9)  # Confine to stable bulk
+    if ENABLE_PHI_CLIPPING:
+        _phi = np.clip(_phi, phi_star_G*1.1, phi_star_L*0.9)  # Confine to stable bulk
     # Smooth interfaces if Gab spikes
     from scipy.ndimage import gaussian_filter
-    _phi = gaussian_filter(_phi, sigma=0.5)  # Diffuse sharp steps slightly
+    if ENABLE_PHI_FILTER:
+        _phi = gaussian_filter(_phi, sigma=0.5)  # Diffuse sharp steps slightly
     ########################################################################################################
 
     if iteration in iterationsOfInterest:
@@ -1394,7 +1401,7 @@ else:
 text = f"Run-time: {diff:.1f} s"
 fig1.text(0.5, 0.98, text, ha='center', va='top', fontsize=12)
 fig1.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
-images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
+images_dir = IMAGES_SUBDIR
 os.makedirs(images_dir, exist_ok=True)
 save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_channel_parameters.png")
 fig1.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -1436,7 +1443,7 @@ if ADD_METRICS:
     plotter.plot_bounds_ext(PhEps_max, "PhEps_max", ax2[2, 3])
 
 fig2.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=0.4)
-images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
+images_dir = IMAGES_SUBDIR
 os.makedirs(images_dir, exist_ok=True)
 save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_Metrics_{TOTAL_ITERATIONS:0{FILENAME_PADDING_WIDTH}d}.png")
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -1452,7 +1459,7 @@ uploader = GitHubUploader(
     scripts_path=SCRIPTS_PATH,
     plots_path=PLOTS_PATH,
     images_subdir=IMAGES_SUBDIR,
-    log_file=LOG_FILE,
+    log_file=os.path.join("FreesurfaceImages", SCRIPT_FILENAME, LOG_FILE),
     token_file='github-repo-token.txt'
 )
 try:

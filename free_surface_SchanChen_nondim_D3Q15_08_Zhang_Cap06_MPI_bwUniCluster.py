@@ -6,15 +6,6 @@ from __future__ import annotations
 
 from mpi4py import MPI
 
-import matplotlib
-
-matplotlib.use('Agg')  # or 'Qt5Agg' if you have PyQt installed
-#matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
-import matplotlib.pyplot as plt
-
-plt.rc('text', usetex=False)
-plt.rc('font', family='serif')
-
 import argparse
 import os
 import time
@@ -22,8 +13,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple  # Import these for proper type hints
 
 import numpy as np
-from scipy.ndimage import gaussian_filter
-from scipy.special import erf
 
 import sys
 import logging
@@ -293,7 +282,6 @@ dx=D/DEFAULT_D_ND  #old->5*10**(-5)
 
 #relaxation time tau_f (eq.25): default 0.6, takes the same --tau_f the parameter study passes
 _pre_parser = argparse.ArgumentParser(add_help=False)
-#_pre_parser.add_argument('--tau_f', type=float, default=0.6)
 _pre_parser.add_argument('--tau_f', type=float, default=1.0)
 tau_f = _pre_parser.parse_known_args()[0].tau_f
 
@@ -307,12 +295,6 @@ rho_0=1e3 #kg/m^3
 nu=2.9e-6 #m^2/s => in OLB this is 1/Re, with Re=148. So Re must become Re= in order to conform with this simulation
 dt = Cs2*(tau_f-0.5)*(dx**2/nu)
 
-
-#Assume U at centerline (max) velocity
-U=0.0
-Re=D*U/nu
-Ma=U/Cs 
-Kn=U*D/nu
 
 #we need Cl, Crho, Ct
 # 1. Conversion factor Cl for length
@@ -331,9 +313,7 @@ n_dt = dt/Ct #-> dt_nd=1
 
 #4. Conversion factor Cu for velocity
 Cu=Cl/Ct
-U_nd = U/Cu #-> limit U_nd=0.1
 U_nd=0.1
-
 
 #5. Conversion factor CF for Force
 CF=Crho*Cl/(Ct**2)
@@ -341,31 +321,18 @@ CF=Crho*Cl/(Ct**2)
 #6. Conversion factor Cf for frequency
 Cf=1/Ct
 
-
 #change nu_nd in order to achieve U_nd=0,1
-#nu_nd=((DEFAULT_D_ND*U_nd)/(D*U))*nu
-#CAPILLARY FLOW -> U=0 -> remove U
 nu_nd = Cs2 * (tau_f - 0.5)
-#nu_nd = 0.0145
-
-
 tau_nd=(nu_nd/Cs2)+1./2
 
 #discrete velocity channels for D3Q15
-# indices 0-6 identical across all three: rest + 6 axis-aligned
 _AXIS = [
     [ 0,  0,  0],
     [ 1,  0,  0], [-1,  0,  0],
     [ 0,  1,  0], [ 0, -1,  0],
     [ 0,  0,  1], [ 0,  0, -1],
 ]
-# 12 edge directions (two components ±1, one 0) - shared by D3Q19 and D3Q27
-_EDGE = [
-    [ 1,  1,  0], [-1, -1,  0], [ 1, -1,  0], [-1,  1,  0],
-    [ 1,  0,  1], [-1,  0, -1], [ 1,  0, -1], [-1,  0,  1],
-    [ 0,  1,  1], [ 0, -1, -1], [ 0,  1, -1], [ 0, -1,  1],
-]
-# 8 corner directions (all three components ±1) - shared by D3Q15 and D3Q27
+# 8 corner directions (all three components ±1) 
 _CORNER = [
     [ 1,  1,  1], [-1, -1, -1],
     [ 1,  1, -1], [-1, -1,  1],
@@ -377,19 +344,11 @@ LATTICE_SETS = {
     "D3Q15": {
         "c": np.array(_AXIS + _CORNER),
         "E": np.array([2/9] + [1/9]*6 + [1/72]*8),
-    },
-    "D3Q19": {
-        "c": np.array(_AXIS + _EDGE),
-        "E": np.array([1/3] + [1/18]*6 + [1/36]*12),
-    },
-    "D3Q27": {
-        "c": np.array(_AXIS + _EDGE + _CORNER),
-        "E": np.array([8/27] + [2/27]*6 + [1/54]*12 + [1/216]*8),
-    },
+    }
 }        
 
 # Zhang bottom p. 32, 2nd column constant w0 & Krüger: force weights
-LATTICE_MODEL = "D3Q15"   # "D3Q15" | "D3Q19" | "D3Q27"
+LATTICE_MODEL = "D3Q15"   # "D3Q15"
 c = LATTICE_SETS[LATTICE_MODEL]["c"]
 E = LATTICE_SETS[LATTICE_MODEL]["E"]
 
@@ -413,8 +372,6 @@ sys.excepthook = _abort_all_ranks_on_error
 
 assert comm.Get_size() in (512, 1024, 2048), f"need 512, 1024 or 2048 ranks, got {comm.Get_size()}"
 dims = {512: [8, 8, 8], 1024: [16, 8, 8], 2048: [16, 16, 8]}[comm.Get_size()]
-#dims = [1, 1, 1]
-#cart = comm.Create_cart(dims, periods=[False, False, False], reorder=True)
 cart = comm.Create_cart(dims, periods=[PERIODIC_X, False, False], reorder=True)
 rank_coords = cart.Get_coords(cart.Get_rank())
 
@@ -504,18 +461,6 @@ z_offset = rank_coords[2] * local_Zn
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # Configurations
 # ──────────────────────────────────────────────────────────────────────────────────────────
-# 0.1 Benchmark - STEP
-BENCHMARK_STEP = FlowConfig(
-    dx=dx,
-    n_dx=n_dx,
-    tau_f=2.5, tau_g=1.0,
-    Kf = 1e-6 * n_dx**2,
-    MULTIPLES=1,
-    vf_W = 4,
-    vf_sigma = 0.001,
-    vf_theta = 60.0    
-)
-
 # 0.2 Benchmark - inclined channel
 BENCHMARK_INCLINED = FlowConfig(
     dx=dx,
@@ -533,26 +478,8 @@ BENCHMARK_INCLINED = FlowConfig(
     ADD_BODY_FORCE = 1
 )
 
-BENCHMARK_CAPILLARY = FlowConfig(
-    dx=dx,
-    n_dx=n_dx, alpha=0,
-    tau_g=0.65, 
-    tau_f=tau_f, #tau_f=1.25, #see eq(25) + Example A , t_g start with 0.6, increase as necessary -> was tau_f=0.65
-    Kf=0.002,
-    #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the diffuse interface, reducing sharp edges.
-    vf_W = 4, #was 6
-    vf_sigma = 0.01, #0.072
-    vf_theta = 60.0, #60
-    MULTIPLES=1,
-    ENFORCE_MASS_CONSERVATION = True,
-    ADD_SURFACE_TENSION_FORCE = 1,
-    ADD_BODY_FORCE = 1
-)
-
 USE_CASES = {
-    "proof_step": {"PHI_DISTRIBUTION": "STEP", "fc": BENCHMARK_STEP},
-    "proof_inclined": {"PHI_DISTRIBUTION": "HORIZONTAL", "fc": BENCHMARK_INCLINED},
-    "proof_capillary": {"PHI_DISTRIBUTION": "HORIZONTAL", "fc": BENCHMARK_CAPILLARY}
+    "proof_inclined": {"PHI_DISTRIBUTION": "HORIZONTAL", "fc": BENCHMARK_INCLINED}
 }
 
 ACTIVE_CASE = "proof_inclined"
@@ -569,6 +496,7 @@ _arg_parser.add_argument('--alpha', type=float, default=None)
 _arg_parser.add_argument('--multiples', type=int, default=None)
 _arg_parser.add_argument('--rho_G', type=float, default=None)
 _arg_parser.add_argument('--rho_L', type=float, default=None)
+_arg_parser.add_argument('--vf_W', type=int, default=None)
 
 _args, _ = _arg_parser.parse_known_args()
 if _args.tau_g is not None:
@@ -587,6 +515,8 @@ if _args.rho_G is not None:
     fc.rho_G = _args.rho_G    
 if _args.rho_L is not None:
     fc.rho_L = _args.rho_L    
+if _args.vf_W is not None:
+    fc.vf_W = _args.vf_W    
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
@@ -672,7 +602,6 @@ def dump_parameters(fc, args, path):
         ("nu_nd", nu_nd),
         ("tau_nd", tau_nd),
         ("U_nd (limit)", U_nd),
-        #("Re, Ma, Kn (from U = 0)", (Re, Ma, Kn)),        
     ]
     text = "\n".join(f"{k:<40} {v}" for k, v in rows)
     with open(path, "w", encoding="utf-8") as fh:
@@ -786,17 +715,14 @@ def zp(fc, _z_fi, _rho, u_ckl, out):
     p =[i=0..8] ∑fi + δt/2 u⋅∇ρCs²
     """
     # channel velocity components
-    #term1 = np.sum(_z_fi, axis=0)  # Shape (nx, ny, nz)
     np.sum(_z_fi, axis=0, out=out)  # out = sum_i fi, written in place
 
     # force term
     drho_dx, drho_dy, drho_dz = zhang_gradient(fc,_rho)
     grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0)   # (3, nx, ny, nz)
     u_dot_grad_rho = np.einsum('cijk,cijk->ijk', u_ckl, grad_rho)
-    #term2 = (n_dt / 2) * u_dot_grad_rho * Cs2
 
     # hydrodynamic pressure
-    #_p = term1 + term2
     out += (n_dt / 2.0) * Cs2 * u_dot_grad_rho
 
     return out
@@ -842,25 +768,18 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, Fs, G):
     _Fi = Fi(fc, Fs, G, u_ckl, rho,  out=_Fi_buf)
 
     # eq(13): collision
-    #z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
     omega_f = 1.0 / fc.tau_f
-    #z_fi_star = (z_fi_c - z_fi)      # 1 new array
     np.subtract(z_fi_c, z_fi, out=_z_star_buf)  #-> use the buffer
     _z_star_buf *= omega_f             # in-place
     _z_star_buf += z_fi                # in-place  (now equals z_fi - omega_f*(z_fi-z_fi_c))
     _z_star_buf += n_dt * _Fi          # n_dt*_Fi is 1 new array; += is in-place
 
     # eq(15): streaming
-    #streamed = [
-    #    np.roll(z_fi_star[i], shift=(c[i, 0], c[i, 1], c[i, 2]), axis=(0, 1, 2)) for i in range(fc.velocitySetSize)
-    #]
-    #z_fi[:] = np.stack(streamed, axis=0)
     for i in range(fc.velocitySetSize):
         exchange_ghosts_x(_z_star_buf[i], x_lo, x_hi, cart)
         exchange_ghosts_y(_z_star_buf[i], y_lo, y_hi, cart)
         exchange_ghosts_z(_z_star_buf[i], z_lo, z_hi, cart)
         z_fi[i] = np.roll(_z_star_buf[i], shift=(c[i,0],c[i,1],c[i,2]), axis=(0,1,2))
-
 
     return z_fi
 
@@ -881,8 +800,6 @@ def chemical_potential(fc, __phi):
 # Zhang eq(5): Fs is the surface tension force, expressed in a potential form
 def Fs(fc, __phi, n_dx, n_dy, n_dz, out):
     drho_dx, drho_dy, drho_dz = zhang_gradient(fc,__phi)
-    #nabla_phi = np.stack([drho_dx, drho_dy, drho_dz], axis=0)
-    #_Fs = chemical_potential(fc, __phi) * nabla_phi
     mu = chemical_potential(fc, __phi) 
     np.multiply(mu, drho_dx, out=out[0])
     np.multiply(mu, drho_dy, out=out[1])
@@ -920,7 +837,6 @@ def Fi(fc, Fs, G, u_ckl, rho, out):
 def zfi_c(fc, u, rho, p, out):
     u_dot_u = np.sum(u**2, axis=0)  # (X,Y,Z) - once
 
-    #z_fi_c = np.zeros((fc.velocitySetSize,) + u.shape[1:])
     #-> use buffer to prevent malloc
     for i in range(fc.velocitySetSize):
         c_dot_u_i = c[i,0]*u[0] + c[i,1]*u[1] + c[i,2]*u[2]
@@ -936,7 +852,6 @@ def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
     omega_g = 1.0 / fc.tau_g
     _Gi = Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out=_Fi_buf)
 
-    #z_gi_star = (z_gi_c - z_gi)      # 1 new array
     np.subtract(z_gi_c, z_gi, out=_z_star_buf)      # -> use buffer to prevent malloc
     _z_star_buf *= omega_g             # in-place
     _z_star_buf += z_gi                # in-place  (now equals z_gi - omega_g*(z_gi-z_gi_c))
@@ -980,7 +895,6 @@ def Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out):
 
 # Zhang eq(17): equilibrium distribution function for pressure distribution
 def zgi_c(fc, u, _phi, track_diag, out):
-    #z_fi_c_out = np.zeros((fc.velocitySetSize,) + u.shape[1:])
     #-> replace with buffer to prevent malloc
     max_abs_c_dot_u = 0.0
     for i in range(fc.velocitySetSize):
@@ -1036,34 +950,31 @@ def bounceBackTopBottom_conservation(__gi, __fi, nx, ny, nz):
     # with vertical wall geometry, q=0.5, uw=0
     # => fi(xf) = [1/(1+0.5)] * [0.5·fi(xff,t) + (1-0.5)·fi*(xf,t) + 0.5·fi*(xs,t) + 2·rho·wi·(ei·0)/cs2]
     # => fi(xf) = [1/1.5] * [0.5·fi(xff,t) + (0.5)·fi*(xf,t) + 0.5·fi*(xs,t)]
-    # with streaming relation fi*(xf,t) = fi(xff,t)
-    # => fi(xf) = [1/1.5]·[0.5·fi(xff,t) + (0.5)·fi(xff,t) + 0.5·fi*(xs,t)]
-    # => fi(xf) = [2/3]·[fi(xff,t) + 0.5·fi*(xs,t)]
-    # => fi(xf) = (2/3)·[fi(xff,t) + 0.5·fi*(xs,t)]
-    # => fi(xf) = (2/3)·fi(xff) + (2/3)·0.5·fi*(xs)
-    # => fi(xf) = (2/3)·fi(xff) + (1/3)·fi*(xs)
+    # => fi(xf) = [2/3]·[0.5·fi(xff,t) + 0.5·fi*(xf,t) + 0.5·fi*(xs,t)]
+    # => fi(xf) = (1/3)·fi(xff) + (1/3)·fi*(xf,t) + (1/3)·fi*(xs)
+    # => fi(xf) = (1/3)·fi(xff) + (1/3)·fi*(xf) + (1/3)·fi*(xs)
 
     # xff: y-index 2
     # xs: y-index 0
     # xf: y-index 1    
 
-    # bottom wall (i=2, 5, 6 — directions pointing N into fluid):
+    # bottom wall (i=2, 5, 6):
     if z_lo == MPI.PROC_NULL:
-        __fi[5, :, :, 1] =  (2/3)*__fi[5, :, :, 2] + (1/3)*__fi[6, :, :, 0]                                 # 6-> 5, die GhostNodes spielen keine Rolle
+        __fi[5, :, :, 1] =  (1/3)*__fi[5, :, :, 2] + (1/3)*__fi[6, :, :, 1] + (1/3)*__fi[6, :, :, 0] # 6-> 5, die GhostNodes spielen keine Rolle
         # diagonal reflections with horizontal shift
-        __fi[7, 1:nx-1, 1:ny-1, 1] = (2/3)*__fi[7, 2:nx, 2:ny, 2] + (1/3)*__fi[8, 0:nx-2, 0:ny-2, 0]  # 8 -> 7
-        __fi[10, 1:nx-1, 1:ny-1, 1] = (2/3)*__fi[10, 0:nx-2, 0:ny-2, 2] + (1/3)*__fi[9, 2:nx, 2:ny, 0]  # 9 -> 10
-        __fi[11, 1:nx-1, 1:ny-1, 1] = (2/3)*__fi[11, 2:nx, 0:ny-2, 2] + (1/3)*__fi[12, 0:nx-2, 2:ny, 0]  # 12 -> 11
-        __fi[13, 1:nx-1, 1:ny-1, 1] = (2/3)*__fi[13, 0:nx-2, 2:ny, 2] + (1/3)*__fi[14, 2:nx, 0:ny-2, 0]    # 14 -> 13
+        __fi[7, 1:nx-1, 1:ny-1, 1] = (1/3)*__fi[7, 2:nx, 2:ny, 2] + (1/3)*__fi[8, 1:nx-1, 1:ny-1, 1] + (1/3)*__fi[8, 0:nx-2, 0:ny-2, 0]  # 8 -> 7
+        __fi[10, 1:nx-1, 1:ny-1, 1] = (1/3)*__fi[10, 0:nx-2, 0:ny-2, 2] + (1/3)*__fi[9, 1:nx-1, 1:ny-1, 1] + (1/3)*__fi[9, 2:nx, 2:ny, 0]  # 9 -> 10
+        __fi[11, 1:nx-1, 1:ny-1, 1] = (1/3)*__fi[11, 2:nx, 0:ny-2, 2] + (1/3)*__fi[12, 1:nx-1, 1:ny-1, 1] + (1/3)*__fi[12, 0:nx-2, 2:ny, 0]  # 12 -> 11
+        __fi[13, 1:nx-1, 1:ny-1, 1] = (1/3)*__fi[13, 0:nx-2, 2:ny, 2] + (1/3)*__fi[14, 1:nx-1, 1:ny-1, 1] + (1/3)*__fi[14, 2:nx, 0:ny-2, 0]    # 14 -> 13
     
     # top wall (i pointing S into fluid, cz=-1): 6, 8, 9, 12, 14
     if z_hi == MPI.PROC_NULL:
-        __fi[6, :, :, nz-2] = (2/3)*__fi[6, :, :, nz-3] + (1/3)*__fi[5, :, :, nz-1]                              # 5 -> 6
+        __fi[6, :, :, nz-2] = (1/3)*__fi[6, :, :, nz-3] + (1/3)*__fi[5, :, :, nz-2] + (1/3)*__fi[5, :, :, nz-1]                              # 5 -> 6
         # diagonal reflections with horizontal shift
-        __fi[8, 1:nx-1, 1:ny-1, nz-2]  = (2/3)*__fi[8,  0:nx-2, 0:ny-2, nz-3] + (1/3)*__fi[7,  2:nx, 2:ny, nz-1]  # 7 -> 8
-        __fi[9, 1:nx-1, 1:ny-1, nz-2]  = (2/3)*__fi[9,  2:nx, 2:ny, nz-3] + (1/3)*__fi[10, 0:nx-2, 0:ny-2, nz-1]  # 10 -> 9
-        __fi[12,1:nx-1, 1:ny-1, nz-2]  = (2/3)*__fi[12, 0:nx-2, 2:ny, nz-3] + (1/3)*__fi[11, 2:nx, 0:ny-2, nz-1]  # 11 -> 12
-        __fi[14,1:nx-1, 1:ny-1, nz-2]  = (2/3)*__fi[14, 2:nx, 0:ny-2, nz-3] + (1/3)*__fi[13, 0:nx-2, 2:ny, nz-1]  # 13 -> 14    
+        __fi[8, 1:nx-1, 1:ny-1, nz-2]  = (1/3)*__fi[8,  0:nx-2, 0:ny-2, nz-3] + (1/3)*__fi[7, 1:nx-1, 1:ny-1, nz-2] + (1/3)*__fi[7,  2:nx, 2:ny, nz-1]  # 7 -> 8
+        __fi[9, 1:nx-1, 1:ny-1, nz-2]  = (1/3)*__fi[9,  2:nx, 2:ny, nz-3] + (1/3)*__fi[10, 1:nx-1, 1:ny-1, nz-2] + (1/3)*__fi[10, 0:nx-2, 0:ny-2, nz-1]  # 10 -> 9
+        __fi[12,1:nx-1, 1:ny-1, nz-2]  = (1/3)*__fi[12, 0:nx-2, 2:ny, nz-3] + (1/3)*__fi[11, 1:nx-1, 1:ny-1, nz-2] + (1/3)*__fi[11, 2:nx, 0:ny-2, nz-1]  # 11 -> 12
+        __fi[14,1:nx-1, 1:ny-1, nz-2]  = (1/3)*__fi[14, 2:nx, 0:ny-2, nz-3] + (1/3)*__fi[13, 1:nx-1, 1:ny-1, nz-2] + (1/3)*__fi[13, 0:nx-2, 2:ny, nz-1]  # 13 -> 14    
 
     return __gi, __fi 
 
@@ -1088,19 +999,19 @@ def bounceBackFrontBack_conservation(__gi, __fi, nx, ny, nz):
 
     # front wall (y=1) - Zhang eq(30)
     if y_lo == MPI.PROC_NULL:
-        __fi[3, :, 1, :] = (2/3)*__fi[3, :, 2, :] + (1/3)*__fi[4, :, 0, :]                                          # 4 -> 3
-        __fi[7, 1:nx-1, 1, 1:nz-1]  = (2/3)*__fi[7, 2:nx, 2, 2:nz]  + (1/3)*__fi[8, 0:nx-2, 0, 0:nz-2]          # 8 -> 7
-        __fi[9, 1:nx-1, 1, 1:nz-1]  = (2/3)*__fi[9, 2:nx, 2, 0:nz-2]  + (1/3)*__fi[10,0:nx-2, 0, 2:nz]          # 10 -> 9
-        __fi[12,1:nx-1, 1, 1:nz-1]  = (2/3)*__fi[12,0:nx-2, 2, 0:nz-2]  + (1/3)*__fi[11,2:nx, 0, 2:nz]          # 11 -> 12
-        __fi[13,1:nx-1, 1, 1:nz-1]  = (2/3)*__fi[13,0:nx-2, 2, 2:nz]  + (1/3)*__fi[14,2:nx, 0, 0:nz-2]          # 14 -> 13
+        __fi[3, :, 1, :] = (1/3)*__fi[3, :, 2, :] + (1/3)*__fi[4, :, 1, :] + (1/3)*__fi[4, :, 0, :]                                          # 4 -> 3
+        __fi[7, 1:nx-1, 1, 1:nz-1]  = (1/3)*__fi[7, 2:nx, 2, 2:nz]  + (1/3)*__fi[8, 1:nx-1, 1, 1:nz-1] + (1/3)*__fi[8, 0:nx-2, 0, 0:nz-2]          # 8 -> 7
+        __fi[9, 1:nx-1, 1, 1:nz-1]  = (1/3)*__fi[9, 2:nx, 2, 0:nz-2]  + (1/3)*__fi[10, 1:nx-1, 1, 1:nz-1] + (1/3)*__fi[10,0:nx-2, 0, 2:nz]          # 10 -> 9
+        __fi[12,1:nx-1, 1, 1:nz-1]  = (1/3)*__fi[12,0:nx-2, 2, 0:nz-2]  + (1/3)*__fi[11, 1:nx-1, 1, 1:nz-1] + (1/3)*__fi[11,2:nx, 0, 2:nz]          # 11 -> 12
+        __fi[13,1:nx-1, 1, 1:nz-1]  = (1/3)*__fi[13,0:nx-2, 2, 2:nz]  + (1/3)*__fi[14, 1:nx-1, 1, 1:nz-1] + (1/3)*__fi[14,2:nx, 0, 0:nz-2]          # 14 -> 13
 
     # back wall (y=ny-2) - Zhang eq(30)
     if y_hi == MPI.PROC_NULL:    
-        __fi[4, :, ny-2, :] = (2/3)*__fi[4, :, ny-3, :] + (1/3)*__fi[3, :, ny-1, :]                                  # 3 -> 4
-        __fi[8, 1:nx-1, ny-2, 1:nz-1]  = (2/3)*__fi[8, 0:nx-2, ny-3, 0:nz-2]  + (1/3)*__fi[7, 2:nx-0, ny-1, 2:nz-0]  # 7 -> 8
-        __fi[10,1:nx-1, ny-2, 1:nz-1]  = (2/3)*__fi[10,0:nx-2, ny-3, 2:nz-0]  + (1/3)*__fi[9, 2:nx-0, ny-1, 0:nz-2]  # 9 -> 10
-        __fi[11,1:nx-1, ny-2, 1:nz-1]  = (2/3)*__fi[11,2:nx-0, ny-3, 2:nz-0]  + (1/3)*__fi[12,0:nx-2, ny-1, 0:nz-2]  # 12 -> 11
-        __fi[14,1:nx-1, ny-2, 1:nz-1]  = (2/3)*__fi[14,2:nx-0, ny-3, 0:nz-2]  + (1/3)*__fi[13,0:nx-2, ny-1, 2:nz-0]  # 13 -> 14
+        __fi[4, :, ny-2, :] = (1/3)*__fi[4, :, ny-3, :] + (1/3)*__fi[3, :, ny-2, :] + (1/3)*__fi[3, :, ny-1, :]                                  # 3 -> 4
+        __fi[8, 1:nx-1, ny-2, 1:nz-1]  = (1/3)*__fi[8, 0:nx-2, ny-3, 0:nz-2]  + (1/3)*__fi[7, 1:nx-1, ny-2, 1:nz-1] + (1/3)*__fi[7, 2:nx-0, ny-1, 2:nz-0]  # 7 -> 8
+        __fi[10,1:nx-1, ny-2, 1:nz-1]  = (1/3)*__fi[10,0:nx-2, ny-3, 2:nz-0]  + (1/3)*__fi[9, 1:nx-1, ny-2, 1:nz-1] + (1/3)*__fi[9, 2:nx-0, ny-1, 0:nz-2]  # 9 -> 10
+        __fi[11,1:nx-1, ny-2, 1:nz-1]  = (1/3)*__fi[11,2:nx-0, ny-3, 2:nz-0]  + (1/3)*__fi[12, 1:nx-1, ny-2, 1:nz-1] + (1/3)*__fi[12,0:nx-2, ny-1, 0:nz-2]  # 12 -> 11
+        __fi[14,1:nx-1, ny-2, 1:nz-1]  = (1/3)*__fi[14,2:nx-0, ny-3, 0:nz-2]  + (1/3)*__fi[13, 1:nx-1, ny-2, 1:nz-1] + (1/3)*__fi[13,0:nx-2, ny-1, 2:nz-0]  # 13 -> 14
 
     return __gi, __fi    
 
@@ -1129,76 +1040,23 @@ def bounceBackLeftRight_conservation(__gi, __fi, nx, ny, nz):
     # Zhang eq(30) for fi: -> see explanation in bounceBackTopBottom_conservation
     # left wall (x=1) - Zhang eq(30)
     if x_lo == MPI.PROC_NULL:
-        __fi[1, 1, :, :] = (2/3)*__fi[1, 2, :, :] + (1/3)*__fi[2, 0, :, :]                                        # 2 -> 1
+        __fi[1, 1, :, :] = (1/3)*__fi[1, 2, :, :] + (1/3)*__fi[2, 1, :, :] + (1/3)*__fi[2, 0, :, :]                                        # 2 -> 1
         # diagonal reflections with horizontal shift
-        __fi[7, 1, 1:ny-1, 1:nz-1]  = (2/3)*__fi[7, 2, 2:ny-0, 2:nz-0] + (1/3)*__fi[8, 0, 0:ny-2, 0:nz-2]          # 8 -> 7
-        __fi[9, 1, 1:ny-1, 1:nz-1]  = (2/3)*__fi[9, 2, 2:ny-0, 0:nz-2] + (1/3)*__fi[10,0, 0:ny-2, 2:nz-0]          # 10 -> 9
-        __fi[11,1, 1:ny-1, 1:nz-1]  = (2/3)*__fi[11,2, 0:ny-2, 2:nz-0] + (1/3)*__fi[12,0, 2:ny-0, 0:nz-2]          # 12 -> 11
-        __fi[14,1, 1:ny-1, 1:nz-1]  = (2/3)*__fi[14,2, 0:ny-2, 0:nz-2] + (1/3)*__fi[13,0, 2:ny-0, 2:nz-0]          # 13 -> 14
+        __fi[7, 1, 1:ny-1, 1:nz-1]  = (1/3)*__fi[7, 2, 2:ny-0, 2:nz-0] + (1/3)*__fi[8, 1, 1:ny-1, 1:nz-1] + (1/3)*__fi[8, 0, 0:ny-2, 0:nz-2]          # 8 -> 7
+        __fi[9, 1, 1:ny-1, 1:nz-1]  = (1/3)*__fi[9, 2, 2:ny-0, 0:nz-2] + (1/3)*__fi[10, 1, 1:ny-1, 1:nz-1] + (1/3)*__fi[10,0, 0:ny-2, 2:nz-0]          # 10 -> 9
+        __fi[11,1, 1:ny-1, 1:nz-1]  = (1/3)*__fi[11,2, 0:ny-2, 2:nz-0] + (1/3)*__fi[12, 1, 1:ny-1, 1:nz-1] + (1/3)*__fi[12,0, 2:ny-0, 0:nz-2]          # 12 -> 11
+        __fi[14,1, 1:ny-1, 1:nz-1]  = (1/3)*__fi[14,2, 0:ny-2, 0:nz-2] + (1/3)*__fi[13, 1, 1:ny-1, 1:nz-1] + (1/3)*__fi[13,0, 2:ny-0, 2:nz-0]          # 13 -> 14
 
     # right wall (x=nx-2) - Zhang eq(30)
     if x_hi == MPI.PROC_NULL:
-        __fi[2, nx-2, :, :] = (2/3)*__fi[2, nx-3, :, :] + (1/3)*__fi[1, nx-1, :, :]                                # 1 -> 2
+        __fi[2, nx-2, :, :] = (1/3)*__fi[2, nx-3, :, :] + (1/3)*__fi[1, nx-2, :, :] + (1/3)*__fi[1, nx-1, :, :]                                # 1 -> 2
         # diagonal reflections with horizontal shift
-        __fi[8, nx-2, 1:ny-1, 1:nz-1]  = (2/3)*__fi[8, nx-3, 0:ny-2, 0:nz-2] + (1/3)*__fi[7, nx-1, 2:ny-0, 2:nz-0]  # 7 -> 8
-        __fi[10,nx-2, 1:ny-1, 1:nz-1]  = (2/3)*__fi[10,nx-3, 0:ny-2, 2:nz-0] + (1/3)*__fi[9, nx-1, 2:ny-0, 0:nz-2]  # 9 -> 10
-        __fi[12,nx-2, 1:ny-1, 1:nz-1]  = (2/3)*__fi[12,nx-3, 2:ny-0, 0:nz-2] + (1/3)*__fi[11,nx-1, 0:ny-2, 2:nz-0]  # 11 -> 12
-        __fi[13,nx-2, 1:ny-1, 1:nz-1]  = (2/3)*__fi[13,nx-3, 2:ny-0, 2:nz-0] + (1/3)*__fi[14,nx-1, 0:ny-2, 0:nz-2]  # 14 -> 13
+        __fi[8, nx-2, 1:ny-1, 1:nz-1]  = (1/3)*__fi[8, nx-3, 0:ny-2, 0:nz-2] + (1/3)*__fi[7, nx-2, 1:ny-1, 1:nz-1] + (1/3)*__fi[7, nx-1, 2:ny-0, 2:nz-0]  # 7 -> 8
+        __fi[10,nx-2, 1:ny-1, 1:nz-1]  = (1/3)*__fi[10,nx-3, 0:ny-2, 2:nz-0] + (1/3)*__fi[9, nx-2, 1:ny-1, 1:nz-1] + (1/3)*__fi[9, nx-1, 2:ny-0, 0:nz-2]  # 9 -> 10
+        __fi[12,nx-2, 1:ny-1, 1:nz-1]  = (1/3)*__fi[12,nx-3, 2:ny-0, 0:nz-2] + (1/3)*__fi[11, nx-2, 1:ny-1, 1:nz-1] + (1/3)*__fi[11,nx-1, 0:ny-2, 2:nz-0]  # 11 -> 12
+        __fi[13,nx-2, 1:ny-1, 1:nz-1]  = (1/3)*__fi[13,nx-3, 2:ny-0, 2:nz-0] + (1/3)*__fi[14, nx-2, 1:ny-1, 1:nz-1] + (1/3)*__fi[14,nx-1, 0:ny-2, 0:nz-2]  # 14 -> 13
 
     return __gi, __fi
-
-
-def init_step_phi(xn, yn, zn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
-    """
-    Initialize a 2D step function field (phi) in the x-y plane with smooth transitions.
-
-    Parameters
-    ----------
-    xn, yn : int
-        Grid sizes in x and y directions.
-    phi_star_g, phi_star_l : float
-        Values for gas and liquid phases.
-    xi : float, optional
-        Interface thickness parameter.
-    smooth_sigma : float, optional
-        Gaussian smoothing sigma; if None, defaults to xi/1.5.
-
-    Returns
-    -------
-    phi : ndarray (shape = (xn, yn))
-        Initialized scalar field.
-    """
-    # Create grid
-    x, y, z = np.meshgrid(np.arange(xn), np.arange(yn), np.arange(zn), indexing='ij')
-
-    # Key geometric reference points
-    y_mid, y_34 = 0.5*(yn-1), 0.75*(yn-1)
-    z_mid, z_23 = 0.5*(zn-1), (2/3)*(zn-1)
-
-    # Initialize step function regions
-    phi = np.where(
-        ((y <= y_mid) & (z < z_mid)) |
-        ((y_mid < y) & (y <= y_34) & (z < z_23)) |
-        ((y > y_34) & (z < z_mid)),
-        phi_star_l, phi_star_g
-    )
-
-    # Smooth interface transitions
-    phi_mid = 0.5 * (phi_star_l + phi_star_g)
-    phi_diff = 0.5 * (phi_star_l - phi_star_g)
-    sigma = np.sqrt(2) * xi
-    w = 3.0 * xi
-
-    # Interface near y = y_mid
-    mask = ((y <= y_mid) | (y > y_34)) & (np.abs(z - z_mid) <= w)
-    phi[mask] = phi_mid + phi_diff * erf((z_mid - z)[mask] / sigma)
-
-    mask = (y_mid < y) & (y <= y_34) & (np.abs(z - z_23) <= w)
-    phi[mask] = phi_mid + phi_diff * erf((z_23 - z)[mask] / sigma)
-
-    phi = gaussian_filter(phi, sigma=(xi/1.5 if smooth_sigma is None else smooth_sigma), mode='nearest')
-
-    return phi
 
 
 def init_horizontal_phi(xn, yn, zn, phi_star_g, phi_star_l, height=None, W=4.0):
@@ -1294,8 +1152,6 @@ def compContactAngle(fc):
 
 def set_solid_nodes(fc, _phi):
     #2. viscous force - adaptation of Zhang et al. eq(5), with μ_phi exchanged for μ_c
-    #fc.vf_kappa = 3 * fc.vf_sigma * fc.vf_W / 2
-    #fc.vf_beta = 12 * fc.vf_sigma / fc.vf_W
 
     # ------- Capillary effect (wetting on bottom, left, and right walls only) -------
     # n = ∇ϕ|∇ϕ∣
@@ -1470,14 +1326,12 @@ rho = np.full((local_Xn+2, local_Yn+2, local_Zn+2), INIT_RHO, dtype=np.float64)
 
 # Simulation parameters
 start = time.perf_counter()
-y0 = (Yn-1)/2
-z0 = (Zn-1)/2
-x,y,z = np.meshgrid(np.arange(Xn+2), np.arange(Yn+2), np.arange(Zn+2), indexing='ij')
 
 PARAMETER_STUB = "__" + ACTIVE_CASE + "__nodes_" + str(DEFAULT_D_ND) + "__tau_f_" + str(fc.tau_f) + "__tau_g_" + str(fc.tau_g) \
     + "__Kf_" + str(fc.Kf) + "__Theta_" + str(fc.vf_theta) + "_alpha" + f"{fc.alpha:g}" + "_sigma" + f"{fc.vf_sigma:g}" \
     + ("_rhoG" + f"{fc.rho_G:g}" if fc.rho_G != 0.01 else "") \
     + ("_rhoL" + f"{fc.rho_L:g}" if fc.rho_L != 10.0 else "") \
+    + ("_W" + str(fc.vf_W) if fc.vf_W != 4 else "") \
     + ("_periodicx" if PERIODIC_X else "") \
     + ("_x" + str(fc.MULTIPLES) if fc.MULTIPLES != 1 else "")
 
@@ -1488,19 +1342,7 @@ if rank == 0:
     print(dump_parameters(fc, _args, os.path.join(images_dir, "parameters.txt")), flush=True)
 
 #phi initialisation
-# Corrected order parameter: phi decreases from phi_star_L to phi_star_G as y > y0
-_phi = (fc.phi_star_L + fc.phi_star_G) / 2 + (fc.phi_star_L - fc.phi_star_G) / 2 * erf((y0 - y) / (np.sqrt(2) * fc.vf_W))
-
-# Example usage during initialization
-if PHI_DISTRIBUTION == "STEP":    
-    # Replace the original _phi initialization with a call to the method
-    _phi = init_step_phi(Xn+2, Yn+2, Zn+2, fc.phi_star_G, fc.phi_star_L, xi=5.0) 
-    density_profile_x_position = int(2/3*Xn)
-    density_profile_y_position = int(2/3*Yn)   
-    density_profile_z_position = int(2/3*Zn)   
 if PHI_DISTRIBUTION == "HORIZONTAL":
-    # Replace the original _phi initialization with a call to the method
-    #_phi = init_horizontal_phi(local_Xn+2, local_Yn+2, local_Zn+2, fc.phi_star_G, fc.phi_star_L, height=(Zn+1)/2 - z_offset, W=fc.vf_W)
     _phi = init_horizontal_phi(local_Xn+2, local_Yn+2, local_Zn+2, fc.phi_star_G, fc.phi_star_L, height=(Zn+1)/10 - z_offset, W=fc.vf_W)
     density_profile_x_position = Xn//2
     density_profile_y_position = Yn//2
@@ -1532,7 +1374,7 @@ if plane_x_is_local:
 
 # rolling crash buffer of the closed-x corner (high-x wall, front wall y=0, floor z=0): whole local blocks of the ranks touching it
 CORNER_N = 1000
-corner_is_local = (x_offset + local_Xn == Xn) and (y_offset < 2*local_Yn) and (z_offset == 0)
+corner_is_local = (not PERIODIC_X) and (x_offset + local_Xn == Xn) and (y_offset < 2*local_Yn) and (z_offset == 0)
 if corner_is_local:
     os.makedirs(os.path.join(images_dir, "ring"), exist_ok=True)
     corner_ring = np.lib.format.open_memmap(
@@ -1564,6 +1406,16 @@ zhang_surface_tension_force = np.zeros((3, local_Xn+2, local_Yn+2, local_Zn+2))
 iterationsOfInterest = get_iterations_of_interest(fc.TOTAL_ITERATIONS, no_slices=fc.NO_DATA_DUMP_SLICES, exp_factor=4.0)
 _ioi = sorted(iterationsOfInterest)
 snapshot_iterations = set(_ioi[int(k)] for k in np.linspace(0, len(_ioi) - 1, 10))   # 10 evenly spaced 3D phi snapshots
+
+# floor strip, one frame per iteration, in the windows below: mid-x plane (x = 384), y < 64, z < 8; phi and u; one file per rank block
+STRIP_WINDOWS = [(0, 3000), (24000, 27000)]
+strip_is_local = plane_x_is_local and (z_offset == 0) and (y_offset < 64)
+if strip_is_local:
+    strip_ny = min(local_Yn, 64 - y_offset)
+    strip_buf = np.zeros((sum(b - a for a, b in STRIP_WINDOWS), 4, strip_ny, 8), dtype=np.float32)
+    strip_iter = np.full(strip_buf.shape[0], -1, dtype=np.int32)
+    strip_n = 0
+
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # simulation
@@ -1663,9 +1515,6 @@ while iteration < fc.TOTAL_ITERATIONS:
     _t0 = time.perf_counter(); 
     _phi = phi(fc, z_gi); 
     _mark('phi_moment', _t0)
-    # === LIGHT INTERFACE SMOOTHING TO REDUCE GRID PINNING ===
-    # Apply very light Gaussian filter — smooth meniscus and reduce sharp corners
-    #_phi = gaussian_filter(_phi, sigma=0.15)   # sigma=0.5–1.0 is usually enough
 
     # ──────────────────────────────
     # Mass conservation diagnostoics
@@ -1726,8 +1575,6 @@ while iteration < fc.TOTAL_ITERATIONS:
     #################################################################################################################################
 
     
-    # In main loop, after u_ckl update:total_mom_x = np.sum(rho * u_ckl[0])  # Add this
-    #if iteration == 0 or iteration==(fc.TOTAL_ITERATIONS - 1) or iteration % 100 == 0:
     if ADD_METRICS and iteration in iterationsOfInterest:
         #  NEW – collect vertical integrals of φ
         local_phi_total  = np.sum(_phi[1:local_Xn+1, 1:local_Yn+1, 1:local_Zn+1])
@@ -1821,6 +1668,14 @@ while iteration < fc.TOTAL_ITERATIONS:
         ring[_slot, 0] = _phi[plane_x_local, 1:local_Yn+1, 1:local_Zn+1]
         ring[_slot, 1:4] = u_ckl[:, plane_x_local, 1:local_Yn+1, 1:local_Zn+1]
         ring[_slot, 4, 0, 0] = iteration
+
+    if strip_is_local and any(a <= iteration < b for a, b in STRIP_WINDOWS):
+        strip_buf[strip_n, 0] = _phi[plane_x_local, 1:strip_ny+1, 1:9]
+        strip_buf[strip_n, 1:4] = u_ckl[:, plane_x_local, 1:strip_ny+1, 1:9]
+        strip_iter[strip_n] = iteration
+        strip_n += 1
+        if (iteration + 1) in [b for a, b in STRIP_WINDOWS]:      # a window just ended: write everything collected so far
+            np.savez(os.path.join(images_dir, f"floor_strip_y{y_offset}.npz"), frames=strip_buf[:strip_n], iteration=strip_iter[:strip_n])
 
     if corner_is_local:
         _cslot = iteration % CORNER_N

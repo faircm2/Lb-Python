@@ -6,7 +6,7 @@ Expected layout: one sub-folder per job name, each holding the plane dumps the s
 The job names are the --job-name values of parm_study_v2__tau_f__sigma__theta.sh (plus 'validation'
 for job 8414074, the periodic twin of closed_x). Runs that are missing are skipped.
 
-usage:   python compare_runs_claude.py <study_dir> [out_dir]
+usage:   python compare_runs_system.py <study_dir> [out_dir]
 output:  out_dir (default <study_dir>/parameter_comparison)/series_sigma.png, series_theta.png, series_tau_f.png, twin_closed_x.png, summary.csv
 """
 import glob
@@ -17,6 +17,7 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams["legend.fancybox"] = False      # square legend frames
 import numpy as np
 
 CS = np.sqrt(1 / 3)
@@ -37,6 +38,9 @@ RUNS = {
     "tau_0.6":    (0.01,  0.6,  60, 90, 1),
     "tau_0.8":    (0.01,  0.8,  60, 90, 1),
     "tau_1.25":   (0.01,  1.25, 60, 90, 1),
+    "B_closed_a0":   (0.01, 0.65, 60, 0, 0),
+    "A_ramp5000":    (0.05, 0.65, 60, 90, 1),
+    "T90_periodic":  (0.05, 0.65, 90, 90, 1),
     "B_periodic":    (0.01, 0.65, 60, 90, 1),
     "B_closed":      (0.01, 0.65, 60, 90, 0),
     "A_periodic":    (0.05, 0.65, 60, 90, 1),
@@ -56,6 +60,10 @@ SERIES = {   # name: (title, job names in plotting order, label function)
               lambda p: "theta=%g" % p["theta"]),
     "tau_f": ("tau_f series  (sigma 0.01, theta 60, alpha 90)", ["tau_0.6", "tau_0.8", "baseline", "tau_1.25"],
               lambda p: "tau_f=%g" % p["tau_f"]),
+    "bubbles_theta_test": ("bubble test: theta 60 vs theta 90  (sigma 0.05, tau_f = tau_g = 0.65, alpha 90, periodic x)", ["A_periodic", "T90_periodic"],
+                           lambda p: "theta=%g" % p["theta"]),
+    "ramp_test": ("start-up transient test: contact angle ramp (sigma 0.05, tau_f = tau_g = 0.65, alpha 90, periodic x)", ["A_periodic", "A_ramp5000", "T90_periodic"],
+                  lambda p: {"A_periodic": "theta 60, no ramp", "A_ramp5000": "theta 90->60 over 5000 it", "T90_periodic": "theta 90"}.get(p.get("job"), "")),
     "twin_B_closed_vs_periodic": ("closed x walls vs periodic x  (sigma 0.01, tau_f = tau_g = 0.65, theta 60, alpha 90)", ["B_periodic", "B_closed"],
                                   lambda p: "x periodic" if p["periodic"] else "x closed (walls)"),
     "twin_A_closed_vs_periodic": ("closed x walls vs periodic x  (sigma 0.05, tau_f = tau_g = 0.65, theta 60, alpha 90)", ["A_periodic", "A_closed"],
@@ -74,7 +82,7 @@ SERIES = {   # name: (title, job names in plotting order, label function)
 def params(job):
     s, t, th, a, per = RUNS[job]
     nu = (t - 0.5) / 3
-    return dict(sigma=s, tau_f=t, theta=th, alpha=a, periodic=per, dt=nu * DX**2 / NU_PHYS)
+    return dict(sigma=s, tau_f=t, theta=th, alpha=a, periodic=per, dt=nu * DX**2 / NU_PHYS, job=job)
 
 
 def load_run(folder, dt):

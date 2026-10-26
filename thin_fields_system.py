@@ -2,11 +2,11 @@
 Run on the cluster login node: cut the huge final-state file (fields_iter_XXXXXX.npz, phi and u_ckl for the whole domain)
 down to a small file you can copy home.  Only numpy is needed.
 
-    python3 thin_fields_claude.py <fields_iter_XXXXXX.npz> <out.npz> [--u]
+    python3 thin_fields_system.py <fields_iter_XXXXXX.npz> <out.npz> [--u]
 
 Output: phi (every 2nd cell in x, y and z, float16, ghost layer removed) and, with --u, u (3 components, same thinning).
 The result has the same layout as the phi3d_iter_XXXXXX.npz snapshots that the simulation writes during the run,
-so render3d_claude.py reads both.
+so render3d_system.py reads both.
 """
 import os
 import sys

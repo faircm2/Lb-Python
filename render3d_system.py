@@ -1,12 +1,12 @@
 """
 3D model and sections of the liquid from a 3D phi file.
 
-usage:  python render3d_claude.py <phi3d_iter_XXXXXX.npz | phi3d_final.npz | fields_iter_XXXXXX.npz> <alpha> <out_prefix>
+usage:  python render3d_system.py <phi3d_iter_XXXXXX.npz | phi3d_final.npz | fields_iter_XXXXXX.npz> <alpha> <out_prefix>
                                   [--closed] [--zcrop 100]
 
 Input files (key 'phi', index order x, y, z):
     phi3d_iter_XXXXXX.npz   snapshot written by the simulation, every 2nd cell, float16
-    thin_fields output      same layout, from thin_fields_claude.py
+    thin_fields output      same layout, from thin_fields_system.py
     fields_iter_XXXXXX.npz  full final state (ghost layer included); thinned by 2 here
 Output:
     <out_prefix>_3d.png        liquid surface (phi = 0.5) in the tilted channel, two views, coloured by height
@@ -18,6 +18,7 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams["legend.fancybox"] = False      # square legend frames
 import numpy as np
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from skimage import measure

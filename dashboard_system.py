@@ -6,7 +6,7 @@ Reads only what the simulation already writes into its output folder:
     diagnostic_lists.npz       optional, used for the mass-conservation panel
     parameters.txt             optional, otherwise the run parameters are parsed from the folder name
 
-usage:  python dashboard_claude.py <run_folder> [out.png] [--sigma S] [--tau_f T] [--tau_g G] [--theta TH] [--alpha A]
+usage:  python dashboard_system.py <run_folder> [out.png] [--sigma S] [--tau_f T] [--tau_g G] [--theta TH] [--alpha A]
         (the options are only needed when the folder name does not carry the parameters, e.g. a local copy)
 """
 import argparse
@@ -18,6 +18,7 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams["legend.fancybox"] = False      # square legend frames
 import numpy as np
 
 CS = np.sqrt(1 / 3)
@@ -197,5 +198,5 @@ if __name__ == "__main__":
     for k in ("sigma", "tau_f", "tau_g", "theta", "alpha", "rho_L", "rho_G"):
         ap.add_argument("--" + k, type=float, default=None)
     a = ap.parse_args()
-    out = a.out or os.path.join(a.folder, "dashboard_claude.png")
+    out = a.out or os.path.join(a.folder, "dashboard_system.png")
     main(a.folder, out, {k: getattr(a, k) for k in ("sigma", "tau_f", "tau_g", "theta", "alpha", "rho_L", "rho_G")}, a.zcrop)

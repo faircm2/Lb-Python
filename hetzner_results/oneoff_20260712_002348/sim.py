@@ -1086,7 +1086,7 @@ def bounceBackLeftRight_conservation_dirk(fc, iteration, __gi, __fi, nx, ny):
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
-# BC rewrite (Claude) - built from the shifted half-way bounce-back template:
+# BC rewrite (system) - built from the shifted half-way bounce-back template:
 #   bottom/left blocks are the template as given (channels renamed to gi/fi);
 #   top/right are the mirror image about the channel centerline, using the
 #   real ghost row/column (nx+1 / ny+1) instead of wrapping within a sub-slice.
@@ -1106,7 +1106,7 @@ def bounceBackLeftRight_conservation_dirk(fc, iteration, __gi, __fi, nx, ny):
 # existing top-wall gi formula and against the non-buggy fi channels).
 # ──────────────────────────────────────────────────────────────────────────────────────────
 
-def bounceBackTopBottom_conservation_claude(fc, iteration, __gi, __fi, nx, ny):
+def bounceBackTopBottom_conservation_system(fc, iteration, __gi, __fi, nx, ny):
 
     # ---- gi: bottom wall (y=1) - template as given ----
     __gi[2, :, 1] = __gi[4, :, 0]
@@ -1131,7 +1131,7 @@ def bounceBackTopBottom_conservation_claude(fc, iteration, __gi, __fi, nx, ny):
     return __gi, __fi
 
 
-def bounceBackLeftRight_conservation_claude(fc, iteration, __gi, __fi, nx, ny):
+def bounceBackLeftRight_conservation_system(fc, iteration, __gi, __fi, nx, ny):
 
     # ---- gi: left wall (x=1) - template as given ----
     __gi[1, 1, :] = __gi[3, 0, :]

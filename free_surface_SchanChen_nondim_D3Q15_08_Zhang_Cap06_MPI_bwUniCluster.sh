@@ -41,6 +41,15 @@ echo "Running with ${SLURM_NTASKS} ranks on ${SLURM_JOB_NUM_NODES} node(s)"
 echo "Node list: $(scontrol show hostnames $SLURM_JOB_NODELIST)"
 
 "$MPIRUN" -n ${SLURM_NTASKS} --bind-to core --map-by core \
-    "$PY" free_surface_SchanChen_nondim_D3Q15_08_Zhang_Cap06_MPI_bwUniCluster.py --alpha ${ALPHA:-90} --vf_sigma ${SIGMA:-0.01} --vf_theta ${THETA:-60} --tau_f ${TAUF:-1.0} --multiples ${MULT:-1}  --rho_G ${RHOG:-0.01} --rho_L ${RHOL:-10} --periodic_x ${PERIODIC_X:-1}
+    "$PY" free_surface_SchanChen_nondim_D3Q15_08_Zhang_Cap06_MPI_bwUniCluster.py \
+        --alpha ${ALPHA:-90} \
+        --vf_sigma ${SIGMA:-0.01} \
+        --vf_theta ${THETA:-60} \
+        --tau_f ${TAUF:-1.0} \
+        --multiples ${MULT:-1} \
+        --rho_G ${RHOG:-0.01} \
+        --rho_L ${RHOL:-10} \
+        --periodic_x ${PERIODIC_X:-1} \
+        --vf_W ${VFW:-4}
 
 echo "Job finished."

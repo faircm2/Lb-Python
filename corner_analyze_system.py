@@ -6,7 +6,7 @@ Layout of each file: shape (CORNER_N, 5, local_Xn, local_Yn, local_Zn), float32
     channel 0 = phi, 1..3 = u_x, u_y, u_z, channel 4 [0,0,0] = iteration number stored in that slot (-1 = empty)
 The blocks are the last x block (x = Xn - local_Xn .. Xn-1), z = 0 .. local_Zn-1, y = y_offset .. y_offset+local_Yn-1.
 
-usage:   python3 corner_analyze_claude.py <ring_dir> [out.npz] [Xn]
+usage:   python3 corner_analyze_system.py <ring_dir> [out.npz] [Xn]
 Only numpy is needed. out.npz keeps the last frames of the assembled corner block (phi, u) for plotting on your PC.
 """
 import glob

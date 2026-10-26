@@ -1545,7 +1545,7 @@ def gather_line(local_line, offset, local_N, N, is_owner):
     return full_line        
 
 
-def dump_final_state_claude(dump_it):
+def dump_final_state_system(dump_it):
     """One-shot post-loop dump: fields .npz, phi/|u| layer slices, phi snapshot.
     Reads the final-state module globals. Collective — every rank must call it."""
     global _chemical_potential_Zhang   # so the post-loop dashboards still find it
@@ -2255,7 +2255,7 @@ while iteration < fc.TOTAL_ITERATIONS:
 end = time.perf_counter()
 diff = end - start
 
-dump_final_state_claude(fc.TOTAL_ITERATIONS - 1)
+dump_final_state_system(fc.TOTAL_ITERATIONS - 1)
 
 rho_in_local = rho[1, y_mid_local, z_mid_local] if (x_lo == MPI.PROC_NULL and y_mid_is_local and z_mid_is_local) else None
 rho_out_local = rho[local_Xn, y_mid_local, z_mid_local] if (x_hi == MPI.PROC_NULL and y_mid_is_local and z_mid_is_local) else None

@@ -3,7 +3,7 @@
 the real phi field of the x = Xn/2 plane from the last plane dump, and the liquid surface of that plane extruded along x.
 Only the mid-x plane is dumped, so the x dependence of the liquid (e.g. pile-up at the closed end) is NOT shown.
 
-usage:  python render3d_closed_x_claude.py <run_folder> <alpha> <out.png> [iter]
+usage:  python render3d_closed_x_system.py <run_folder> <alpha> <out.png> [iter]
         run_folder holds plane_yz_iter_XXXXXX.npz (e.g. study/closed_x); iter defaults to the last dump
 """
 import glob
@@ -14,6 +14,7 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams["legend.fancybox"] = False      # square legend frames
 import numpy as np
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 

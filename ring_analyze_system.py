@@ -5,7 +5,7 @@ and print, for the frames just before the end, where the velocity is largest and
 Layout of each file: shape (RING_N, 5, local_Yn, local_Zn), float32
     channel 0 = phi, 1..3 = u_x, u_y, u_z, channel 4 [0,0] = iteration number stored in that slot (-1 = empty)
 
-usage:   python3 ring_analyze_claude.py <ring_dir> [out.npz] [last_n_frames]
+usage:   python3 ring_analyze_system.py <ring_dir> [out.npz] [last_n_frames]
 Only numpy is needed. The compact out.npz keeps ~25 frames (phi and u) for plotting on your PC.
 """
 import glob
