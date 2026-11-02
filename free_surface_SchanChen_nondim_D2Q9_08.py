@@ -6,8 +6,6 @@ from __future__ import annotations
 
 import matplotlib
 
-matplotlib.use('TkAgg')  # or 'Qt5Agg' if you have PyQt installed
-#matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -27,7 +25,6 @@ from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 
-from github_uploader import GitHubUploader
 from plotter_2d import Plotter2D
 
 
@@ -123,9 +120,6 @@ ADD_METRICS = True
 
 # Constants
 SCRIPT_FILENAME = os.path.splitext(os.path.basename(__file__))[0] 
-SCRIPT_FULL_PATH = os.path.abspath(__file__) 
-SCRIPTS_PATH = "scripts/freesurface/"
-PLOTS_PATH = "results/freesurface/"  # GitHub path prefix
 IMAGES_SUBDIR = "FreesurfaceImages"  # Local subdir
 script_dir = os.path.dirname(os.path.abspath(__file__))  # script directory
 images_subdir = os.path.join(script_dir, IMAGES_SUBDIR)
@@ -395,8 +389,8 @@ def gradient_p(p):
 
 #Inamuro eq(12): first derivatives - partial dphi/dx_a, du_b/dx_a, drho/dx_a
 def c_first_derivative(lamda, n_dx=1.0, n_dy=1.0):
-    scale_x = (8/14) / (10 * n_dx)
-    scale_y = (8/14) / (10 * n_dy)
+    scale_x = 1 / (6 * n_dx)
+    scale_y = 1 / (6 * n_dy)
 
     neigh_c_x = c[1:9, 0]
     neigh_c_y = c[1:9, 1]
@@ -404,31 +398,12 @@ def c_first_derivative(lamda, n_dx=1.0, n_dy=1.0):
     roll_axes = (0, 1)
 
     shifted_neighbors = [
-        np.roll(lamda, shift=(c[k+1, 0], c[k+1, 1]), axis=roll_axes) for k in range(8) 
+        np.roll(lamda, shift=(-c[k+1, 0], -c[k+1, 1]), axis=roll_axes) for k in range(8) #shift=(c[k+1, 0], c[k+1, 1])
     ]
     neighbors_stack = np.stack(shifted_neighbors, axis=0)
 
     dlamda_dx = np.einsum('k,kij->ij', neigh_c_x, neighbors_stack) * scale_x
     dlamda_dy = np.einsum('k,kij->ij', neigh_c_y, neighbors_stack) * scale_y
-
-    return dlamda_dx, dlamda_dy
-
-
-def c_first_derivative2(lamda, n_dx=1.0, n_dy=1.0):
-    """
-    Fast central differences for 3D scalar field.
-    Computes derivatives only for interior points (avoids np.roll).
-    """
-    #profiler.start("c_first_derivative")
-
-    dlamda_dx = np.zeros_like(lamda)
-    dlamda_dy = np.zeros_like(lamda)
-
-    # interior points only
-    dlamda_dx[1:-1,:] = (lamda[2:,:] - lamda[:-2,:]) / (2 * n_dx)
-    dlamda_dy[:,1:-1] = (lamda[:,2:] - lamda[:,:-2]) / (2 * n_dy)
-
-    #profiler.stop("c_first_derivative")
 
     return dlamda_dx, dlamda_dy
 
@@ -443,8 +418,8 @@ def c_second_derivative(lamda, n_dx=1.0, n_dy=1.0):
     """
 
     # Precompute scaling factors (cache globally if called often)
-    scale_x = (8.0/14.0) / (5.0 * n_dx)
-    scale_y = (8.0/14.0) / (5.0 * n_dy)
+    scale_x = 1.0 / (3.0 * n_dx**2)
+    scale_y = 1.0 / (3.0 * n_dy**2)
 
     # Roll axes for 2D: (0=x, 1=y)
     roll_axes = (0, 1)
@@ -474,7 +449,7 @@ def c_laplacian(lamda, n_dx=1.0, n_dy=1.0):
     Compute ∇²λ = ∂²λ/∂x² + ∂²λ/∂y² using Eq. (13) for each direction
     """
     d2lamda_dx2, d2lamda_dy2 = c_second_derivative(lamda, n_dx, n_dy)
-    laplacian = d2lamda_dx2 + d2lamda_dy2
+    laplacian = d2lamda_dx2 # + d2lamda_dy2
     return laplacian
 
 
@@ -488,10 +463,10 @@ def Gab(_phi):
     # |grad phi|^2
     mag2 = dphi_x**2 + dphi_y**2
 
-    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (3/2) * mag2 #G_xx
+    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (9/4) * mag2 #G_xx
     G[:, :, 0, 1] = (9/2) * dphi_x * dphi_y #G_xy
     G[:, :, 1, 0] = (9/2) * dphi_y * dphi_x #G_yx
-    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (3/2) * mag2 #G_yy
+    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (9/4) * mag2 #G_yy
 
     return G
 
@@ -706,7 +681,7 @@ def gi_c(fc, u, rho, iteration):
     du_b_dx, du_b_dy = c_first_derivative(u[1], n_dx, n_dy)
     
     # Gab on full
-    Gab_phi = Gab(_phi)  # (nx_pad, ny_pad, 2, 2)
+    Gab_rho = Gab(rho)  # (nx_pad, ny_pad, 2, 2)
     
     # Expansions for i-broadcast
     ones = np.ones((nx_pad, ny_pad))
@@ -735,13 +710,13 @@ def gi_c(fc, u, rho, iteration):
     term5 = E_exp * (3.0 / 2.0) * (fc.tau_g - 0.5) * n_dx * velocity_gradient_term
     
     # term6: E[i] * (Kg/rho) * (c_i . Gab . c_i)
-    _Gab = np.einsum('ia,ib,xyab->ixy', c, c, Gab_phi)  # (9,nx,ny)
+    _Gab = np.einsum('ia,ib,xyab->ixy', c, c, Gab_rho)  # (9,nx,ny)
     term6 = E_exp * (fc.Kg / rho) * _Gab
     #abs_term6 = np.max(np.abs(term6))
     #GrowthMetric_gi_c_term6_Gab.append((iteration, abs_term6))
     
     # term7: (2/3) * F[i] * (Kg/rho) * grad_rho_x**2
-    term7 = (2.0 / 3.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
+    term7 = (1.0 / 2.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
 
     # Assemble: exact match to loop addition
     _gi_c = term1 + term2 - term3 + term4 + term5 + term6 - term7  # (9,nx_pad,ny_pad)
@@ -799,7 +774,7 @@ def fi_c(fc, u, F, _phi):
     term3 = F_exp * fc.Kf * _phi * laplacian_phi
     
     # term4: F[i] * Kf/6 * (dphi_dxa**2 + dphi_dya**2)
-    term4 = F_exp * (fc.Kf / 6.0) * (dphi_dxa**2 + dphi_dya**2)
+    term4 = F_exp * (0.0 * fc.Kf / 6.0) * (dphi_dxa**2 + dphi_dya**2)
     
     # term5: 3 * E[i] * _phi * c_dot_u
     c_dot_u = np.einsum('ia,axy->ixy', c, u)  # (9,nx,ny) - c_i . u
@@ -865,20 +840,19 @@ def bounceBackTopBottom_conservation(fi, gi, nx, ny):
     gi[2, 1:nx+1, 1] = gi[4, 1:nx+1, 0]
 
     # Diagonal directions - CRITICAL: NO ROLL! Pure reflection
-    fi[5, 1:nx+1, 1] = fi[7, 1:nx+1, 0]    # NE ← SW
-    fi[6, 1:nx+1, 1] = fi[8, 1:nx+1, 0]    # NW ← SE
-
-    gi[5, 1:nx+1, 1] = gi[7, 1:nx+1, 0]
-    gi[6, 1:nx+1, 1] = gi[8, 1:nx+1, 0]
+    fi[5, 1:nx+1, 1] = np.roll(fi[7, :, 0], 1)[1:nx+1]
+    fi[6, 1:nx+1, 1] = np.roll(fi[8, :, 0], -1)[1:nx+1]
+    gi[5, 1:nx+1, 1] = np.roll(gi[7, :, 0], 1)[1:nx+1]
+    gi[6, 1:nx+1, 1] = np.roll(gi[8, :, 0], -1)[1:nx+1]
 
     # === Top wall (y = ny) ===
     fi[4, 1:nx+1, ny] = fi[2, 1:nx+1, ny+1]
-    fi[7, 1:nx+1, ny] = fi[5, 1:nx+1, ny+1]
-    fi[8, 1:nx+1, ny] = fi[6, 1:nx+1, ny+1]
-
     gi[4, 1:nx+1, ny] = gi[2, 1:nx+1, ny+1]
-    gi[7, 1:nx+1, ny] = gi[5, 1:nx+1, ny+1]
-    gi[8, 1:nx+1, ny] = gi[6, 1:nx+1, ny+1]
+
+    fi[7, 1:nx+1, ny] = np.roll(fi[5, :, ny+1], -1)[1:nx+1]
+    fi[8, 1:nx+1, ny] = np.roll(fi[6, :, ny+1], 1)[1:nx+1]
+    gi[7, 1:nx+1, ny] = np.roll(gi[5, :, ny+1], -1)[1:nx+1]
+    gi[8, 1:nx+1, ny] = np.roll(gi[6, :, ny+1], 1)[1:nx+1]
 
     return fi, gi
 
@@ -1217,7 +1191,7 @@ PHI_DISTRIBUTION = USE_CASES[ACTIVE_CASE]["PHI_DISTRIBUTION"]
 fc = USE_CASES[ACTIVE_CASE]["fc"]  # current FlowConfig
 
 images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FreesurfaceImages")
-PARAMETER_STUB = "__usecase_" + ACTIVE_CASE + "__tau_f_" + str(fc.tau_f) + "__Kf_" + str(fc.Kf)
+PARAMETER_STUB = "__tau_f_" + str(fc.tau_f) + "__Kf_" + str(fc.Kf)
 images_dir = images_subdir + "\\" + SCRIPT_FILENAME + PARAMETER_STUB
 os.makedirs(images_dir, exist_ok=True)
 
@@ -1292,7 +1266,7 @@ plotter = Plotter2D(
     total_iterations=fc.TOTAL_ITERATIONS,
     filename_padding_width=fc.FILENAME_PADDING_WIDTH,
     debug_log=debug_log,
-    PLOTREALTIME=True, TOTAL_ITERATIONS=1000
+    PLOTREALTIME=True
 )
 
 rho_min = np.min(rho)
@@ -1339,9 +1313,10 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     # === 2. UPDATE GHOST NODES FROM CURRENT POST-COLLISION STATE ===
     # Use _fi_c and _gi_c (post-collision, pre-streaming)
-    update_ghost_nodes_top_bottom(_fi_c, _gi_c, Yn)        
+    #update_ghost_nodes_top_bottom(_fi_c, _gi_c, Yn)        
 
     # 4. Apply conservative bounce-back (no rolls!)
+    #Bounce-Back Top and Bottom
     _fi, _gi = bounceBackTopBottom_conservation(_fi, _gi, Xn, Yn)
 
     #4.1b. assign inlet boundary values -> B)
@@ -1375,18 +1350,6 @@ while iteration < fc.TOTAL_ITERATIONS:
         plotter.density_map_standalone(rho, rho_min, rho_max, title, iteration)
         rho_slice = rho[density_profile_x_position, :].copy()
         density_slices.append((iteration, rho_slice))
-
-
-    #_gi = giExt(_gi, _gi_c, u_ckl, rho, mu) 
-
-    #moved BEFORE equilibrium methods
-    #update_ghost_nodes_top_bottom(_fi, _gi, Yn)
-
-    #=> here the boundary conditions
-    #Bounce-Back Top and Bottom
-    #_fi = bounceBackTopBottom2(_fi, Xn, Yn)
-    #_gi = bounceBackTopBottom2(_gi, Xn, Yn)
-      
 
 
     #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
@@ -1616,28 +1579,3 @@ save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
-
-
-########### upload this file and results to GitHub repo
-uploader = GitHubUploader(
-    debug_log=debug_log,
-    timeout=60,
-    script_filename=SCRIPT_FILENAME,
-    script_full_path=SCRIPT_FULL_PATH,
-    scripts_path=SCRIPTS_PATH,
-    plots_path=PLOTS_PATH,
-    #images_subdir=IMAGES_SUBDIR,
-    images_subdir=images_dir,
-    log_file=LOG_FILE,
-    token_file='github-repo-token.txt'
-)
-try:
-    uploader.upload_results(upload_log=True)
-    debug_log('INIT', f'Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/{uploader.results_folder}')
-except Exception as e:
-    debug_log('ERROR', f'Upload failed: {e}')
-
-# Example usage at the end of your script:
-# Assuming SCRIPT_FILENAME = 'your_script.py'
-# uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
-# uploader.upload_results()

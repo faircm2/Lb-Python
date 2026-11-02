@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>Greiner2024</b:Tag>
+    <b:SourceType>InternetSite</b:SourceType>
+    <b:Guid>{4A9D1E62-3C7B-4F05-8B1A-6E2F9C0D7B34}</b:Guid>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person>
+            <b:Last>Greiner</b:Last>
+            <b:First>Andreas</b:First>
+          </b:Person>
+          <b:Person>
+            <b:Last>Pastewka</b:Last>
+            <b:First>Lars</b:First>
+          </b:Person>
+          <b:Person>
+            <b:Last>Wang</b:Last>
+            <b:First>Yizhen</b:First>
+          </b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Lattice Boltzmann</b:Title>
+    <b:InternetSiteTitle>Accelerators – Lecture Material</b:InternetSiteTitle>
+    <b:ProductionCompany>IMTEK, University of Freiburg</b:ProductionCompany>
+    <b:Year>2024</b:Year>
+    <b:YearAccessed>2026</b:YearAccessed>
+    <b:MonthAccessed>November</b:MonthAccessed>
+    <b:DayAccessed>1</b:DayAccessed>
+    <b:URL>https://pastewka.github.io/Accelerators/lecture/lattice-boltzmann.html</b:URL>
+  </b:Source>
+</b:Sources>

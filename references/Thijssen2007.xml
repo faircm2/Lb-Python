@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>Thijssen2007</b:Tag>
+    <b:SourceType>Book</b:SourceType>
+    <b:Guid>{C4A7E1D9-2B6F-4E38-9D51-7F0A3B8C6E24}</b:Guid>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person>
+            <b:Last>Thijssen</b:Last>
+            <b:First>Jos</b:First>
+            <b:Middle>M.</b:Middle>
+          </b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Computational Physics</b:Title>
+    <b:Edition>2</b:Edition>
+    <b:Year>2007</b:Year>
+    <b:City>Cambridge</b:City>
+    <b:Publisher>Cambridge University Press</b:Publisher>
+    <b:StandardNumber>ISBN 978-0-521-83346-2</b:StandardNumber>
+  </b:Source>
+</b:Sources>

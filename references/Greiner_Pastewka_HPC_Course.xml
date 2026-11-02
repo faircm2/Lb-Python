@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>GreinerHPC2024</b:Tag>
+    <b:SourceType>Misc</b:SourceType>
+    <b:Guid>{9E41C7B2-0A5D-4C3E-8F16-2B7D9A4E1C58}</b:Guid>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person>
+            <b:Last>Greiner</b:Last>
+            <b:First>Andreas</b:First>
+          </b:Person>
+          <b:Person>
+            <b:Last>Pastewka</b:Last>
+            <b:First>Lars</b:First>
+          </b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>High-Performance Computing: Fluid Mechanics with Python</b:Title>
+    <b:PublicationTitle>Lecture course, Department of Microsystems Engineering (IMTEK)</b:PublicationTitle>
+    <b:Publisher>University of Freiburg</b:Publisher>
+    <b:City>Freiburg</b:City>
+    <b:Year>2024</b:Year>
+    <b:Medium>ILIAS course</b:Medium>
+    <b:URL>https://ilias.uni-freiburg.de/ilias.php?baseClass=ilrepositorygui&amp;cmdNode=102:og&amp;cmdClass=ilobjcoursegui&amp;ref_id=2002946</b:URL>
+    <b:YearAccessed>2026</b:YearAccessed>
+    <b:MonthAccessed>November</b:MonthAccessed>
+    <b:DayAccessed>1</b:DayAccessed>
+  </b:Source>
+</b:Sources>

@@ -26,7 +26,6 @@ from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 
-from github_uploader import GitHubUploader
 from plotter_2d import Plotter2D
 
 import sys

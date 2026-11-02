@@ -30,7 +30,6 @@ from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 
-from github_uploader import GitHubUploader
 from lbm_plotter import LBMPlotter
 from profiler_class import Profiler
 from vtk_data_dump import VTKDataDumper
@@ -1631,27 +1630,3 @@ save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{USE_CASE_TAG}_Metrics_
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
-
-
-########### upload this file and results to GitHub repo
-if UPLOAD_TO_GITHUB:
-    uploader = GitHubUploader(
-        debug_log=debug_log,
-        script_filename=SCRIPT_FILENAME,
-        script_full_path=SCRIPT_FULL_PATH,
-        scripts_path=SCRIPTS_PATH,
-        plots_path=PLOTS_PATH,
-        images_subdir=IMAGES_SUBDIR,
-        log_file=LOG_FILE,
-        token_file='github-repo-token.txt'
-    )
-    try:
-        uploader.upload_results(upload_log=True)
-        debug_log('INIT', f'Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/{uploader.results_folder}')
-    except Exception as e:
-        debug_log('ERROR', f'Upload failed: {e}')
-
-    # Example usage at the end of your script:
-    # Assuming SCRIPT_FILENAME = 'your_script.py'
-    # uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
-    # uploader.upload_results()

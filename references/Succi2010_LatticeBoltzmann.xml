@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>Succi2010</b:Tag>
+    <b:SourceType>JournalArticle</b:SourceType>
+    <b:Guid>{7C3E2A41-5B8D-4F6A-9E21-0D4B6C8A9F10}</b:Guid>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person>
+            <b:Last>Succi</b:Last>
+            <b:First>Sauro</b:First>
+          </b:Person>
+          <b:Person>
+            <b:Last>Sbragaglia</b:Last>
+            <b:First>Mauro</b:First>
+          </b:Person>
+          <b:Person>
+            <b:Last>Ubertini</b:Last>
+            <b:First>Stefano</b:First>
+          </b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Lattice Boltzmann Method</b:Title>
+    <b:JournalName>Scholarpedia</b:JournalName>
+    <b:Year>2010</b:Year>
+    <b:Volume>5</b:Volume>
+    <b:Issue>5</b:Issue>
+    <b:Pages>9507</b:Pages>
+    <b:DOI>10.4249/scholarpedia.9507</b:DOI>
+    <b:URL>http://www.scholarpedia.org/article/Lattice_Boltzmann_Method</b:URL>
+    <b:Comments>Revision #151625</b:Comments>
+  </b:Source>
+</b:Sources>

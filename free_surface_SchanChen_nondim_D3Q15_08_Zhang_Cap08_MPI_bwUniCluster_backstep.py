@@ -1372,6 +1372,12 @@ while iteration < fc.TOTAL_ITERATIONS:
     _t0 = time.perf_counter(); 
     u_ckl = ~solid * zu_ckl(fc, z_fi, rho, body_force, _Fs);
     _mark('zu_ckl', _t0)
+
+
+    if y_lo == MPI.PROC_NULL: u_ckl[:, :, 0, :] = 0.0
+    if y_hi == MPI.PROC_NULL: u_ckl[:, :, -1, :] = 0.0
+    if z_lo == MPI.PROC_NULL: u_ckl[:, :, :, 0] = 0.0
+    if z_hi == MPI.PROC_NULL: u_ckl[:, :, :, -1] = 0.0    
        
 
     #Step2a. calculate h, p

@@ -1,0 +1,6 @@
+sweepS_S0.50
+sweepS_S0.55
+sweepS_S0.60
+sweepS_S0.62
+sweepS_S0.64
+sweepS_S0.65

@@ -31,7 +31,6 @@ from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 
-from github_uploader import GitHubUploader
 from plotter_2d import Plotter2D
 
 
@@ -1533,7 +1532,7 @@ plotter = Plotter2D(
     total_iterations=fc.TOTAL_ITERATIONS,
     filename_padding_width=fc.FILENAME_PADDING_WIDTH,
     debug_log=debug_log,
-    PLOTREALTIME=True, TOTAL_ITERATIONS=1000
+    PLOTREALTIME=True
 )
 
 rho_min = np.min(rho)
@@ -1932,28 +1931,3 @@ save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x4 grid: %s', save_path)
 plt.close(fig2)
-
-
-########### upload this file and results to GitHub repo
-uploader = GitHubUploader(
-    debug_log=debug_log,
-    timeout=60,
-    script_filename=SCRIPT_FILENAME,
-    script_full_path=SCRIPT_FULL_PATH,
-    scripts_path=SCRIPTS_PATH,
-    plots_path=PLOTS_PATH,
-    #images_subdir=IMAGES_SUBDIR,
-    images_subdir=images_dir,
-    log_file=LOG_FILE,
-    token_file='github-repo-token.txt'
-)
-try:
-    uploader.upload_results(upload_log=True)
-    debug_log('INIT', f'Upload complete: Script at root, results in https://github.com/faircm2/Lb-Python/tree/main/{uploader.results_folder}')
-except Exception as e:
-    debug_log('ERROR', f'Upload failed: {e}')
-
-# Example usage at the end of your script:
-# Assuming SCRIPT_FILENAME = 'your_script.py'
-# uploader = GitHubUploader(SCRIPT_FILENAME, repo_name='yourusername/your-repo-name')
-# uploader.upload_results()

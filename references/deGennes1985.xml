@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>deGennes1985</b:Tag>
+    <b:SourceType>JournalArticle</b:SourceType>
+    <b:Guid>{3D8F5A21-7C4E-4B9A-A6D2-5E1F0C8B7A93}</b:Guid>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person>
+            <b:Last>de Gennes</b:Last>
+            <b:First>Pierre-Gilles</b:First>
+          </b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Wetting: statics and dynamics</b:Title>
+    <b:JournalName>Reviews of Modern Physics</b:JournalName>
+    <b:Year>1985</b:Year>
+    <b:Volume>57</b:Volume>
+    <b:Issue>3</b:Issue>
+    <b:Pages>827-863</b:Pages>
+    <b:DOI>10.1103/RevModPhys.57.827</b:DOI>
+  </b:Source>
+</b:Sources>

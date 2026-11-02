@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>Saliba2024</b:Tag>
+    <b:SourceType>JournalArticle</b:SourceType>
+    <b:Guid>{6B2E9D47-1F3A-4C85-9E70-8A4D2C1B5F36}</b:Guid>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person>
+            <b:Last>Saliba</b:Last>
+            <b:First>Georges</b:First>
+            <b:Middle>C.</b:Middle>
+          </b:Person>
+          <b:Person>
+            <b:Last>Korvink</b:Last>
+            <b:First>Jan</b:First>
+            <b:Middle>G.</b:Middle>
+          </b:Person>
+          <b:Person>
+            <b:Last>Brandner</b:Last>
+            <b:First>Juergen</b:First>
+            <b:Middle>J.</b:Middle>
+          </b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Magnetic resonance velocimetry reveals secondary flow in falling films at the microscale</b:Title>
+    <b:JournalName>Physics of Fluids</b:JournalName>
+    <b:Year>2024</b:Year>
+    <b:Month>July</b:Month>
+    <b:Volume>36</b:Volume>
+    <b:Issue>7</b:Issue>
+    <b:Pages>071705</b:Pages>
+    <b:DOI>10.1063/5.0214609</b:DOI>
+  </b:Source>
+</b:Sources>
