@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
 
-import json
 import logging
 import os
 import sys
@@ -20,7 +19,6 @@ import time
 from typing import Any, Optional, Tuple  # Import these for proper type hints
 
 import numpy as np
-from matplotlib.colors import Normalize
 from scipy.special import erf
 
 from lbm_plotter import LBMPlotter

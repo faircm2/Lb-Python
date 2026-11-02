@@ -9,8 +9,6 @@ import matplotlib
 matplotlib.use('Agg')  # or 'Qt5Agg' if you have PyQt installed
 #matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
@@ -22,7 +20,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple  # Import these for proper type hints
 
 import numpy as np
-from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 

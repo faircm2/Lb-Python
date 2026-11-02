@@ -1237,13 +1237,7 @@ class Plotter2D:
         plt.xlabel("Iteration")
         plt.ylabel(ylabel)
         plt.title(title)
-        plt.legend(
-            ncol=2,
-            loc='upper center',
-            bbox_to_anchor=(0.5, -0.15),
-            fontsize='small',
-            frameon=True
-        )
+        plt.legend(loc='best', fontsize='x-small', frameon=True, framealpha=0.8)
         plt.grid(True)
 
         if script_filename is None:
@@ -1266,13 +1260,7 @@ class Plotter2D:
             plt.xlabel("Iteration")
             plt.ylabel(ylabel)
             plt.title(title)
-            plt.legend(
-                ncol=2,
-                loc='upper center',
-                bbox_to_anchor=(0.5, -0.15),
-                fontsize='small',
-                frameon=True
-            )
+            plt.legend(loc='best', fontsize='x-small', frameon=True, framealpha=0.8)
             plt.grid(True)
 
 

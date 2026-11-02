@@ -13,7 +13,6 @@ plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
 
 import io
-import json
 import logging
 import os
 import sys
@@ -26,7 +25,6 @@ from collections import deque
 from typing import Any, Optional, Tuple  # Import these for proper type hints
 
 import numpy as np
-from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 

@@ -4,11 +4,7 @@
 # Add at top of script (Python 3.7+ for forward refs in annotations)
 from __future__ import annotations
 
-import matplotlib
-
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
@@ -21,12 +17,9 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple  # Import these for proper type hints
 
 import numpy as np
-from matplotlib.colors import Normalize
-from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 
 from plotter_2d import Plotter2D
-
 
 @dataclass
 class FlowConfig:
@@ -857,6 +850,33 @@ def bounceBackTopBottom_conservation(fi, gi, nx, ny):
     return fi, gi
 
 
+def update_ghost_nodes_top_bottom(_fi, _gi, Yn):
+    """
+    Vectorized update of ghost nodes at top and bottom boundaries.
+    Applies mirror/extrapolation for fi and gi distributions based on lattice directions.
+    Assumes _fi and _gi are (9, nx, Yn+2) with ghosts at y=0 and y=Yn+1.
+    Called in main loop before bounceBackTopBottom2.
+    """
+    # Upward directions (c[i,1] > 0: i=2,5,6): mirror opposite from interior y=1 to ghost y=0
+    up_dirs = [2, 5, 6]
+    opp_up = [4, 7, 8]  # i+2
+    _fi[up_dirs, :, 0] = _fi[opp_up, :, 1]
+    _gi[up_dirs, :, 0] = _gi[opp_up, :, 1]
+
+    # Downward directions (c[i,1] < 0: i=4,7,8): mirror opposite from interior y=Yn to ghost y=Yn+1
+    down_dirs = [4, 7, 8]
+    opp_down = [2, 5, 6]  # i-2
+    _fi[down_dirs, :, Yn+1] = _fi[opp_down, :, Yn]
+    _gi[down_dirs, :, Yn+1] = _gi[opp_down, :, Yn]
+
+    # Zero y-velocity directions (i=0,1,3): copy/extrapolate from adjacent interior
+    zero_y_dirs = [0, 1, 3]
+    _fi[zero_y_dirs, :, 0] = _fi[zero_y_dirs, :, 1]
+    _fi[zero_y_dirs, :, Yn+1] = _fi[zero_y_dirs, :, Yn]
+    _gi[zero_y_dirs, :, 0] = _gi[zero_y_dirs, :, 1]
+    _gi[zero_y_dirs, :, Yn+1] = _gi[zero_y_dirs, :, Yn]
+
+
 def init_step_phi(xn, yn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
     """
     Initialize a 2D step function field (phi) in the x-y plane with smooth transitions.
@@ -906,9 +926,6 @@ def init_step_phi(xn, yn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
     mask = (x_mid < x) & (x <= x_34) & (np.abs(y - y_23) <= w)
     phi[mask] = phi_mid + phi_diff * erf((y_23 - y)[mask] / sigma)
 
-    # Optional Gaussian smoothing
-    phi = gaussian_filter(phi, sigma=(xi/1.5 if smooth_sigma is None else smooth_sigma), mode='nearest')
-
     return phi
 
 
@@ -956,33 +973,6 @@ def init_horizontal_phi(xn, yn, phi_star_g, phi_star_l, height=None, xi=5.0):
     )
 
     return _phi
-
-
-def update_ghost_nodes_top_bottom(_fi, _gi, Yn):
-    """
-    Vectorized update of ghost nodes at top and bottom boundaries.
-    Applies mirror/extrapolation for fi and gi distributions based on lattice directions.
-    Assumes _fi and _gi are (9, nx, Yn+2) with ghosts at y=0 and y=Yn+1.
-    Called in main loop before bounceBackTopBottom2.
-    """
-    # Upward directions (c[i,1] > 0: i=2,5,6): mirror opposite from interior y=1 to ghost y=0
-    up_dirs = [2, 5, 6]
-    opp_up = [4, 7, 8]  # i+2
-    _fi[up_dirs, :, 0] = _fi[opp_up, :, 1]
-    _gi[up_dirs, :, 0] = _gi[opp_up, :, 1]
-
-    # Downward directions (c[i,1] < 0: i=4,7,8): mirror opposite from interior y=Yn to ghost y=Yn+1
-    down_dirs = [4, 7, 8]
-    opp_down = [2, 5, 6]  # i-2
-    _fi[down_dirs, :, Yn+1] = _fi[opp_down, :, Yn]
-    _gi[down_dirs, :, Yn+1] = _gi[opp_down, :, Yn]
-
-    # Zero y-velocity directions (i=0,1,3): copy/extrapolate from adjacent interior
-    zero_y_dirs = [0, 1, 3]
-    _fi[zero_y_dirs, :, 0] = _fi[zero_y_dirs, :, 1]
-    _fi[zero_y_dirs, :, Yn+1] = _fi[zero_y_dirs, :, Yn]
-    _gi[zero_y_dirs, :, 0] = _gi[zero_y_dirs, :, 1]
-    _gi[zero_y_dirs, :, Yn+1] = _gi[zero_y_dirs, :, Yn]
 
 
 def apply_periodic_boundary_conditions(_fi, _gi):
@@ -1104,10 +1094,10 @@ PROOF_STEP6 = FlowConfig(
     name="Proof: Step6",
     n_dx=n_dx, CF=CF,
     a=1.0, b=6.7, T=3.5e-2,
-    tau_f=1.5, tau_g=1.0,
-    Kf=0.008, Kg=1e-6 * n_dx**2,
+    tau_f=1.0, tau_g=1.0,
+    Kf=0.5, Kg=2.5e-5 * n_dx**2,
     epsilon_cutoff=1e-4,
-    MULTIPLES= 1 #8*4
+    MULTIPLES=4
 )
 
 PROOF_STEP7 = FlowConfig(
@@ -1311,9 +1301,9 @@ while iteration < fc.TOTAL_ITERATIONS:
     _fi = fi(fc, _fi, _fi_c)
     _gi = gi(fc, _gi, _gi_c, u_ckl, rho, mu, iteration) 
 
-    # === 2. UPDATE GHOST NODES FROM CURRENT POST-COLLISION STATE ===
-    # Use _fi_c and _gi_c (post-collision, pre-streaming)
-    #update_ghost_nodes_top_bottom(_fi_c, _gi_c, Yn)        
+
+    #update ghost nodes
+    update_ghost_nodes_top_bottom(_fi, _gi, Yn)    
 
     # 4. Apply conservative bounce-back (no rolls!)
     #Bounce-Back Top and Bottom
@@ -1322,7 +1312,10 @@ while iteration < fc.TOTAL_ITERATIONS:
     #4.1b. assign inlet boundary values -> B)
     apply_periodic_boundary_conditions(_fi, _gi)    
 
-    #Calculation of order parameter to distiguish the 2 phases
+
+
+    # Calculation of moments
+    # Calculation of order parameter to distiguish the 2 phases
     _phi = phi(_fi)
     #Calculation of rho, mu
     rho, mu = density_and_viscosity(fc, _phi)
@@ -1350,6 +1343,11 @@ while iteration < fc.TOTAL_ITERATIONS:
         plotter.density_map_standalone(rho, rho_min, rho_max, title, iteration)
         rho_slice = rho[density_profile_x_position, :].copy()
         density_slices.append((iteration, rho_slice))
+
+
+
+
+
 
 
     #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
@@ -1384,9 +1382,6 @@ while iteration < fc.TOTAL_ITERATIONS:
 
     if np.max(epsilon) > fc.epsilon_cutoff:
         debug_log('WARN', 'ph stalled at global %d, eps=%.3e, using approx p', iteration, np.max(epsilon))
-        # Fallback: smooth p to break stall
-        from scipy.ndimage import gaussian_filter
-        _p0 = gaussian_filter(_p0, sigma=1.0)  # Light smoothing 
     #################################################################################################################################
 
     #Inamuro eq(22 & 24): assign resultant p to _p0 for next iteration

@@ -6,11 +6,7 @@ from __future__ import annotations
 
 import matplotlib
 
-matplotlib.use('TkAgg')  # or 'Qt5Agg' if you have PyQt installed
-#matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
@@ -22,7 +18,6 @@ import time
 from typing import Any, Optional, Tuple  # Import these for proper type hints
 
 import numpy as np
-from matplotlib.colors import Normalize
 from scipy.special import erf
 
 from plotter_2d import Plotter2D
@@ -30,15 +25,13 @@ from plotter_2d import Plotter2D
 #flags
 RAISE_LESS_THAN_ZERO_ERROR = False
 RAISE_NaN_ERROR = False
-ENABLE_PHI_CLIPPING = False  # True = original behaviour (loses about 17% of total phi in 48,000 iterations)
-ENABLE_PHI_FILTER = False     # Gaussian smoothing of phi each iteration (original behaviour)
 PRESSURE_IN_DENSITY_MAP = False
 ADD_FORCING_TERM = 1
 TOTAL_ITERATIONS = 12001 * 4
 FILENAME_PADDING_WIDTH = int(np.ceil(np.log10(TOTAL_ITERATIONS + 1)))
 NO_DATA_DUMP_SLICES = 51 
 PLOTREALTIME = False  
-ADD_METRICS = False 
+ADD_METRICS = True 
 ADD_METRICS_PRINT = False
 
 
@@ -821,7 +814,35 @@ def bounceBackTopBottom2(f, nx, ny):
     f[7, 1 : nx + 1, ny] = np.roll(f[5, 1 : nx + 1, ny + 1], -1)
     f[8, 1 : nx + 1, ny] = np.roll(f[6, 1 : nx + 1, ny + 1], 1)
 
-    return f   
+    return f
+
+
+def update_ghost_nodes_top_bottom(_fi, _gi, Yn):
+    """
+    Vectorized update of ghost nodes at top and bottom boundaries.
+    Applies mirror/extrapolation for fi and gi distributions based on lattice directions.
+    Assumes _fi and _gi are (9, nx, Yn+2) with ghosts at y=0 and y=Yn+1.
+    Called in main loop before bounceBackTopBottom2.
+    """
+    # Upward directions (c[i,1] > 0: i=2,5,6): mirror opposite from interior y=1 to ghost y=0
+    up_dirs = [2, 5, 6]
+    opp_up = [4, 7, 8]  # i+2
+    _fi[up_dirs, :, 0] = _fi[opp_up, :, 1]
+    _gi[up_dirs, :, 0] = _gi[opp_up, :, 1]
+
+    # Downward directions (c[i,1] < 0: i=4,7,8): mirror opposite from interior y=Yn to ghost y=Yn+1
+    down_dirs = [4, 7, 8]
+    opp_down = [2, 5, 6]  # i-2
+    _fi[down_dirs, :, Yn+1] = _fi[opp_down, :, Yn]
+    _gi[down_dirs, :, Yn+1] = _gi[opp_down, :, Yn]
+
+    # Zero y-velocity directions (i=0,1,3): copy/extrapolate from adjacent interior
+    zero_y_dirs = [0, 1, 3]
+    _fi[zero_y_dirs, :, 0] = _fi[zero_y_dirs, :, 1]
+    _fi[zero_y_dirs, :, Yn+1] = _fi[zero_y_dirs, :, Yn]
+    _gi[zero_y_dirs, :, 0] = _gi[zero_y_dirs, :, 1]
+    _gi[zero_y_dirs, :, Yn+1] = _gi[zero_y_dirs, :, Yn]
+
 
 
 def initialize_nonlinear_phi(xn, yn, phi_star_g, phi_star_l, xi=2.0):
@@ -908,33 +929,6 @@ def initialize_phi_line(xn, yn, phi_star_g, phi_star_l, height=None, xi=2.0):
     )
 
     return _phi
-
-
-def update_ghost_nodes_top_bottom(_fi, _gi, Yn):
-    """
-    Vectorized update of ghost nodes at top and bottom boundaries.
-    Applies mirror/extrapolation for fi and gi distributions based on lattice directions.
-    Assumes _fi and _gi are (9, nx, Yn+2) with ghosts at y=0 and y=Yn+1.
-    Called in main loop before bounceBackTopBottom2.
-    """
-    # Upward directions (c[i,1] > 0: i=2,5,6): mirror opposite from interior y=1 to ghost y=0
-    up_dirs = [2, 5, 6]
-    opp_up = [4, 7, 8]  # i+2
-    _fi[up_dirs, :, 0] = _fi[opp_up, :, 1]
-    _gi[up_dirs, :, 0] = _gi[opp_up, :, 1]
-
-    # Downward directions (c[i,1] < 0: i=4,7,8): mirror opposite from interior y=Yn to ghost y=Yn+1
-    down_dirs = [4, 7, 8]
-    opp_down = [2, 5, 6]  # i-2
-    _fi[down_dirs, :, Yn+1] = _fi[opp_down, :, Yn]
-    _gi[down_dirs, :, Yn+1] = _gi[opp_down, :, Yn]
-
-    # Zero y-velocity directions (i=0,1,3): copy/extrapolate from adjacent interior
-    zero_y_dirs = [0, 1, 3]
-    _fi[zero_y_dirs, :, 0] = _fi[zero_y_dirs, :, 1]
-    _fi[zero_y_dirs, :, Yn+1] = _fi[zero_y_dirs, :, Yn]
-    _gi[zero_y_dirs, :, 0] = _gi[zero_y_dirs, :, 1]
-    _gi[zero_y_dirs, :, Yn+1] = _gi[zero_y_dirs, :, Yn]
 
 
 def apply_periodic_boundary_conditions(_fi, _gi):
@@ -1137,12 +1131,9 @@ while iteration < TOTAL_ITERATIONS:
     #Inamuro §2.3 Algorithm of computation:
     #Step 1. Using eqs (1) and (2), compute (fi(x, t+n_dt) and g(x, t+n_dt), and then compute phi(x, t+n_dt) and _u(x, t+n_dt)= with eqs (4) and (5).
     #Also rho(x, t+n_dt) is calculated with eq (4)
-    if iteration == 0:
-        u_zero = np.zeros_like(u_ckl)
-        _fi_c = fi_c(u_zero, Kf, F, _phi)
-        debug_log('ITER', 'Iter 0: _fi_c with u=0 (no advection)')
-    else:
-        _fi_c = fi_c(u_ckl, Kf, F, _phi)
+    _fi_c = fi_c(u_ckl, Kf, F, _phi)
+    _gi_c = gi_c(u_ckl, rho, tau_g, Kg, iteration)
+    #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid
     if RAISE_NaN_ERROR and np.any(np.isnan(_fi_c)):
         raise ValueError(f"Iter {iteration}: NaN in _fi_c")
     if ADD_METRICS_PRINT: debug_log('ITER', 'Iter %d: fi_c min=%.3e, max=%.3e | fi min=%.3e, max=%.3e', 
@@ -1155,7 +1146,24 @@ while iteration < TOTAL_ITERATIONS:
     if ADD_METRICS_PRINT: debug_log('ITER', ' advisory Iter %d: fi min=%.3e, max=%.3e', 
           iteration, np.min(_fi), np.max(_fi))
 
-    #Calculation of order parameter to distiguish the 2 phases
+    _gi = gi(_gi, _gi_c, u_ckl, rho, mu, iteration) 
+    if RAISE_NaN_ERROR and np.any(np.isnan(_gi)):
+        raise ValueError(f"Iter {iteration}: NaN in _gi")   
+    
+
+    update_ghost_nodes_top_bottom(_fi, _gi, Yn) 
+
+    #=> here the boundary conditions
+    #Bounce-Back Top and Bottom
+    _fi = bounceBackTopBottom2(_fi, Xn, Yn)
+    _gi = bounceBackTopBottom2(_gi, Xn, Yn)
+
+    #4.1b. assign inlet boundary values -> B)
+    apply_periodic_boundary_conditions(_fi, _gi)      
+
+
+    # Calculation of moments
+    # Calculation of order parameter to distiguish the 2 phases
     _phi = phi(_fi)
     # In the main loop, after _phi = phi(_fi)
     if ADD_METRICS_PRINT: debug_log('ITER', 'Iter %d: phi at y=0: %.3e, y=50: %.3e, y=51: %.3e', iteration, np.mean(_phi[:,1]), np.mean(_phi[:,50]), np.mean(_phi[:,51])) 
@@ -1172,9 +1180,6 @@ while iteration < TOTAL_ITERATIONS:
         #phi mapping
         plotter.save_phi_snapshot(_phi, iteration, phi_star_G, phi_star_L)
 
-    #Inamuro eq(3): calculation of the predicted velocity of the two phase fluid        
-    if iteration > 0:
-        _gi_c = gi_c(u_ckl, rho, tau_g, Kg, iteration)
     if RAISE_NaN_ERROR and np.any(np.isnan(_gi_c)):
         raise ValueError(f"Iter {iteration}: NaN in _gi_c")        
 
@@ -1182,17 +1187,6 @@ while iteration < TOTAL_ITERATIONS:
     if RAISE_NaN_ERROR and np.any(np.isnan(rho)):
         raise ValueError(f"Iter {iteration}: NaN in rho")
     if ADD_METRICS_PRINT: debug_log('ITER', 'Iter %d: rho min=%.3e, max=%.3e', iteration, np.min(rho), np.max(rho))
-
-    ################### 3. Clip and Smooth Rho/Mu/Phi #####################################################
-    rho = np.clip(rho, 0.5, 75)  # Limit ratio effective 1:150, avoid tau_h extremes
-    mu = np.clip(mu, mu_G*0.5, mu_L*2)
-    if ENABLE_PHI_CLIPPING:
-        _phi = np.clip(_phi, phi_star_G*1.1, phi_star_L*0.9)  # Confine to stable bulk
-    # Smooth interfaces if Gab spikes
-    from scipy.ndimage import gaussian_filter
-    if ENABLE_PHI_FILTER:
-        _phi = gaussian_filter(_phi, sigma=0.5)  # Diffuse sharp steps slightly
-    ########################################################################################################
 
     if iteration in iterationsOfInterest:
         # Store 2D data (existing)
@@ -1205,22 +1199,14 @@ while iteration < TOTAL_ITERATIONS:
         title = "Density map"
         plotter.density_map_standalone(rho, rho_min, rho_max, title, iteration)
         rho_slice = rho[density_profile_x_position, :].copy()
-        density_slices.append((iteration, rho_slice))
+        density_slices.append((iteration, rho_slice))   
 
-    _gi = gi(_gi, _gi_c, u_ckl, rho, mu, iteration) 
-    if RAISE_NaN_ERROR and np.any(np.isnan(_gi)):
-        raise ValueError(f"Iter {iteration}: NaN in _gi")    
-    #_gi = giExt(_gi, _gi_c, u_ckl, rho, mu) 
 
-    update_ghost_nodes_top_bottom(_fi, _gi, Yn)
 
-    #=> here the boundary conditions
-    #Bounce-Back Top and Bottom
-    _fi = bounceBackTopBottom2(_fi, Xn, Yn)
-    _gi = bounceBackTopBottom2(_gi, Xn, Yn)
+  
 
-    #4.1b. assign inlet boundary values -> B)
-    apply_periodic_boundary_conditions(_fi, _gi)        
+
+ 
 
 
     #Calculation of a predicted velocity of the 2 phase fluid without pressure gradient
@@ -1255,9 +1241,6 @@ while iteration < TOTAL_ITERATIONS:
 
     if np.max(epsilon) > epsilon_cutoff:
         debug_log('WARN', 'ph stalled at global %d, eps=%.3e, using approx p', iteration, np.max(epsilon))
-        # Fallback: smooth p to break stall
-        from scipy.ndimage import gaussian_filter
-        _p0 = gaussian_filter(_p0, sigma=1.0)  # Light smoothing 
     #################################################################################################################################
 
     #Inamuro eq(22 & 24): assign resultant p to _p0 for next iteration
@@ -1281,7 +1264,7 @@ while iteration < TOTAL_ITERATIONS:
             rho_max = np.max(rho)    
             rho_bounds.append((iteration, rho_min, rho_max))
             Invariants.append((iteration, invariant))
-            debug_log('FIELD','Iteration={iteration}', 'max|u_x|={u_ckl_x_max:.2e}, invariant={invariant:.2e}')
+            debug_log('FIELD', 'Iteration=%d; max|u_x|=%.2e; invariant=%.2e', iteration, u_ckl_x_max, invariant)
             GrowthMetric_uckl_x.append((iteration, u_ckl_x_max))
             GrowthMetric_uckl_y.append((iteration, u_ckl_y_max))
 

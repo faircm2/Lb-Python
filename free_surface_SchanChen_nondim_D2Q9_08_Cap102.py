@@ -4,11 +4,8 @@
 # Add at top of script (Python 3.7+ for forward refs in annotations)
 from __future__ import annotations
 
-import matplotlib
 
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
@@ -19,7 +16,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple  # Import these for proper type hints
 
 import numpy as np
-from matplotlib.colors import Normalize
 from scipy.ndimage import gaussian_filter
 from scipy.special import erf
 
@@ -1495,7 +1491,19 @@ def sync_ghost_fi_with_phi_wall(fc, _fi, _phi, u_ckl, F):
     """
     _fi_c_sync = fi_c(fc, u_ckl, F, _phi)
     _fi[:, 0,    :] = _fi_c_sync[:, 0,    :]   # left ghost column
-    _fi[:, Xn+1, :] = _fi_c_sync[:, Xn+1, :]   # right ghost column    
+    _fi[:, Xn+1, :] = _fi_c_sync[:, Xn+1, :]   # right ghost column  
+
+
+def update_ghost_velocity_noslip(u, Xn, Yn):
+    """
+    Ghost-node velocity for the half-way no-slip walls: the ghost value is the
+    negative of the adjacent fluid value, so the velocity at the wall is zero.
+    Call after u_ckl_star and after u_ckl are computed, before they are used.
+    """
+    u[:, 0,    :] = -u[:, 1,  :]
+    u[:, Xn+1, :] = -u[:, Xn, :]
+    u[:, :,    0] = -u[:, :,  1]
+    u[:, :, Yn+1] = -u[:, :, Yn]      
 
 
 # print wettability info
@@ -1970,6 +1978,8 @@ while iteration < fc.TOTAL_ITERATIONS:
     u_ckl_star = np.einsum('ia,ijk->ajk', c, _gi) \
         + _bf_scale * body_force \
         + _capillary_force  
+
+    update_ghost_velocity_noslip(u_ckl_star, Xn, Yn)        
         
     if iteration in iterationsOfInterest:
         # Store 2D data (existing)
@@ -2024,6 +2034,8 @@ while iteration < fc.TOTAL_ITERATIONS:
     #Step 3: Compute u(x,t+n_dt) using eq. (20)
     #Inamuro eq(20): corrected current velocity u which satisfies the continuity equation div.u=0
     u_ckl = -gradient_p(p)*n_dt/(rho*Sh) + u_ckl_star
+
+    update_ghost_velocity_noslip(u_ckl, Xn, Yn)    
     
     # In main loop, after u_ckl update:total_mom_x = np.sum(rho * u_ckl[0])  # Add this
     #if iteration == 0 or iteration==(fc.TOTAL_ITERATIONS - 1) or iteration % 100 == 0:
