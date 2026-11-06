@@ -871,6 +871,8 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     """
     Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
     """
+    global _z_star_buf
+        
     # Zhang eq(20)/(21): forcing term Fi, shape (9, nx, ny)
     _Fi = Fi(fc, Fs, G, u_ckl, rho,  out=_Fi_buf)
 
@@ -1002,6 +1004,7 @@ def zfi_c(fc, u, rho, p, out):
 
 # Zhang eq(12): collision function of order parameter distribution function 
 def zgi(fc, z_gi, z_gi_c, __phi_old, _u_ckl_old, __phi, _u_ckl):
+    global _z_star_buf
     omega_g = 1.0 / fc.tau_g
     _Gi = Gi(fc, __phi_old, _u_ckl_old, __phi, _u_ckl, out=_Fi_buf)
 
