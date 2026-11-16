@@ -44,3 +44,9 @@ c_files/measurement
 c_files/output
 c_files/server
 c_files/todo
+# Hetzner runs, scaling studies, S/G calibration sweeps
+hetzner_results/
+FreesurfaceImages_hetzner/
+scaling/
+scaling2/
+sweepS_calib/
