@@ -876,6 +876,16 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
 
 
 # Zhang eq(13): collision function of pressure distribution function 
+ETA_G_OVER_L = 0.007 / 0.5        # Zhang example A: eta_G / eta_L
+
+def tau_f_field_system(fc, rho):
+    """Per-cell relaxation time: tau = 0.5 + eta/(rho*Cs2), eta = phi*eta_L + (1-phi)*eta_G."""
+    phi = (rho - fc.rho_G) / (fc.rho_L - fc.rho_G)
+    eta_L = fc.rho_L * Cs2 * (fc.tau_f - 0.5)
+    eta = eta_L * (phi + (1.0 - phi) * ETA_G_OVER_L)
+    return 0.5 + eta / (Cs2 * rho)
+
+
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     """
     Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
@@ -887,7 +897,7 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
 
     # eq(13): collision
     #z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
-    omega_f = 1.0 / fc.tau_f
+    omega_f = 1.0 / tau_f_field_system(fc, rho)
     #z_fi_star = (z_fi_c - z_fi)      # 1 new array
     np.subtract(z_fi_c, z_fi, out=_z_star_buf)  #-> use the buffer
     _z_star_buf *= omega_f             # in-place
@@ -939,7 +949,7 @@ def Fs(fc, __phi, n_dx, n_dy, n_dz, out):
 def Fi(fc, Fs, G, u_ckl, rho, out):
     u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)                      # (X,Y,Z) - once
 
-    term1 = 1 - 1 / (2 * fc.tau_f)
+    term1 = 1 - 1 / (2 * tau_f_field_system(fc, rho))
     combined_force = Fs * fc.ADD_SURFACE_TENSION_FORCE + G * fc.ADD_BODY_FORCE   # (3,X,Y,Z) - once
 
     drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2, n_dx, n_dy, n_dz)
@@ -1616,7 +1626,7 @@ def dump_final_state_system(dump_it):
     if rank == 0:
         plotter.plot_field_layers(phi_full, "phi", dump_it,
                                   Z_LAYER_INDICES, Y_LAYER_INDICES,
-                                  second_axis='y', cmap='RdBu_r')
+                                  second_axis='y', cmap='RdBu')
         _put("phi", phi_full)
         del phi_full
         gc.collect()
@@ -1806,9 +1816,9 @@ u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
 _phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
 u_mag_full = gather_full_volume(u_mag, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
 if rank == 0:
-    plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
+    plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu')
     plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
-    plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu_r')
+    plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu')
     plotter.plot_field_layers(u_mag_full, "u_mag_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x')
 if midpoint_is_local:
     u_ckl_midpoint0 = u_ckl[0, x_mid_local, y_mid_local, z_mid_local]
@@ -1954,9 +1964,9 @@ while iteration < fc.TOTAL_ITERATIONS:
         _phi_full = gather_full_volume(_phi, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
         u_mag_full = gather_full_volume(u_mag, x_offset, y_offset, z_offset, local_Xn, local_Yn, local_Zn, Xn, Yn, Zn)
         if rank == 0:
-            plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
+            plotter.plot_field_layers(_phi_full, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu')
             plotter.plot_field_layers(u_mag_full, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
-            plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu_r')
+            plotter.plot_field_layers(_phi_full, "phi_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x', cmap='RdBu')
             plotter.plot_field_layers(u_mag_full, "u_mag_yz", iteration, Z_LAYER_INDICES, X_LAYER_INDICES, second_axis='x')
 
     # ──────────────────────────────────────────────────────────────

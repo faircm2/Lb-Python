@@ -61,11 +61,8 @@ class FlowConfig:
     vf_sigma: float
     '''θ - equilibrium contact angle'''
     vf_theta: float
-    '''cap force multiplier'''
-    vf_capillaryForceMultiplier: float
 
     # --- Defaults ---
-    epsilon_cutoff: float = 1e-4        # convergence tolerance
     alpha: float = 0.0                  # inclination of channel (degrees)
     # Generous but cap to avoid infinite
     # Successive Over-Relaxation (SOR) factor
@@ -402,9 +399,7 @@ PROOF_STEP1 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=2.5, tau_g=1.0,
     Kf = 1e-6 * n_dx**2, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=1,
-    vf_capillaryForceMultiplier=1.0,
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0    
@@ -418,9 +413,7 @@ PROOF_STEP2 = FlowConfig(
     tau_f=1.5, tau_g=1.0,
     #Kf=0.008, Kg=1e-6 * n_dx**2,
     Kf=0.0008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -433,9 +426,7 @@ PROOF_STEP3 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=2.5, tau_g=1.0,
     Kf=0.008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -448,9 +439,7 @@ PROOF_STEP4 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=1.0, tau_g=1.0,
     Kf=0.008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -463,9 +452,7 @@ PROOF_STEP5 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=0.9, tau_g=1.0,
     Kf=0.008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -478,9 +465,7 @@ PROOF_STEP6 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=1.5, tau_g=1.0,
     Kf=0.008, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES= 1, #8*4
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 0.0
@@ -493,9 +478,7 @@ PROOF_STEP7 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=2.5, tau_g=1.0,
     Kf=0.05, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -508,9 +491,7 @@ PROOF_STEP8 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=2., tau_g=1.0,
     Kf=0.05, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -523,9 +504,7 @@ PROOF_STEP9 = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=1.8, tau_g=1.0,
     Kf=0.05, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=8*8,
-    vf_capillaryForceMultiplier=1.0,    
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 60.0
@@ -539,9 +518,7 @@ PROOF_INCLINED = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=2.5, tau_g=1.0,
     Kf=0.005, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     MULTIPLES=1,
-    vf_capillaryForceMultiplier=1.0,      
     vf_W = 4,
     vf_sigma = 0.001,
     vf_theta = 0.0
@@ -553,18 +530,12 @@ CAPILLARY_PROOF = FlowConfig(
     dx=dx, dt=dt,
     n_dx=n_dx, alpha=0, CF=CF,
     a=1.0, b=6.7, T=3.5e-2,
-    #tau_f=1.5, tau_g=1.0,
     tau_g=0.65, tau_f=1.25, #see eq(25) + Example A , t_g start with 0.6, increase as necessary -> was tau_f=0.65
-    #Kf=0.5 * dx**2, Kg=1e-5 * dx**2,
-    #Kf=0.5*dx**2 -> 0.08*dx**2
-    #Kg=2.5e-4*dx**2 -> 1e-5*dx**2 -> 1e-7*dx**2
     Kf=0.002, Kg=1e-6 * n_dx**2,
-    epsilon_cutoff=1e-4,
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the diffuse interface, reducing sharp edges.
     vf_W = 4, #was 6
     vf_sigma = 0.01, #0.072
-    vf_theta = 120.0, #60
-    vf_capillaryForceMultiplier=1,
+    vf_theta = 60.0, #60
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
     ADD_SURFACE_TENSION_FORCE = 1,
@@ -579,8 +550,6 @@ CAPILLARY_WAVE = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=1.0, tau_g=1.0,
     Kf=0.5 * n_dx**2, Kg=0.0,
-    epsilon_cutoff=1e-4,
-    vf_capillaryForceMultiplier=1,
     MULTIPLES=1,    
     vf_W = 4,
     vf_sigma = 0.001,
@@ -595,8 +564,6 @@ DROPLET_COLLISION = FlowConfig(
     a=1.0, b=6.7, T=3.5e-2,
     tau_f=1.0, tau_g=1.0,
     Kf=0.5 * n_dx**2, Kg=20.0,
-    epsilon_cutoff=1e-4,
-    vf_capillaryForceMultiplier=1,
     MULTIPLES=1,        
     vf_W = 4,
     vf_sigma = 0.001,
@@ -611,8 +578,6 @@ BUBBLE_FLOW = FlowConfig(
     a=1.0, b=1.0, T=2.93e-1,
     tau_f=1.0, tau_g=1.0,
     Kf=0.08 * n_dx**2, Kg=1e-7 * n_dx**2,
-    epsilon_cutoff=1e-5,
-    vf_capillaryForceMultiplier=1,
     MULTIPLES=1,        
     vf_W = 4,
     vf_sigma = 0.001,
@@ -818,6 +783,16 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
 
 
 # Zhang eq(13): collision function of pressure distribution function 
+ETA_G_OVER_L = 0.007 / 0.5        # Zhang example A: eta_G / eta_L
+
+def tau_f_field_system(fc, rho):
+    """Per-cell relaxation time: tau = 0.5 + eta/(rho*Cs2), eta = phi*eta_L + (1-phi)*eta_G."""
+    phi = (rho - fc.rho_G) / (fc.rho_L - fc.rho_G)
+    eta_L = fc.rho_L * Cs2 * (fc.tau_f - 0.5)
+    eta = eta_L * (phi + (1.0 - phi) * ETA_G_OVER_L)
+    return 0.5 + eta / (Cs2 * rho)
+
+
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     """
     Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
@@ -826,7 +801,7 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     _Fi = Fi(fc, Fs, G, u_ckl, rho)
 
     # eq(13): collision
-    z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
+    z_fi_star = z_fi - (1.0 / tau_f_field_system(fc, rho)) * (z_fi - z_fi_c) + n_dt * _Fi
 
     # eq(15): streaming
     streamed = [
@@ -866,7 +841,7 @@ def Fi(fc, Fs, G, u_ckl, rho):
     s0 = 1 + ei_dot_u / Cs2 + ei_dot_u**2 / (2 * Cs4) - u_sq / (2 * Cs2)
     s = E_exp * s0
 
-    term1 = 1 - 1 / (2 * fc.tau_f)
+    term1 = 1 - 1 / (2 * tau_f_field_system(fc, rho))
     ei_u = c_exp - u_ckl[np.newaxis]
 
     drho_dx, drho_dy = zhang_gradient(rho * Cs2, n_dx, n_dy)
@@ -1110,7 +1085,7 @@ def bounceBackLeftRight_conservation(fc, iteration, __gi, __fi, nx, ny):
     return __gi, __fi
 
 
-def init_step_phi(xn, yn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
+def init_step_phi(xn, yn, phi_star_g, phi_star_l, W=5.0, smooth_sigma=None):
     """
     Initialize a 2D step function field (phi) in the x-y plane with smooth transitions.
 
@@ -1120,10 +1095,10 @@ def init_step_phi(xn, yn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
         Grid sizes in x and y directions.
     phi_star_g, phi_star_l : float
         Values for gas and liquid phases.
-    xi : float, optional
+    W : float, optional
         Interface thickness parameter.
     smooth_sigma : float, optional
-        Gaussian smoothing sigma; if None, defaults to xi/1.5.
+        Gaussian smoothing sigma; if None, defaults to W/1.5.
 
     Returns
     -------
@@ -1148,8 +1123,8 @@ def init_step_phi(xn, yn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
     # Smooth interface transitions
     phi_mid = 0.5 * (phi_star_l + phi_star_g)
     phi_diff = 0.5 * (phi_star_l - phi_star_g)
-    sigma = np.sqrt(2) * xi
-    w = 3.0 * xi
+    sigma = np.sqrt(2) * W
+    w = 3.0 * W
 
     # Interface near y = y_mid
     mask = ((x <= x_mid) | (x > x_34)) & (np.abs(y - y_mid) <= w)
@@ -1160,7 +1135,7 @@ def init_step_phi(xn, yn, phi_star_g, phi_star_l, xi=5.0, smooth_sigma=None):
     phi[mask] = phi_mid + phi_diff * erf((y_23 - y)[mask] / sigma)
 
     # Optional Gaussian smoothing
-    phi = gaussian_filter(phi, sigma=(xi/1.5 if smooth_sigma is None else smooth_sigma), mode='nearest')
+    phi = gaussian_filter(phi, sigma=(W/1.5 if smooth_sigma is None else smooth_sigma), mode='nearest')
 
     return phi
 
@@ -1571,7 +1546,7 @@ _phi = (fc.phi_star_L + fc.phi_star_G) / 2 + (fc.phi_star_L - fc.phi_star_G) / 2
 # Example usage during initialization
 if PHI_DISTRIBUTION == "STEP":    
     # Replace the original _phi initialization with a call to the method
-    _phi = init_step_phi(Xn+2, Yn+2, fc.phi_star_G, fc.phi_star_L, xi=5.0) 
+    _phi = init_step_phi(Xn+2, Yn+2, fc.phi_star_G, fc.phi_star_L, W=fc.vf_W) 
     density_profile_x_position = int(2/3*Xn)
     density_profile_y_position = int(2/3*Yn)   
 if PHI_DISTRIBUTION == "HORIZONTAL":
@@ -1827,7 +1802,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         _Fs[:, -1, :] = 0.0   # right ghost column
     zhang_surface_tension_force = _Fs
     assert zhang_surface_tension_force.shape == (2, Xn+2, Yn+2), f"zhang_surface_tension_force shape: {zhang_surface_tension_force.shape}"
-    _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force * fc.vf_capillaryForceMultiplier
+    _capillary_force = fc.ADD_SURFACE_TENSION_FORCE * zhang_surface_tension_force
 
         # ── CONTACT-LINE FORCE DIAGNOSTIC ─────────────────────────────────────────
     if iteration in iterationsOfInterest:
@@ -1885,6 +1860,11 @@ while iteration < fc.TOTAL_ITERATIONS:
         print(f"    fi_term={_fi_term[1,_xi,_yi]:.4e}  bf={_bf_term[1,_xi,_yi]:.4e}  cap={_cap_term[1,_xi,_yi]:.4e}  rho={rho[_xi,_yi]:.4e}")
 
     u_ckl = zu_ckl(fc, z_fi, rho, body_force, _capillary_force)
+    if iteration in iterationsOfInterest:
+        np.savez_compressed(os.path.join(images_dir, 'fields_it%05d.npz' % iteration),
+                            phi=_phi.astype(np.float32), u=u_ckl.astype(np.float32),
+                            Fs=_capillary_force.astype(np.float32), Fb=body_force.astype(np.float32),
+                            rho=rho.astype(np.float32), iteration=iteration)    
     _u_ckl_abs = np.abs(u_ckl)
     print(f"iter {iteration}: u_ckl max |value| = {np.max(_u_ckl_abs):.6e}")
     _loc = np.unravel_index(np.argmax(_u_ckl_abs), u_ckl.shape)
@@ -2238,3 +2218,6 @@ save_path = os.path.join(images_dir, f"{SCRIPT_FILENAME}_{ACTIVE_CASE}_Metrics_{
 fig2.savefig(save_path, dpi=300, bbox_inches='tight')
 debug_log('INIT', 'Saved 3x3 grid: %s', save_path)
 plt.close(fig2)
+
+from plot_vel_force_fields import generate_plots
+generate_plots(images_dir)

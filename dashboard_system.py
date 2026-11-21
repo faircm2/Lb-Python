@@ -100,7 +100,7 @@ def main(folder, out, overrides=None, zcrop=None):
         fig.colorbar(im, ax=a, label=cbar, fraction=0.04, pad=0.02)
 
     # row 1: y-z maps of the last dump ---------------------------------------------------------
-    yz_map(ax[0, 1], phi, "phi (cyan: phi=0.5)", "phi", cmap="RdBu_r")
+    yz_map(ax[0, 1], phi, "phi (cyan: phi=0.5)", "phi", cmap="RdBu")
     ax[0, 1].images[0].set_clim(0, 1)
     yz_map(ax[0, 2], u[0], "u_x", "u_x", cmap="RdBu_r", sym=True)
     yz_map(ax[1, 0], speed / CS, "Mach number", "Ma = |u| / c_s")

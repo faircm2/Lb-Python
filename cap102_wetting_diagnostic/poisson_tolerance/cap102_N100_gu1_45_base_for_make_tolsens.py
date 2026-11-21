@@ -928,10 +928,9 @@ def gi(fc, _gi, _gi_c, u_ckl, rho, mu, iteration):
     du_y_dx, du_y_dy = grads[1]
 
     # Strain rate tensor S
-    S_xx = du_x_dx
-    S_yy = du_y_dy
+    S_xx = 2 * du_x_dx
+    S_yy = 2 * du_y_dy
     S_xy = du_y_dx + du_x_dy
-    S_yx = S_xy
 
     # Stress sigma = mu * S
     sigma_xx = mu * S_xx

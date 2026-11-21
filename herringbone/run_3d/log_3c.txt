@@ -1,0 +1,11 @@
+fields3d_W14/fields3d_iter_180000.npz: W=14, job 8885554; section = 15 slabs of 11 cells = 3.09 mm; his: mean 3709 m2/m3, relative std < 5 %
+sections inside a groove train, best match to his numbers first:
+  start x = 326 cells (6.09 mm): mean 4035 m2/m3, relative std 5.6 %
+  start x =  66 cells (1.22 mm): mean 4042 m2/m3, relative std 5.6 %
+  start x = 331 cells (6.19 mm): mean 4040 m2/m3, relative std 5.8 %
+  start x =  61 cells (1.12 mm): mean 4053 m2/m3, relative std 5.7 %
+  start x =  71 cells (1.31 mm): mean 4057 m2/m3, relative std 5.8 %
+  start x = 321 cells (6.00 mm): mean 4057 m2/m3, relative std 6.1 %
+done
+his digitised points: 15, mean 3709, relative std 4.8 % (he states 3709, < 5 %)
+wrote compare plot

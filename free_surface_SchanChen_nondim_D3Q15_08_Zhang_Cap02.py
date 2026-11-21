@@ -1,4 +1,5 @@
-#this simulation a microchannel flow is modelled along a plane inserted vertically and symetrically in the channel center#aligned to the z-axis vertically and in the x-axis direction along hte channel length
+#this simulation a microchannel flow is modelled along a plane inserted vertically and symetrically in the channel center
+#aligned to the z-axis vertically and in the x-axis direction along hte channel length
 #the axes in the plane are y-axis in the vertical direction and x-axis in the channel horizontal direction
 #The simulation is based on the paper by Zhang et al, 2020, Physics of Fluids 32, 103301 (2020)
 # Add at top of script (Python 3.7+ for forward refs in annotations)
@@ -7,7 +8,6 @@ from __future__ import annotations
 import matplotlib
 
 matplotlib.use('Agg')  # or 'Qt5Agg' if you have PyQt installed
-#matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
 import matplotlib.pyplot as plt
 
 plt.rc('text', usetex=False)
@@ -581,23 +581,19 @@ PROOF_INCLINED = FlowConfig(
     vf_theta = 0.0
 )
 
-#CAPILLARY FLOW -> vf_theta == 0°
+# Capillary surface at wall -> vf_theta == θ°, equilibrium contact angle
 CAPILLARY_PROOF = FlowConfig(
     name="Capillary Proof",
     dx=dx, dt=dt,
     n_dx=n_dx, alpha=0, CF=CF,
     a=1.0, b=6.7, T=3.5e-2,
-    #tau_f=1.5, tau_g=1.0,
     tau_g=0.65, tau_f=1.25, #see eq(25) + Example A , t_g start with 0.6, increase as necessary -> was tau_f=0.65
-    #Kf=0.5 * dx**2, Kg=1e-5 * dx**2,
-    #Kf=0.5*dx**2 -> 0.08*dx**2
-    #Kg=2.5e-4*dx**2 -> 1e-5*dx**2 -> 1e-7*dx**2
     Kf=0.002, Kg=1e-6 * n_dx**2,
     epsilon_cutoff=1e-4,
     #Increase interface smoothness: Set vf_W = 6 or 8 in FlowConfig to widen the diffuse interface, reducing sharp edges.
-    vf_W = 4, #was 6
-    vf_sigma = 0.01, #0.072
-    vf_theta = 120.0, #60
+    vf_W = 4,
+    vf_sigma = 0.01,
+    vf_theta = 120.0,
     vf_capillaryForceMultiplier=1,
     MULTIPLES=1,
     ENFORCE_MASS_CONSERVATION = True,
@@ -867,6 +863,16 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
 
 
 # Zhang eq(13): collision function of pressure distribution function 
+ETA_G_OVER_L = 0.007 / 0.5        # Zhang example A: eta_G / eta_L
+
+def tau_f_field_system(fc, rho):
+    """Per-cell relaxation time: tau = 0.5 + eta/(rho*Cs2), eta = phi*eta_L + (1-phi)*eta_G."""
+    phi = (rho - fc.rho_G) / (fc.rho_L - fc.rho_G)
+    eta_L = fc.rho_L * Cs2 * (fc.tau_f - 0.5)
+    eta = eta_L * (phi + (1.0 - phi) * ETA_G_OVER_L)
+    return 0.5 + eta / (Cs2 * rho)
+
+
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     """
     Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
@@ -878,7 +884,7 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
 
     # eq(13): collision
     #z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
-    omega_f = 1.0 / fc.tau_f
+    omega_f = 1.0 / tau_f_field_system(fc, rho)
     #z_fi_star = (z_fi_c - z_fi)      # 1 new array
     np.subtract(z_fi_c, z_fi, out=_z_star_buf)  #-> use the buffer
     _z_star_buf *= omega_f             # in-place
@@ -924,32 +930,10 @@ def Fs(fc, __phi, n_dx, n_dy, n_dz, out):
 
 
 # Zhang eq(20): Fi discrete forcing term for pressure distribution function in eq(13)
-def Fi_old(fc, Fs, G, u_ckl, rho):
-    ei_dot_u = np.einsum('ic,cjkl->ijkl', c, u_ckl)  
-    u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)  
-    s0 = 1 + ei_dot_u / Cs2 + ei_dot_u**2 / (2 * Cs4) - u_sq / (2 * Cs2)
-    s = E_exp * s0
-
-    term1 = 1 - 1 / (2 * fc.tau_f)
-    ei_u = c_exp - u_ckl[np.newaxis]
-
-    drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2, n_dx, n_dy, n_dz)
-    stack_grad_rho = np.stack([drho_dx, drho_dy, drho_dz], axis=0) 
-
-    forces_s = (Fs * fc.ADD_SURFACE_TENSION_FORCE + G * fc.ADD_BODY_FORCE)[np.newaxis] * s[:, np.newaxis] 
-    second_term = (s - E_exp)[:, np.newaxis] * stack_grad_rho[np.newaxis]
-    assert forces_s.shape == second_term.shape, f"forces {forces_s.shape} vs second_term {second_term.shape}"
-    assert ei_u.shape == forces_s.shape, f"ei_u {ei_u.shape} vs forces {forces_s.shape}"    
-
-    _Fi = term1 * np.einsum('icjkl,icjkl->ijkl', ei_u, forces_s + second_term)
-    
-    return _Fi
-
-
 def Fi(fc, Fs, G, u_ckl, rho, out):
     u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)                      # (X,Y,Z) - once
 
-    term1 = 1 - 1 / (2 * fc.tau_f)
+    term1 = 1 - 1 / (2 * tau_f_field_system(fc, rho))
     combined_force = Fs * fc.ADD_SURFACE_TENSION_FORCE + G * fc.ADD_BODY_FORCE   # (3,X,Y,Z) - once
 
     drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2, n_dx, n_dy, n_dz)
@@ -1820,7 +1804,7 @@ title = "Density map"
 #plotter.density_map_standalone(rho[:, :, zc], rho_min, rho_max, title, iteration)
 plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)
 u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
-plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
+plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu')
 plotter.plot_field_layers(u_mag, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
 
 u_ckl_midpoint0 = u_ckl[0,int(Xn//2),int(Yn//2),int(Zn//2)]
@@ -1953,7 +1937,7 @@ while iteration < fc.TOTAL_ITERATIONS:
         #phi mapping
         plotter.save_phi_snapshot(_phi[:, :, zc], iteration, fc.phi_star_G, fc.phi_star_L)  
         u_mag = np.sqrt(u_ckl[0]**2 + u_ckl[1]**2 + u_ckl[2]**2)
-        plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu_r')
+        plotter.plot_field_layers(_phi, "phi", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y', cmap='RdBu')
         plotter.plot_field_layers(u_mag, "u_mag", iteration, Z_LAYER_INDICES, Y_LAYER_INDICES, second_axis='y')
 
         # Store 2D data (existing)

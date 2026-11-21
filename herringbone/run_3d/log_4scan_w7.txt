@@ -1,0 +1,112 @@
+C:\Dirk\Neethling\iems\master\PythonLBCourse\herringbone\run_3d\xs1_fig4_scan.py:132: RuntimeWarning: Mean of empty slice
+  uz = np.nanmean(np.where(liq[sl], u[2][sl], np.nan), axis=0)
+his mask 422 x 180 px, window y 0.007..1.226 mm, z -0.140..0.380 mm, ink 15.6 %
+x0   45 ( 0.83 mm): score +0.626  ink  27.6 %  groove ink left/right  0.80  divider y 0.59 mm
+x0   51 ( 0.95 mm): score +0.593  ink  32.5 %  groove ink left/right  0.84  divider y 0.48 mm
+x0   57 ( 1.06 mm): score +0.557  ink  34.5 %  groove ink left/right  0.71  divider y 0.48 mm
+x0   63 ( 1.17 mm): score +0.558  ink  34.3 %  groove ink left/right  0.66  divider y 0.35 mm
+x0   69 ( 1.28 mm): score +0.570  ink  33.5 %  groove ink left/right  0.71  divider y 0.48 mm
+x0   75 ( 1.40 mm): score +0.510  ink  36.3 %  groove ink left/right  0.70  divider y 0.48 mm
+x0   81 ( 1.51 mm): score +0.542  ink  35.4 %  groove ink left/right  0.74  divider y 0.48 mm
+x0   87 ( 1.62 mm): score +0.537  ink  34.7 %  groove ink left/right  0.68  divider y 0.48 mm
+x0   93 ( 1.73 mm): score +0.508  ink  35.7 %  groove ink left/right  0.70  divider y 0.44 mm
+x0   99 ( 1.85 mm): score +0.508  ink  33.1 %  groove ink left/right  0.61  divider y 0.31 mm
+x0  105 ( 1.96 mm): score +0.576  ink  31.3 %  groove ink left/right  0.80  divider y 0.33 mm
+x0  111 ( 2.07 mm): score +0.580  ink  33.5 %  groove ink left/right  1.06  divider y 0.29 mm
+x0  117 ( 2.18 mm): score +0.532  ink  35.4 %  groove ink left/right  0.96  divider y 0.29 mm
+x0  123 ( 2.30 mm): score +0.534  ink  35.0 %  groove ink left/right  0.79  divider y 0.33 mm
+x0  129 ( 2.41 mm): score +0.513  ink  35.1 %  groove ink left/right  0.72  divider y 0.33 mm
+x0  135 ( 2.52 mm): score +0.497  ink  37.4 %  groove ink left/right  0.93  divider y 0.33 mm
+x0  141 ( 2.63 mm): score +0.533  ink  36.7 %  groove ink left/right  1.00  divider y 0.33 mm
+x0  147 ( 2.75 mm): score +0.530  ink  37.0 %  groove ink left/right  1.08  divider y 0.33 mm
+x0  153 ( 2.86 mm): score +0.513  ink  36.6 %  groove ink left/right  0.98  divider y 0.33 mm
+x0  159 ( 2.97 mm): score +0.500  ink  34.8 %  groove ink left/right  0.77  divider y 0.33 mm
+x0  165 ( 3.08 mm): score +0.495  ink  33.6 %  groove ink left/right  0.77  divider y 0.33 mm
+x0  171 ( 3.20 mm): score +0.501  ink  34.0 %  groove ink left/right  0.98  divider y 0.33 mm
+x0  177 ( 3.31 mm): score +0.473  ink  34.5 %  groove ink left/right  1.02  divider y 0.33 mm
+x0  183 ( 3.42 mm): score +0.482  ink  34.8 %  groove ink left/right  0.91  divider y 0.33 mm
+x0  189 ( 3.53 mm): score +0.464  ink  34.1 %  groove ink left/right  0.66  divider y 0.37 mm
+x0  195 ( 3.65 mm): score +0.314  ink  30.6 %  groove ink left/right  0.89  divider y 0.38 mm
+x0  201 ( 3.76 mm): score +0.294  ink  29.2 %  groove ink left/right  0.85  divider y 0.38 mm
+x0  207 ( 3.87 mm): score +0.381  ink  30.3 %  groove ink left/right  0.90  divider y 0.40 mm
+x0  213 ( 3.98 mm): score +0.387  ink  29.8 %  groove ink left/right  0.67  divider y 0.40 mm
+x0  219 ( 4.10 mm): score +0.351  ink  29.0 %  groove ink left/right  0.39  divider y 0.40 mm
+x0  225 ( 4.21 mm): score +0.217  ink  24.4 %  groove ink left/right  0.29  divider y 0.74 mm
+x0  231 ( 4.32 mm): score +0.205  ink  20.8 %  groove ink left/right  0.18  divider y 0.82 mm
+x0  237 ( 4.43 mm): score +0.222  ink  18.8 %  groove ink left/right  0.04  divider y 0.87 mm
+x0  243 ( 4.55 mm): score +0.257  ink  17.4 %  groove ink left/right  0.00  divider y 0.91 mm
+x0  249 ( 4.66 mm): score +0.321  ink  15.9 %  groove ink left/right  0.00  divider y 0.98 mm
+x0  255 ( 4.77 mm): score +0.369  ink  14.7 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  261 ( 4.88 mm): score +0.439  ink  13.5 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  267 ( 5.00 mm): score +0.443  ink  13.7 %  groove ink left/right  0.00  divider y 0.89 mm
+x0  273 ( 5.11 mm): score +0.471  ink  14.3 %  groove ink left/right  0.00  divider y 0.91 mm
+x0  279 ( 5.22 mm): score +0.562  ink  17.0 %  groove ink left/right  0.24  divider y 0.70 mm
+x0  285 ( 5.33 mm): score +0.602  ink  20.3 %  groove ink left/right  0.64  divider y 0.68 mm
+x0  291 ( 5.45 mm): score +0.580  ink  24.1 %  groove ink left/right  0.90  divider y 0.68 mm
+x0  297 ( 5.56 mm): score +0.579  ink  26.9 %  groove ink left/right  1.18  divider y 0.68 mm
+x0  303 ( 5.67 mm): score +0.578  ink  29.1 %  groove ink left/right  1.47  divider y 0.68 mm
+x0  309 ( 5.78 mm): score +0.580  ink  31.3 %  groove ink left/right  1.43  divider y 0.68 mm
+x0  315 ( 5.90 mm): score +0.592  ink  32.7 %  groove ink left/right  1.52  divider y 0.68 mm
+x0  321 ( 6.01 mm): score +0.602  ink  32.4 %  groove ink left/right  1.70  divider y 0.68 mm
+x0  327 ( 6.12 mm): score +0.615  ink  31.3 %  groove ink left/right  1.66  divider y 0.68 mm
+x0  333 ( 6.23 mm): score +0.553  ink  33.4 %  groove ink left/right  1.39  divider y 0.59 mm
+x0  339 ( 6.35 mm): score +0.600  ink  32.0 %  groove ink left/right  1.06  divider y 0.87 mm
+x0  345 ( 6.46 mm): score +0.595  ink  33.0 %  groove ink left/right  0.92  divider y 0.87 mm
+x0  351 ( 6.57 mm): score +0.612  ink  33.3 %  groove ink left/right  1.00  divider y 0.87 mm
+x0  357 ( 6.68 mm): score +0.638  ink  32.1 %  groove ink left/right  1.06  divider y 0.89 mm
+x0  363 ( 6.80 mm): score +0.616  ink  32.6 %  groove ink left/right  0.97  divider y 0.87 mm
+x0  369 ( 6.91 mm): score +0.549  ink  35.9 %  groove ink left/right  1.22  divider y 0.87 mm
+x0  375 ( 7.02 mm): score +0.588  ink  34.0 %  groove ink left/right  0.94  divider y 0.87 mm
+x0  381 ( 7.13 mm): score +0.577  ink  35.1 %  groove ink left/right  1.08  divider y 0.80 mm
+x0  387 ( 7.25 mm): score +0.562  ink  34.8 %  groove ink left/right  1.65  divider y 0.80 mm
+x0  393 ( 7.36 mm): score +0.587  ink  32.1 %  groove ink left/right  1.54  divider y 0.93 mm
+x0  399 ( 7.47 mm): score +0.594  ink  31.6 %  groove ink left/right  1.47  divider y 0.87 mm
+x0  405 ( 7.58 mm): score +0.552  ink  33.7 %  groove ink left/right  1.51  divider y 0.91 mm
+x0  411 ( 7.70 mm): score +0.547  ink  33.9 %  groove ink left/right  1.58  divider y 0.91 mm
+x0  417 ( 7.81 mm): score +0.561  ink  32.6 %  groove ink left/right  1.98  divider y 0.87 mm
+x0  423 ( 7.92 mm): score +0.577  ink  31.9 %  groove ink left/right  1.82  divider y 0.93 mm
+x0  429 ( 8.03 mm): score +0.568  ink  32.6 %  groove ink left/right  1.75  divider y 0.87 mm
+x0  435 ( 8.15 mm): score +0.554  ink  31.8 %  groove ink left/right  1.41  divider y 0.87 mm
+x0  441 ( 8.26 mm): score +0.576  ink  31.4 %  groove ink left/right  1.59  divider y 0.87 mm
+x0  447 ( 8.37 mm): score +0.602  ink  31.0 %  groove ink left/right  1.92  divider y 0.87 mm
+x0  453 ( 8.48 mm): score +0.544  ink  32.8 %  groove ink left/right  1.80  divider y 0.93 mm
+x0  459 ( 8.60 mm): score +0.546  ink  30.7 %  groove ink left/right  1.89  divider y 0.87 mm
+x0  465 ( 8.71 mm): score +0.538  ink  30.6 %  groove ink left/right  1.82  divider y 0.87 mm
+x0  471 ( 8.82 mm): score +0.559  ink  29.9 %  groove ink left/right  1.93  divider y 0.87 mm
+x0  477 ( 8.93 mm): score +0.597  ink  28.0 %  groove ink left/right  2.81  divider y 0.91 mm
+x0  483 ( 9.05 mm): score +0.567  ink  24.6 %  groove ink left/right  3.25  divider y 0.91 mm
+x0  489 ( 9.16 mm): score +0.465  ink  23.4 %  groove ink left/right  4.45  divider y 0.98 mm
+x0  495 ( 9.27 mm): score +0.443  ink  20.8 %  groove ink left/right  6.95  divider y 0.22 mm
+x0  501 ( 9.38 mm): score +0.471  ink  18.0 %  groove ink left/right 1901.00  divider y 0.35 mm
+x0  507 ( 9.50 mm): score +0.468  ink  16.1 %  groove ink left/right 1233.00  divider y 0.27 mm
+x0  513 ( 9.61 mm): score +0.480  ink  13.9 %  groove ink left/right 720.00  divider y 0.22 mm
+x0  519 ( 9.72 mm): score +0.508  ink  12.0 %  groove ink left/right 160.00  divider y 0.22 mm
+x0  525 ( 9.83 mm): score +0.568  ink  10.4 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  531 ( 9.95 mm): score +0.574  ink   9.6 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  537 (10.06 mm): score +0.574  ink   8.8 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  543 (10.17 mm): score +0.584  ink   7.8 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  549 (10.28 mm): score +0.588  ink   7.0 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  555 (10.40 mm): score +0.590  ink   6.1 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  561 (10.51 mm): score +0.585  ink   5.3 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  567 (10.62 mm): score +0.582  ink   4.6 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  573 (10.73 mm): score +0.580  ink   4.0 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  579 (10.85 mm): score +0.574  ink   3.5 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  585 (10.96 mm): score +0.558  ink   3.0 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  591 (11.07 mm): score +0.544  ink   2.5 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  597 (11.18 mm): score +0.553  ink   2.3 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  603 (11.30 mm): score +0.558  ink   2.1 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  609 (11.41 mm): score +0.563  ink   1.9 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  615 (11.52 mm): score +0.572  ink   1.9 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  621 (11.63 mm): score +0.571  ink   1.8 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  627 (11.75 mm): score +0.560  ink   1.8 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  633 (11.86 mm): score +0.558  ink   1.8 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  639 (11.97 mm): score +0.542  ink   1.7 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  645 (12.08 mm): score +0.532  ink   1.7 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  651 (12.20 mm): score +0.523  ink   1.6 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  657 (12.31 mm): score +0.522  ink   1.6 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  663 (12.42 mm): score +0.520  ink   1.6 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  669 (12.53 mm): score +0.526  ink   1.6 %  groove ink left/right  0.00  divider y 0.22 mm
+x0  675 (12.65 mm): score +0.513  ink   1.6 %  groove ink left/right  0.00  divider y 0.22 mm
+his image: ink 15.6 %, groove ink left/right 2.32
+best: [(447, 0.602), (327, 0.615), (399, 0.594)]
+done

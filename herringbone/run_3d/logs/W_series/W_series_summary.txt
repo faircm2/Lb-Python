@@ -1,0 +1,8 @@
+W=5 job=8873105_0 | last finite: iter  24236  t= 284.016 ms  max|u|=1.3589e-01  Ma=0.2354  phi=[0.0000, 1.0000] | first nan: iter  26744  t= 313.406 ms  max|u|=nan  Ma=nan  phi=[nan, nan]
+W=6 job=8873105_1 | last finite: iter  26744  t= 313.406 ms  max|u|=1.1988e-01  Ma=0.2076  phi=[0.0000, 1.0000]      max|u| at x=87, y=17, z=27 (component x), phi there = 0.1115 | first nan: iter  29251  t= 342.785 ms  max|u|=nan  Ma=nan  phi=[nan, nan]
+W=8 job=8873105_2 | last finite: iter  21729  t= 254.637 ms  max|u|=1.2404e-01  Ma=0.2148  phi=[0.0000, 1.0000] | first nan: iter  24236  t= 284.016 ms  max|u|=nan  Ma=nan  phi=[nan, nan]
+W=9 job=8873105_3 | last finite: iter  19222  t= 225.258 ms  max|u|=1.3477e-01  Ma=0.2334  phi=[0.0000, 1.0000] | first nan: iter  29251  t= 342.785 ms  max|u|=nan  Ma=nan  phi=[nan, nan]
+W=10 job=8873105_4 | last finite: iter  44295  t= 519.082 ms  max|u|=1.4418e-01  Ma=0.2497  phi=[0.0000, 1.0000] | first nan: iter  46803  t= 548.473 ms  max|u|=nan  Ma=nan  phi=[nan, nan]
+W=12 job=8873105_5 | last finite: iter  61314  t= 718.523 ms  max|u|=1.6787e-01  Ma=0.2908  phi=[0.0000, 1.0000] | first nan: iter  64785  t= 759.199 ms  max|u|=nan  Ma=nan  phi=[nan, nan]
+W=14 job=8873105_6 | last finite: iter 156012  t=1828.266 ms  max|u|=2.6400e-01  Ma=0.4573  phi=[0.0000, 1.0000] | first nan: none
+W=17 job=8873105_7 | last finite: iter  14207  t= 166.488 ms  max|u|=2.8740e-01  Ma=0.4978  phi=[0.0001, 1.0000] | first nan: iter  16714  t= 195.867 ms  max|u|=nan  Ma=nan  phi=[nan, nan]

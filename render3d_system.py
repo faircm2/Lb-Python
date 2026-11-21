@@ -103,7 +103,7 @@ def main(path, alpha_deg, prefix, closed=False, zcrop=100):
     secs = [("XZ section at y = %d (mid-width)" % (YN // 2), phi[:, phi.shape[1] // 2, :nz].T, XN, "x"),
             ("YZ section at x = %d (mid-length)" % (XN // 2), phi[phi.shape[0] // 2, :, :nz].T, YN, "y")]
     for a_, (title, sec, L, lab) in zip(ax, secs):
-        im = a_.imshow(sec, origin="lower", aspect="equal", cmap="RdBu_r", vmin=0, vmax=1, extent=(0, L, 0, nz * step))
+        im = a_.imshow(sec, origin="lower", aspect="equal", cmap="RdBu", vmin=0, vmax=1, extent=(0, L, 0, nz * step))
         a_.contour(np.linspace(0, L, sec.shape[1]), np.linspace(0, nz * step, sec.shape[0]), sec, levels=[0.5], colors="cyan", linewidths=1.3)
         a_.set_title("%s   (phi: red = liquid, blue = gas; z shown 0-%d of %d cells)" % (title, nz * step, ZN), fontsize=10)
         a_.set_xlabel(lab + " [cells]"); a_.set_ylabel("z [cells]")

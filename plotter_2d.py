@@ -1005,7 +1005,7 @@ class Plotter2D:
         Left panel  : x = 1 .. strip_width   (left wall region)
         Right panel : x = Xn-strip_width .. Xn  (right wall region)
 
-        Background: phi field coloured by phase (same RdBu_r scheme).
+        Background: phi field coloured by phase (same RdBu scheme).
         Vectors:    net_force direction and magnitude.
                     Arrow colour follows phi so you see liquid/interface/gas phase.
         Interface contour drawn in white.
@@ -1050,7 +1050,7 @@ class Plotter2D:
         fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(12, 8), sharey=True)
 
         phi_kw = dict(origin='lower', aspect='auto',
-                      cmap='RdBu_r', vmin=phi_G, vmax=phi_L)
+                      cmap='RdBu', vmin=phi_G, vmax=phi_L)
 
         for ax, phi_strip, XI, YI, FX, FY, PHI_q, label in [
             (ax_l, phi_l, XI_l, YI_l, FX_l, FY_l, PHI_ql, "Left wall"),
@@ -1076,7 +1076,7 @@ class Plotter2D:
             # colour arrows by phi value (same cmap)
             phi_flat = PHI_q.ravel()
             norm = plt.Normalize(vmin=phi_G, vmax=phi_L)
-            colors = plt.cm.RdBu_r(norm(phi_flat))
+            colors = plt.cm.RdBu(norm(phi_flat))
 
             # quiver: positions in strip-local x, global y
             # ravel for scatter-style quiver
@@ -1102,7 +1102,7 @@ class Plotter2D:
         ax_l.set_ylabel("y-index  (0 = bottom/liquid)", fontsize=10)
 
         # ─── Colourbar (phi) ─────────────────────────────────────────────
-        sm = plt.cm.ScalarMappable(cmap='RdBu_r', norm=plt.Normalize(vmin=phi_G, vmax=phi_L))
+        sm = plt.cm.ScalarMappable(cmap='RdBu', norm=plt.Normalize(vmin=phi_G, vmax=phi_L))
         sm.set_array([])
         cbar = fig.colorbar(sm, ax=[ax_l, ax_r], shrink=0.7, pad=0.02)
         cbar.set_label("phi  (red = liquid, blue = gas)", fontsize=10)
@@ -1319,7 +1319,7 @@ class Plotter2D:
         ax = fig.add_subplot(111)
         #plt.figure(figsize=(8, 6))
 
-        im = ax.imshow(_phi.T, origin='lower', cmap='RdBu_r', vmin=phi_star_G, vmax=phi_star_L)
+        im = ax.imshow(_phi.T, origin='lower', cmap='RdBu', vmin=phi_star_G, vmax=phi_star_L)
 
         # Create a divider so the colorbar matches the axes height
         divider = make_axes_locatable(ax)
@@ -1508,7 +1508,7 @@ class Plotter2D:
         fig, axes = plt.subplots(1, 3, figsize=(16, 5))
 
         # --- Panel 1: phi ---
-        im0 = axes[0].imshow(_phi.T, origin='lower', cmap='RdBu_r',
+        im0 = axes[0].imshow(_phi.T, origin='lower', cmap='RdBu',
                              vmin=fc.phi_star_G, vmax=fc.phi_star_L)
         axes[0].contour(_phi.T, levels=[phi_mid], colors='white', linewidths=1)
         plt.colorbar(im0, ax=axes[0])
@@ -1555,7 +1555,7 @@ class Plotter2D:
         fig, axes = plt.subplots(1, 3, figsize=(16, 5))
 
         # --- Panel 1: phi ---
-        im0 = axes[0].imshow(_phi.T, origin='lower', cmap='RdBu_r',
+        im0 = axes[0].imshow(_phi.T, origin='lower', cmap='RdBu',
                              vmin=fc.phi_star_G, vmax=fc.phi_star_L)
         axes[0].contour(_phi.T, levels=[phi_mid], colors='white', linewidths=1)
         plt.colorbar(im0, ax=axes[0])

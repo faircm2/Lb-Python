@@ -914,10 +914,15 @@ def Gab(_phi):
     # |grad phi|^2
     mag2 = dphi_x**2 + dphi_y**2
 
-    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (3/2) * mag2 #G_xx
+    # G must have zero trace
+    # trace = 9/2·|∇φ|² − k·(number of dimensions)·|∇φ|²
+    # where k is the coefficient of the |∇φ|² term.
+    # In 3D: 9/2 − 3k = 0, so k = 3/2.
+    # In 2D: 9/2 − 2k = 0, so k = 9/4.
+    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (9/4) * mag2 #G_xx
     G[:, :, 0, 1] = (9/2) * dphi_x * dphi_y #G_xy
     G[:, :, 1, 0] = (9/2) * dphi_y * dphi_x #G_yx
-    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (3/2) * mag2 #G_yy
+    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (9/4) * mag2 #G_yy
 
     return G
 
@@ -932,15 +937,12 @@ def density_and_viscosity(fc, _phi):
     phi_delta_star = fc.phi_star_L - fc.phi_star_G   
 
     #if _phi < phi_star_G:
-    #    _rho = rho_G
     mask_gas = _phi < fc.phi_star_G
     _rho[mask_gas] = fc.rho_G
-    #elif _phi >= phi_star_G and _phi <= phi_star_L:
     #    _rho = rho_center
     mask_interface = (_phi >= fc.phi_star_G) & (_phi <= fc.phi_star_L)
     rho_center = (delta_rho/2) * (np.sin(np.pi * ((_phi[mask_interface] - phi_dash_star)/phi_delta_star)) + 1) + fc.rho_G
     _rho[mask_interface] = rho_center
-    #elif _phi > phi_star_L:
     #    _rho = rho_L
     mask_liquid = _phi > fc.phi_star_L
     _rho[mask_liquid] = fc.rho_L
@@ -1012,10 +1014,6 @@ def ph(hn, _rho, u_ckl_star, iteration, n_dx=1.0, n_dy=1.0):
     # Divergence term: (1/3) * E_i * div_u * n_dx
     du_dx, _ = c_first_derivative0(u_ckl_star[0], n_dx, n_dy)
     _, dv_dy = c_first_derivative0(u_ckl_star[1], n_dx, n_dy)
-    ######################################## 6. Switch Derivative Scheme: I ########################
-    #du_dx, _ = np.gradient(u_ckl_star[0], n_dx, n_dy)
-    #_, dv_dy = np.gradient(u_ckl_star[1], n_dx, n_dy)
-    ################################################################################################
     div_u = du_dx + dv_dy
 
     ############# 4. Fix Boundary Inconsistencies for div_u=0 Enforcement ###########################
@@ -1086,10 +1084,9 @@ def gi(fc, _gi, _gi_c, u_ckl, rho, mu, iteration):
     du_y_dx, du_y_dy = grads[1]
 
     # Strain rate tensor S
-    S_xx = du_x_dx
-    S_yy = du_y_dy
+    S_xx = 2 * du_x_dx
+    S_yy = 2 * du_y_dy
     S_xy = du_y_dx + du_x_dy
-    S_yx = S_xy
 
     # Stress sigma = mu * S
     sigma_xx = mu * S_xx
@@ -1106,16 +1103,6 @@ def gi(fc, _gi, _gi_c, u_ckl, rho, mu, iteration):
     d_sigma_yy_dy = c_first_derivative0(sigma_yy, n_dx, n_dy)[1]
     div_sigma_y = d_sigma_yx_dx + d_sigma_yy_dy        
 
-    if False: #old solution
-        # Expand for viscous term broadcasting over i=0..8
-        div_sigma_x_exp = div_sigma_x[np.newaxis, :, :]  # (1, nx, ny)
-        div_sigma_y_exp = div_sigma_y[np.newaxis, :, :]
-        rho_exp = rho[np.newaxis, :, :]  # (1, nx, ny)
-
-        # Viscous term: 3 * E_i * (c_{i,x} * div_x / rho + c_{i,y} * div_y / rho) * n_dx
-        dot_term = c_x_exp * (div_sigma_x_exp / rho_exp) + c_y_exp * (div_sigma_y_exp / rho_exp)
-        viscous_term = 3.0 * E_exp * dot_term * n_dx  # (9, nx, ny)
-
     ####################### new solution
     # After computing div_sigma_x and div_sigma_y (these are already the full ∂_b σ_{a b} for a = x and a = y)
 
@@ -1131,8 +1118,6 @@ def gi(fc, _gi, _gi_c, u_ckl, rho, mu, iteration):
     ###############################################
 
     # Collision: fully vectorized BGK + forcing
-    #_gi_old = np.copy(_gi)  # (9, nx, ny)
-    #_gi_star = _gi_old - (1.0 / fc.tau_g) * (_gi_old - _gi_c) + viscous_term
     _gi_star = _gi - (1.0 / fc.tau_g) * (_gi - _gi_c) + viscous_term
 
     # Streaming: batched rolls for all directions
@@ -1209,7 +1194,9 @@ def gi_c(fc, u, rho, iteration):
     #GrowthMetric_gi_c_term6_Gab.append((iteration, abs_term6))
     
     # term7: (2/3) * F[i] * (Kg/rho) * grad_rho_x**2
-    term7 = (2.0 / 3.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
+    # term7 3D: (2/3) * F[i] * (Kg/rho) * grad_rho_x**2
+    # term7 2D: (1/2) * F[i] * (Kg/rho) * grad_rho_x**2
+    term7 = (1.0 / 2.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
 
     # Assemble: exact match to loop addition
     _gi_c = term1 + term2 - term3 + term4 + term5 + term6 - term7  # (9,nx_pad,ny_pad)
@@ -1290,7 +1277,10 @@ def fi_c(fc, u, F, _phi):
     term3 = - F_exp * fc.Kf * _phi * laplacian_phi
     
     # term4: F[i] * Kf/6 * (dphi_dxa**2 + dphi_dya**2)
-    term4 = - F_exp * (fc.Kf / 6.0) * (dphi_dxa**2 + dphi_dya**2)
+    # reproduce the Korteweg pressure tensor, diagonal part is −κ/2·|∇φ|²
+    # G (with 9/4) => −κ/2·|∇φ|², => Kf/6 = 0
+    # => *0
+    term4 = - F_exp * (fc.Kf *0 / 6.0) * (dphi_dxa**2 + dphi_dya**2)
     
     # term5: 3 * E[i] * _phi * c_dot_u
     c_dot_u = np.einsum('ia,axy->ixy', c, u)  # (9,nx,ny) - c_i . u

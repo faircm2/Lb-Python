@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<b:Sources SelectedStyle="\IEEE2006OfficeOnline.xsl" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">
+  <b:Source>
+    <b:Tag>Bird2002</b:Tag>
+    <b:SourceType>Book</b:SourceType>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person><b:Last>Bird</b:Last><b:First>R.</b:First><b:Middle>B.</b:Middle></b:Person>
+          <b:Person><b:Last>Stewart</b:Last><b:First>W.</b:First><b:Middle>E.</b:Middle></b:Person>
+          <b:Person><b:Last>Lightfoot</b:Last><b:First>E.</b:First><b:Middle>N.</b:Middle></b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Transport Phenomena</b:Title>
+    <b:Edition>2nd</b:Edition>
+    <b:Year>2002</b:Year>
+    <b:City>New York</b:City>
+    <b:Publisher>John Wiley &amp; Sons</b:Publisher>
+  </b:Source>
+  <b:Source>
+    <b:Tag>Nusselt1916</b:Tag>
+    <b:SourceType>JournalArticle</b:SourceType>
+    <b:Author>
+      <b:Author>
+        <b:NameList>
+          <b:Person><b:Last>Nusselt</b:Last><b:First>W.</b:First></b:Person>
+        </b:NameList>
+      </b:Author>
+    </b:Author>
+    <b:Title>Die Oberflächenkondensation des Wasserdampfes</b:Title>
+    <b:JournalName>Zeitschrift des Vereines Deutscher Ingenieure</b:JournalName>
+    <b:Year>1916</b:Year>
+    <b:Volume>60</b:Volume>
+    <b:Pages>541–546, 569–575</b:Pages>
+  </b:Source>
+</b:Sources>

@@ -1,3 +1,8 @@
+#this simulation a microchannel flow is modelled along a plane inserted vertically and symetrically in the channel center#aligned to the z-axis vertically and in the x-axis direction along hte channel length
+#the axes in the plane are y-axis in the vertical direction and x-axis in the channel horizontal direction
+#The simulation is based on the paper by Inamuro et al, 2003, Journal of Computational Physics 198
+# Add at top of script (Python 3.7+ for forward refs in annotations)
+from __future__ import annotations
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')

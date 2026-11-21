@@ -1,0 +1,10 @@
+49 seeds on the inlet plane (spacing 3.5 cells), 30 reach the outlet x = 736; integration time median 109 ms, max 355 ms, colours up to 212 ms (95th percentile); projected line length density 51 mm per mm^2 (his image: 35-45)
+wrote C:\Dirk\Neethling\iems\master\PythonLBCourse\herringbone\run_3d\xs1_fig4_inlet_compare_iter520000_49seeds.png
+73 seeds on the inlet plane (spacing 2.79 cells), 55 reach the outlet x = 736; integration time median 153 ms, max 424 ms, colours up to 246 ms (95th percentile); projected line length density 91 mm per mm^2 (his image: 35-45)
+wrote C:\Dirk\Neethling\iems\master\PythonLBCourse\herringbone\run_3d\xs1_fig4_inlet_compare_iter520000_73seeds.png
+98 seeds on the inlet plane (spacing 2.6 cells), 67 reach the outlet x = 736; integration time median 150 ms, max 737 ms, colours up to 307 ms (95th percentile); projected line length density 123 mm per mm^2 (his image: 35-45)
+wrote C:\Dirk\Neethling\iems\master\PythonLBCourse\herringbone\run_3d\xs1_fig4_inlet_compare_iter520000_98seeds.png
+147 seeds on the inlet plane (spacing 2.0 cells), 107 reach the outlet x = 736; integration time median 156 ms, max 542 ms, colours up to 282 ms (95th percentile); projected line length density 185 mm per mm^2 (his image: 35-45)
+wrote C:\Dirk\Neethling\iems\master\PythonLBCourse\herringbone\run_3d\xs1_fig4_inlet_compare_iter520000_147seeds.png
+196 seeds on the inlet plane (spacing 1.84 cells), 136 reach the outlet x = 736; integration time median 163 ms, max 2489 ms, colours up to 307 ms (95th percentile); projected line length density 239 mm per mm^2 (his image: 35-45)
+wrote C:\Dirk\Neethling\iems\master\PythonLBCourse\herringbone\run_3d\xs1_fig4_inlet_compare_iter520000_196seeds.png

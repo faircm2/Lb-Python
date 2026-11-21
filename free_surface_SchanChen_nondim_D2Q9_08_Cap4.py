@@ -608,10 +608,15 @@ def Gab(_phi):
     # |grad phi|^2
     mag2 = dphi_x**2 + dphi_y**2
 
-    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (3/2) * mag2 #G_xx
+    # G must have zero trace
+    # trace = 9/2·|∇φ|² − k·(number of dimensions)·|∇φ|²
+    # where k is the coefficient of the |∇φ|² term.
+    # In 3D: 9/2 − 3k = 0, so k = 3/2.
+    # In 2D: 9/2 − 2k = 0, so k = 9/4.
+    G[:, :, 0, 0] = (9/2) * dphi_x * dphi_x - (9/4) * mag2 #G_xx
     G[:, :, 0, 1] = (9/2) * dphi_x * dphi_y #G_xy
     G[:, :, 1, 0] = (9/2) * dphi_y * dphi_x #G_yx
-    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (3/2) * mag2 #G_yy
+    G[:, :, 1, 1] = (9/2) * dphi_y * dphi_y - (9/4) * mag2 #G_yy
 
     return G
 
@@ -861,7 +866,9 @@ def gi_c(fc, u, rho, iteration):
     #GrowthMetric_gi_c_term6_Gab.append((iteration, abs_term6))
     
     # term7: (2/3) * F[i] * (Kg/rho) * grad_rho_x**2
-    term7 = (2.0 / 3.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
+    # term7 3D: (2/3) * F[i] * (Kg/rho) * grad_rho_x**2
+    # term7 2D: (1/2) * F[i] * (Kg/rho) * grad_rho_x**2
+    term7 = (1.0 / 2.0) * F_exp * (fc.Kg / rho) * (grad_rho_x**2 + grad_rho_y**2)
 
     # Assemble: exact match to loop addition
     _gi_c = term1 + term2 - term3 + term4 + term5 + term6 - term7  # (9,nx_pad,ny_pad)
@@ -920,7 +927,10 @@ def fi_c(fc, u, F, _phi):
     term3 = F_exp * fc.Kf * _phi * laplacian_phi
     
     # term4: F[i] * Kf/6 * (dphi_dxa**2 + dphi_dya**2)
-    term4 = F_exp * (fc.Kf / 6.0) * (dphi_dxa**2 + dphi_dya**2)
+    # reproduce the Korteweg pressure tensor, diagonal part is −κ/2·|∇φ|²
+    # G (with 9/4) => −κ/2·|∇φ|², => Kf/6 = 0
+    # => *0
+    term4 = F_exp * (fc.Kf *0 / 6.0) * (dphi_dxa**2 + dphi_dya**2)
     
     # term5: 3 * E[i] * _phi * c_dot_u
     c_dot_u = np.einsum('ia,axy->ixy', c, u)  # (9,nx,ny) - c_i . u

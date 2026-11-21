@@ -754,6 +754,16 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
 
 
 # Zhang eq(13): collision function of pressure distribution function 
+ETA_G_OVER_L = 0.007 / 0.5        # Zhang example A: eta_G / eta_L
+
+def tau_f_field_system(fc, rho):
+    """Per-cell relaxation time: tau = 0.5 + eta/(rho*Cs2), eta = phi*eta_L + (1-phi)*eta_G."""
+    phi = (rho - fc.rho_G) / (fc.rho_L - fc.rho_G)
+    eta_L = fc.rho_L * Cs2 * (fc.tau_f - 0.5)
+    eta = eta_L * (phi + (1.0 - phi) * ETA_G_OVER_L)
+    return 0.5 + eta / (Cs2 * rho)
+
+
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
     """
     Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
@@ -774,7 +784,7 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, mu, Fs, G, iteration):
         _Fi[:, -1, :] = 0.0   # right ghost column
 
     # eq(13): collision
-    z_fi_star = z_fi - (1.0 / fc.tau_f) * (z_fi - z_fi_c) + n_dt * _Fi
+    z_fi_star = z_fi - (1.0 / tau_f_field_system(fc, rho)) * (z_fi - z_fi_c) + n_dt * _Fi
 
     # eq(15): streaming
     streamed = [
@@ -815,7 +825,7 @@ def Fi(fc, Fs, G, u_ckl, rho):
     s0 = 1 + ei_dot_u / Cs2 + ei_dot_u**2 / (2 * Cs4) - u_sq / (2 * Cs2)
     s = E_exp * s0
 
-    term1 = 1 - 1 / (2 * fc.tau_f)
+    term1 = 1 - 1 / (2 * tau_f_field_system(fc, rho))
     ei_u = c_exp - u_ckl[np.newaxis]
 
     drho_dx, drho_dy = zhang_gradient(rho * Cs2, n_dx, n_dy)

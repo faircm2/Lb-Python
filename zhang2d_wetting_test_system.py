@@ -1,3 +1,8 @@
+#this simulation a microchannel flow is modelled along a plane inserted vertically and symetrically in the channel center#aligned to the z-axis vertically and in the x-axis direction along hte channel length
+#the axes in the plane are y-axis in the vertical direction and x-axis in the channel horizontal direction
+#The simulation is based on the paper by Zhang et al, 2020, Physics of Fluids 32, 103301 (2020)
+# Add at top of script (Python 3.7+ for forward refs in annotations)
+from __future__ import annotations
 """
 Isolated 2D test of Zhang et al. (2020) phase-field LBM with the wetting boundary condition (eqs. 31-32), for the YZ cross-section of the channel:
 a flat liquid layer (initial depth 38 cells) on the floor, two side walls, top wall, no gravity (alpha = 90), same lattice parameters as the 3D runs.

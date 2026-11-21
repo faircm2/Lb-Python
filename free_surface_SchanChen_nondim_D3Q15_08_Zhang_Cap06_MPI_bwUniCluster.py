@@ -758,6 +758,16 @@ def zu_ckl(fc, _z_fi, rho, body_force, _capillary_force):
 
 
 # Zhang eq(13): collision function of pressure distribution function 
+ETA_G_OVER_L = 0.007 / 0.5        # Zhang example A: eta_G / eta_L
+
+def tau_f_field_system(fc, rho):
+    """Per-cell relaxation time: tau = 0.5 + eta/(rho*Cs2), eta = phi*eta_L + (1-phi)*eta_G."""
+    phi = (rho - fc.rho_G) / (fc.rho_L - fc.rho_G)
+    eta_L = fc.rho_L * Cs2 * (fc.tau_f - 0.5)
+    eta = eta_L * (phi + (1.0 - phi) * ETA_G_OVER_L)
+    return 0.5 + eta / (Cs2 * rho)
+
+
 def zfi(fc, z_fi, z_fi_c, u_ckl, rho, Fs, G):
     """
     Zhang eq(13) collision + eq(15) streaming for fi in D2Q9 two-phase LBM.
@@ -768,7 +778,7 @@ def zfi(fc, z_fi, z_fi_c, u_ckl, rho, Fs, G):
     _Fi = Fi(fc, Fs, G, u_ckl, rho,  out=_Fi_buf)
 
     # eq(13): collision
-    omega_f = 1.0 / fc.tau_f
+    omega_f = 1.0 / tau_f_field_system(fc, rho)
     np.subtract(z_fi_c, z_fi, out=_z_star_buf)  #-> use the buffer
     _z_star_buf *= omega_f             # in-place
     _z_star_buf += z_fi                # in-place  (now equals z_fi - omega_f*(z_fi-z_fi_c))
@@ -812,7 +822,7 @@ def Fs(fc, __phi, n_dx, n_dy, n_dz, out):
 def Fi(fc, Fs, G, u_ckl, rho, out):
     u_sq = np.einsum('cjkl,cjkl->jkl', u_ckl, u_ckl)                      # (X,Y,Z) - once
 
-    term1 = 1 - 1 / (2 * fc.tau_f)
+    term1 = 1 - 1 / (2 * tau_f_field_system(fc, rho))
     combined_force = Fs * fc.ADD_SURFACE_TENSION_FORCE + G * fc.ADD_BODY_FORCE   # (3,X,Y,Z) - once
 
     drho_dx, drho_dy, drho_dz = zhang_gradient(fc, rho * Cs2)
